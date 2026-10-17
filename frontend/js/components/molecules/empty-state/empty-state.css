@@ -1,0 +1,24 @@
+/* Molecule · empty-state (maqueta: .empty-state) */
+.empty-state {
+  padding: 26px 22px;
+  border: 2px dashed var(--asphalt);
+  background: var(--concrete-2);
+  text-align: center;
+}
+
+.empty-state strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.empty-state p {
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+}
+
+.empty-state-action {
+  margin-top: 14px;
+}

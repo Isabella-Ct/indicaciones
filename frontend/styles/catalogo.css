@@ -1,0 +1,133 @@
+/* Estilos SOLO del catálogo de componentes (app/_catalogo.html). */
+.catalogo {
+  display: grid;
+  gap: 24px;
+}
+
+.catalogo-rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px 24px;
+}
+
+.catalogo-muestra {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.catalogo-nombre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.catalogo-nombre code {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-2);
+}
+
+.catalogo-demo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.catalogo-demo > .hazard-strip,
+.catalogo-demo > .meter,
+.catalogo-demo > .form-grid,
+.catalogo-demo > .field,
+.catalogo-demo > .empty-state,
+.catalogo-demo > .alert,
+.catalogo-demo > .data-list,
+.catalogo-demo > .navbar,
+.catalogo-demo > .footer,
+.catalogo-demo > .input,
+.catalogo-demo > .select,
+.catalogo-demo > .textarea,
+.catalogo-demo > .catalogo-kpis,
+.catalogo-demo > .catalogo-oscuro,
+.catalogo-demo > .catalogo-iconos {
+  flex: 1 1 100%;
+}
+
+.catalogo-iconos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+}
+
+.catalogo-iconos span {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  background: var(--white);
+  border: 1px solid var(--rule);
+}
+
+.catalogo-iconos small {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+}
+
+.catalogo-autos {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: var(--asphalt-2);
+  color: var(--car-body);
+}
+
+.catalogo-car {
+  width: 26px;
+  height: 46px;
+}
+
+.catalogo-moto {
+  width: 14px;
+  height: 34px;
+}
+
+.catalogo-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 2px;
+  background: var(--asphalt);
+  border: 2px solid var(--asphalt);
+}
+
+.catalogo-kpis > .kpi--main {
+  grid-column: 1 / -1;
+}
+
+.catalogo-oscuro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+  padding: 14px 18px;
+  background: var(--asphalt);
+  color: var(--line);
+}
+
+@media (max-width: 760px) {
+  .catalogo-rejilla {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

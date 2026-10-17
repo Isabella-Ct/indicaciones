@@ -1,0 +1,5 @@
+/* Atom · hazard-strip (maqueta: .hazard-strip) */
+.hazard-strip {
+  height: 10px;
+  background: var(--hazard);
+}

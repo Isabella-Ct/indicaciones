@@ -1,0 +1,50 @@
+/* ==========================================================================
+   PARKO · Hoja principal: importa tokens, base y el CSS de cada componente
+   (Atomic Design). Sin bundler: el navegador resuelve los @import.
+   Orden: tokens → base → atoms → molecules → organisms → templates.
+   ========================================================================== */
+@import url('./tokens.css');
+@import url('./base.css');
+
+/* atoms */
+@import url('../js/components/atoms/avatar/avatar.css');
+@import url('../js/components/atoms/brand-mark/brand-mark.css');
+@import url('../js/components/atoms/button/button.css');
+@import url('../js/components/atoms/hazard-strip/hazard-strip.css');
+@import url('../js/components/atoms/icon/icon.css');
+@import url('../js/components/atoms/icon-button/icon-button.css');
+@import url('../js/components/atoms/input/input.css');
+@import url('../js/components/atoms/label-caps/label-caps.css');
+@import url('../js/components/atoms/link/link.css');
+@import url('../js/components/atoms/meter/meter.css');
+@import url('../js/components/atoms/plate/plate.css');
+@import url('../js/components/atoms/select/select.css');
+@import url('../js/components/atoms/spinner/spinner.css');
+@import url('../js/components/atoms/status-chip/status-chip.css');
+@import url('../js/components/atoms/textarea/textarea.css');
+
+/* molecules */
+@import url('../js/components/molecules/alert/alert.css');
+@import url('../js/components/molecules/brand/brand.css');
+@import url('../js/components/molecules/check/check.css');
+@import url('../js/components/molecules/data-list/data-list.css');
+@import url('../js/components/molecules/empty-state/empty-state.css');
+@import url('../js/components/molecules/field/field.css');
+@import url('../js/components/molecules/kpi/kpi.css');
+@import url('../js/components/molecules/page-head/page-head.css');
+@import url('../js/components/molecules/panel/panel.css');
+@import url('../js/components/molecules/shift/shift.css');
+@import url('../js/components/molecules/tiles/tiles.css');
+@import url('../js/components/molecules/toast/toast.css');
+@import url('../js/components/molecules/user-menu/user-menu.css');
+
+/* organisms */
+@import url('../js/components/organisms/footer/footer.css');
+@import url('../js/components/organisms/header/header.css');
+@import url('../js/components/organisms/modal/modal.css');
+@import url('../js/components/organisms/navbar/navbar.css');
+
+/* templates */
+@import url('../js/components/templates/app-layout/app-layout.css');
+@import url('../js/components/templates/auth-layout/auth-layout.css');
+@import url('../js/components/templates/public-layout/public-layout.css');

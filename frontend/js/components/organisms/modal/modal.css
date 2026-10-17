@@ -1,0 +1,92 @@
+/* Organism · modal (maqueta: .modal-overlay, .modal, .modal-head, .modal-body, .modal-foot) */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--overlay);
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  width: min(940px, 100%);
+  max-height: calc(100vh - 48px);
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 22px;
+  background: var(--asphalt);
+  color: var(--line);
+}
+
+.modal-head h2 {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.modal-head p {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-on-dark);
+}
+
+.modal-head .icon-button {
+  margin-left: auto;
+}
+
+/* En la maqueta el cuerpo es una rejilla formulario + ticket (270 px).
+   El modal genérico usa una sola columna; .modal-body--split recupera la rejilla. */
+.modal-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  padding: 22px;
+  overflow-y: auto;
+}
+
+.modal-body--split {
+  grid-template-columns: minmax(0, 1fr) 270px;
+}
+
+.modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 22px;
+  border-top: 2px solid var(--asphalt);
+}
+
+/* Agregados */
+.modal--sm {
+  width: min(520px, 100%);
+}
+
+body.has-modal {
+  overflow: hidden;
+}
+
+@media (max-width: 760px) {
+  .modal-body,
+  .modal-body--split {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-overlay {
+    padding: 10px;
+  }
+
+  .modal-foot {
+    flex-wrap: wrap;
+  }
+}

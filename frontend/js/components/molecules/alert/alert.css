@@ -1,0 +1,25 @@
+/* Molecule · alert (nuevo): aviso en línea con borde izquierdo de color. */
+.alert {
+  --tone: var(--blue);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 2px solid var(--asphalt);
+  border-left: 8px solid var(--tone);
+  background: var(--white);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.alert > .icon {
+  color: var(--tone);
+}
+
+.alert--error {
+  --tone: var(--red);
+}
+
+.alert--success {
+  --tone: var(--green);
+}

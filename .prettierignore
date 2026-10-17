@@ -1,0 +1,7 @@
+node_modules
+docs
+prompts
+backend/uploads
+backend/database/*.sql
+*.md
+frontend/styles/tokens.css

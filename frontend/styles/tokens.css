@@ -1,0 +1,60 @@
+/* ==========================================================================
+   PARKO · Tokens de diseño
+   El primer bloque :root es copia EXACTA de la sección "1. Tokens" de
+   docs/diseno-parko/styles.css — no modificar.
+   ========================================================================== */
+
+:root {
+  --concrete: #d6d6d1;
+  --concrete-2: #e8e8e4;
+  --panel: #f3f3f0;
+  --asphalt: #1e2023;
+  --asphalt-2: #2d3035;
+  --asphalt-3: #3a3e44;
+  --line: #f1f1ec;
+  --yellow: #ffc400;
+  --orange: #ff6b00;
+  --green: #2fbf71;
+  --blue: #2f6fdc;
+  --red: #d93a2b;
+  --steel: #6b7078;
+  --ink: #16181a;
+  --ink-2: #44484e;
+
+  --hazard: repeating-linear-gradient(-45deg, var(--yellow) 0 14px, var(--asphalt) 14px 28px);
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font: "Barlow", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+/* ---------- Tokens agregados por el proyecto ----------
+   Valores literales que la maqueta usa dentro de sus componentes, convertidos
+   en tokens para que ningún color quede "suelto" (los valores no cambian),
+   más espaciados y capas (z-index). */
+:root {
+  --yellow-hover: #ffd440;
+  --white: #fff;
+  --ink-on-dark: #a9adb3;
+  --ink-on-dark-2: #c9ccd0;
+  --car-body: #d8dade;
+  --blue-light: #7aa5f0;
+  --green-dark: #1d7f49;
+  --orange-dark: #b84400;
+  --overlay: rgba(22, 24, 26, 0.82);
+  --track: rgba(30, 32, 35, 0.18);
+  --rule: rgba(30, 32, 35, 0.18);
+  --placeholder: rgba(22, 24, 26, 0.35);
+  --free-glow: rgba(47, 191, 113, 0.55);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --page-max: 1360px;
+
+  --z-menu: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+}

@@ -1,0 +1,6 @@
+/* Atom · textarea — estilos base compartidos en atoms/input/input.css */
+.textarea {
+  min-height: 80px;
+  padding: 10px 14px;
+  resize: vertical;
+}

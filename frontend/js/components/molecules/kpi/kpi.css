@@ -1,0 +1,29 @@
+/* Molecule · kpi (maqueta: .kpi, .kpi-value, .kpi-note, .kpi--main) */
+.kpi {
+  padding: 16px 18px;
+  background: var(--panel);
+}
+
+.kpi-value {
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 2.375rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.kpi-value small {
+  font-size: 1.125rem;
+  color: var(--ink-2);
+}
+
+.kpi-note {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.kpi--main {
+  background: var(--yellow);
+}

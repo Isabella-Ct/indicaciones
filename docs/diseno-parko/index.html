@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PARKO · Parqueadero</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!--
+    EJERCICIO 6 · Administración de parqueadero (estilo plano industrial)
+    ----------------------------------------------------------------------
+    Todo está construido y visible a propósito. Al abrir el archivo verás:
+      · los DOS niveles del mapa (#level-1 y #level-2) uno debajo del otro,
+      · el mensaje #space-empty Y el detalle #space-detail al mismo tiempo,
+      · el modal #modal-new-entry cubriendo toda la pantalla.
+
+    Tarea del estudiante (JavaScript):
+      1. Al iniciar: ocultar #level-2, #space-detail y #modal-new-entry.
+      2. Pestañas .level-tab -> mostrar solo el nivel elegido.
+      3. Clic en un espacio .space -> mostrar el detalle con sus data-*.
+      4. Botón #btn-new-entry -> mostrar el formulario de ingreso.
+
+    Pista: la clase .hidden (ver styles.css) oculta cualquier elemento.
+  -->
+
+  <svg class="sprite" aria-hidden="true">
+    <symbol id="car-top" viewBox="0 0 26 46"><rect x="2" y="2" width="22" height="42" rx="7" fill="currentColor"/><rect x="5" y="11" width="16" height="8" rx="2" fill="#2d3035" opacity=".75"/><rect x="5" y="30" width="16" height="6" rx="2" fill="#2d3035" opacity=".75"/></symbol>
+    <symbol id="moto-top" viewBox="0 0 14 34"><rect x="5" y="1" width="4" height="8" rx="2" fill="currentColor"/><rect x="3" y="8" width="8" height="18" rx="3" fill="currentColor"/><rect x="5" y="25" width="4" height="8" rx="2" fill="currentColor"/><rect x="0" y="9" width="14" height="2" fill="currentColor"/></symbol>
+    <symbol id="i-in" viewBox="0 0 24 24"><path d="M3 12h13"/><path d="M11 6l6 6-6 6"/><path d="M20 3v18"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M5 5l14 14"/><path d="M19 5L5 19"/></symbol>
+    <symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8"/><path d="M6 14h12v7H6z"/></symbol>
+    <symbol id="i-car" viewBox="0 0 24 24"><path d="M3 16v-5l2-5h14l2 5v5z"/><path d="M3 11h18"/><path d="M6 16v3M18 16v3"/></symbol>
+    <symbol id="i-moto" viewBox="0 0 24 24"><circle cx="5" cy="16" r="3"/><circle cx="19" cy="16" r="3"/><path d="M5 16l5-7h4l5 7"/><path d="M14 9l2-3h3"/></symbol>
+    <symbol id="i-wheel" viewBox="0 0 24 24"><circle cx="12" cy="4" r="2"/><path d="M11 8v6h6l2 5"/><path d="M8 11a6 6 0 1 0 7 8"/></symbol>
+  </svg>
+
+  <!-- ===================== ENCABEZADO ===================== -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand"><span class="brand-mark">P</span><div>PARKO<small>Torre Norte · Bogotá</small></div></div>
+      <div class="shift">
+        <div>Fecha<strong id="clock-date">13 OCT 2026</strong></div>
+        <div>Hora<strong id="clock-time">18:42</strong></div>
+        <div>Turno<strong>Caseta 1 · J. Pérez</strong></div>
+      </div>
+    </div>
+    <div class="hazard-strip"></div>
+  </header>
+
+  <main class="page">
+    <div class="page-head">
+      <div>
+        <h1>Control de espacios</h1>
+        <p>// 44 espacios en 2 sótanos · tarifa carro $120/min (tope $28.000) · moto $60/min (tope $12.000)</p>
+      </div>
+      <button type="button" class="btn" id="btn-new-entry"><svg class="icon"><use href="#i-in"/></svg>Registrar ingreso</button>
+    </div>
+
+    <!-- ===================== INDICADORES ===================== -->
+    <section class="kpis" aria-label="Indicadores">
+      <article class="kpi kpi--main">
+        <p class="label-caps">Ocupación actual</p>
+        <p class="kpi-value">65<small> %</small></p>
+        <div class="meter"><span style="--v:65"></span></div>
+        <p class="kpi-note">28 de 43 espacios habilitados</p>
+      </article>
+      <article class="kpi"><p class="label-caps">Espacios libres</p><p class="kpi-value">13</p><p class="kpi-note">S1: 6 · S2: 7</p></article>
+      <article class="kpi"><p class="label-caps">Vehículos dentro</p><p class="kpi-value">28</p><p class="kpi-note">8 motos · 20 carros</p></article>
+      <article class="kpi"><p class="label-caps">Recaudo de hoy</p><p class="kpi-value">$1,28 M</p><p class="kpi-note">143 salidas cobradas</p></article>
+      <article class="kpi"><p class="label-caps">Permanencia prom.</p><p class="kpi-value">2 h 14</p><p class="kpi-note">Visitantes de hoy</p></article>
+    </section>
+
+    <div class="workspace">
+
+      <!-- ===================== MAPA ===================== -->
+      <section class="panel" aria-labelledby="map-title">
+        <div class="panel-head">
+          <h2 id="map-title">Mapa del parqueadero</h2>
+          <div class="level-tabs" role="tablist" aria-label="Niveles">
+            <button type="button" class="level-tab is-active" role="tab" data-level="level-1" aria-selected="true">Sótano 1</button>
+            <button type="button" class="level-tab" role="tab" data-level="level-2" aria-selected="false">Sótano 2</button>
+          </div>
+        </div>
+        <div class="map-legend">
+          <span><i class="lg-free"></i>Libre</span>
+          <span><i class="lg-occupied"></i>Ocupado</span>
+          <span><i class="lg-reserved"></i>Reservado (mensualidad)</span>
+          <span><i class="lg-accessible"></i>Accesible</span>
+          <span><i class="lg-out"></i>Fuera de servicio</span>
+        </div>
+
+        <div class="level" id="level-1" role="tabpanel" aria-label="Sótano 1">
+          <p class="level-title">Sótano 1 · Carros <span>15 ocupados de 24</span></p>
+          <div class="lot">
+            <div class="row row--top" style="--cols:12">
+                <button type="button" class="space space--free space--accessible"
+                  data-space="A-01" data-level="Sótano 1" data-type="Accesible" data-status="Libre"
+                  data-plate="" data-vehicle="" data-client="" data-holder=""
+                  data-entry="" data-ticket="" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio A-01, libre"><span class="space-code">A-01</span><span class="space-tag">LIBRE</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="A-02" data-level="Sótano 1" data-type="Carro" data-status="Ocupado"
+                  data-plate="GHT 215" data-vehicle="Kia Picanto · Blanco" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T07:48" data-ticket="T-004791" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio A-02, ocupado"><span class="space-code">A-02</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">GHT 215</span></button>
+                <button type="button" class="space space--occupied is-selected"
+                  data-space="A-03" data-level="Sótano 1" data-type="Carro" data-status="Ocupado"
+                  data-plate="JKL 482" data-vehicle="Chevrolet Spark · Rojo" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T16:05" data-ticket="T-004792" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio A-03, ocupado"><span class="space-code">A-03</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">JKL 482</span></button>
+                <button type="button" class="space space--reserved"
+                  data-space="A-04" data-level="Sótano 1" data-type="Carro" data-status="Reservado"
+                  data-plate="MNP 908" data-vehicle="Mazda CX-30 · Gris" data-client="Mensualidad" data-holder="Andrea Salcedo"
+                  data-entry="" data-ticket="" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio A-04, reservado"><span class="space-code">A-04</span><span class="space-tag">MENSUAL</span><span class="space-plate">MNP 908</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="A-05" data-level="Sótano 1" data-type="Carro" data-status="Ocupado"
+                  data-plate="QWE 731" data-vehicle="Toyota Corolla · Negro" data-client="Mensualidad" data-holder="Hernán Quintero"
+                  data-entry="2026-10-13T07:15" data-ticket="T-004793" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio A-05, ocupado"><span class="space-code">A-05</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">QWE 731</span></button>
+                <button type="button" class="space space--free"
+                  data-space="A-06" data-level="Sótano 1" data-type="Carro" data-status="Libre"
+                  data-plate="" data-vehicle="" data-client="" data-holder=""
+                  data-entry="" data-ticket="" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio A-06, libre"><span class="space-code">A-06</span><span class="space-tag">LIBRE</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="A-07" data-level="Sótano 1" data-type="Carro" data-status="Ocupado"
+                  data-plate="ZXC 664" data-vehicle="Renault Sandero · Azul" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T17:20" data-ticket="T-004794" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio A-07, ocupado"><span class="space-code">A-07</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">ZXC 664</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="A-08" data-level="Sótano 1" data-type="Carro" data-status="Ocupado"
+                  data-plate="RTY 129" data-vehicle="Nissan Versa · Plata" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T12:40" data-ticket="T-004795" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio A-08, ocupado"><span class="space-code">A-08</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">RTY 129</span></button>
+                <button type="button" class="space space--out"
+                  data-space="A-09" data-level="Sótano 1" data-type="Carro" data-status="Fuera de servicio"
+                  data-plate="" data-vehicle="" data-client="" data-holder=""
+                  data-entry="" data-ticket="" data-rate-minute="120" data-day-cap="28000"
+                  data-note="Filtración en el techo; revisión el 15 oct" aria-label="Espacio A-09, fuera de servicio"><span class="space-code">A-09</span><span class="space-tag">FUERA DE<br>SERVICIO</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="A-10" data-level="Sótano 1" data-type="Carro" data-status="Ocupado"
+                  data-plate="BNM 350" data-vehicle="Hyundai Tucson · Blanco" data-client="Mensualidad" data-holder="Lucía Ortega"
+                  data-entry="2026-10-13T06:55" data-ticket="T-004796" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio A-10, ocupado"><span class="space-code">A-10</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">BNM 350</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="A-11" data-level="Sótano 1" data-type="Carro" data-status="Ocupado"
+                  data-plate="FGH 802" data-vehicle="Suzuki Swift · Rojo" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T18:10" data-ticket="T-004797" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio A-11, ocupado"><span class="space-code">A-11</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">FGH 802</span></button>
+                <button type="button" class="space space--free"
+                  data-space="A-12" data-level="Sótano 1" data-type="Carro" data-status="Libre"
+                  data-plate="" data-vehicle="" data-client="" data-holder=""
+                  data-entry="" data-ticket="" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio A-12, libre"><span class="space-code">A-12</span><span class="space-tag">LIBRE</span></button>
+              </div>
+            <div class="lane" aria-hidden="true"><span>ENTRADA →</span><span>→ CIRCULACIÓN →</span><span>→ RAMPA S2</span></div>
+            <div class="row row--bottom" style="--cols:12">
+                <button type="button" class="space space--occupied space--accessible"
+                  data-space="B-01" data-level="Sótano 1" data-type="Accesible" data-status="Ocupado"
+                  data-plate="DSA 417" data-vehicle="Toyota Yaris · Gris" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T15:30" data-ticket="T-004798" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio B-01, ocupado"><span class="space-code">B-01</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">DSA 417</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="B-02" data-level="Sótano 1" data-type="Carro" data-status="Ocupado"
+                  data-plate="UIO 556" data-vehicle="Mazda 3 · Azul" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T09:05" data-ticket="T-004799" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio B-02, ocupado"><span class="space-code">B-02</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">UIO 556</span></button>
+                <button type="button" class="space space--free"
+                  data-space="B-03" data-level="Sótano 1" data-type="Carro" data-status="Libre"
+                  data-plate="" data-vehicle="" data-client="" data-holder=""
+                  data-entry="" data-ticket="" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio B-03, libre"><span class="space-code">B-03</span><span class="space-tag">LIBRE</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="B-04" data-level="Sótano 1" data-type="Carro" data-status="Ocupado"
+                  data-plate="PLK 293" data-vehicle="Chevrolet Onix · Blanco" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T13:45" data-ticket="T-004800" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio B-04, ocupado"><span class="space-code">B-04</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">PLK 293</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="B-05" data-level="Sótano 1" data-type="Carro" data-status="Ocupado"
+                  data-plate="HJK 740" data-vehicle="Kia Sportage · Gris" data-client="Mensualidad" data-holder="Camilo Restrepo"
+                  data-entry="2026-10-13T07:30" data-ticket="T-004801" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio B-05, ocupado"><span class="space-code">B-05</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">HJK 740</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="B-06" data-level="Sótano 1" data-type="Carro" data-status="Ocupado"
+                  data-plate="WER 381" data-vehicle="Volkswagen Gol · Negro" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T17:55" data-ticket="T-004802" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio B-06, ocupado"><span class="space-code">B-06</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">WER 381</span></button>
+                <button type="button" class="space space--free"
+                  data-space="B-07" data-level="Sótano 1" data-type="Carro" data-status="Libre"
+                  data-plate="" data-vehicle="" data-client="" data-holder=""
+                  data-entry="" data-ticket="" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio B-07, libre"><span class="space-code">B-07</span><span class="space-tag">LIBRE</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="B-08" data-level="Sótano 1" data-type="Carro" data-status="Ocupado"
+                  data-plate="TYU 618" data-vehicle="Renault Duster · Naranja" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T11:20" data-ticket="T-004803" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio B-08, ocupado"><span class="space-code">B-08</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">TYU 618</span></button>
+                <button type="button" class="space space--reserved"
+                  data-space="B-09" data-level="Sótano 1" data-type="Carro" data-status="Reservado"
+                  data-plate="CVB 275" data-vehicle="Honda HR-V · Rojo" data-client="Mensualidad" data-holder="Paula Giraldo"
+                  data-entry="" data-ticket="" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio B-09, reservado"><span class="space-code">B-09</span><span class="space-tag">MENSUAL</span><span class="space-plate">CVB 275</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="B-10" data-level="Sótano 1" data-type="Carro" data-status="Ocupado"
+                  data-plate="NMB 904" data-vehicle="Ford Escape · Blanco" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T16:50" data-ticket="T-004804" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio B-10, ocupado"><span class="space-code">B-10</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">NMB 904</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="B-11" data-level="Sótano 1" data-type="Carro" data-status="Ocupado"
+                  data-plate="KJH 137" data-vehicle="Chevrolet Tracker · Gris" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T14:15" data-ticket="T-004805" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio B-11, ocupado"><span class="space-code">B-11</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">KJH 137</span></button>
+                <button type="button" class="space space--free"
+                  data-space="B-12" data-level="Sótano 1" data-type="Carro" data-status="Libre"
+                  data-plate="" data-vehicle="" data-client="" data-holder=""
+                  data-entry="" data-ticket="" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio B-12, libre"><span class="space-code">B-12</span><span class="space-tag">LIBRE</span></button>
+              </div>
+          </div>
+        </div>
+
+        <div class="level" id="level-2" role="tabpanel" aria-label="Sótano 2">
+          <p class="level-title">Sótano 2 · Carros y motos <span>13 ocupados de 20</span></p>
+          <div class="lot">
+            <div class="row row--top" style="--cols:8">
+                <button type="button" class="space space--occupied"
+                  data-space="C-01" data-level="Sótano 2" data-type="Carro" data-status="Ocupado"
+                  data-plate="LMN 552" data-vehicle="Kia Rio · Gris" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T10:30" data-ticket="T-004806" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio C-01, ocupado"><span class="space-code">C-01</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">LMN 552</span></button>
+                <button type="button" class="space space--free"
+                  data-space="C-02" data-level="Sótano 2" data-type="Carro" data-status="Libre"
+                  data-plate="" data-vehicle="" data-client="" data-holder=""
+                  data-entry="" data-ticket="" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio C-02, libre"><span class="space-code">C-02</span><span class="space-tag">LIBRE</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="C-03" data-level="Sótano 2" data-type="Carro" data-status="Ocupado"
+                  data-plate="OPQ 119" data-vehicle="Mazda 2 · Rojo" data-client="Mensualidad" data-holder="Felipe Mora"
+                  data-entry="2026-10-13T07:05" data-ticket="T-004807" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio C-03, ocupado"><span class="space-code">C-03</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">OPQ 119</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="C-04" data-level="Sótano 2" data-type="Carro" data-status="Ocupado"
+                  data-plate="STU 846" data-vehicle="Renault Kwid · Blanco" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T17:35" data-ticket="T-004808" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio C-04, ocupado"><span class="space-code">C-04</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">STU 846</span></button>
+                <button type="button" class="space space--free"
+                  data-space="C-05" data-level="Sótano 2" data-type="Carro" data-status="Libre"
+                  data-plate="" data-vehicle="" data-client="" data-holder=""
+                  data-entry="" data-ticket="" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio C-05, libre"><span class="space-code">C-05</span><span class="space-tag">LIBRE</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="C-06" data-level="Sótano 2" data-type="Carro" data-status="Ocupado"
+                  data-plate="VWX 371" data-vehicle="Chevrolet Joy · Plata" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T13:10" data-ticket="T-004809" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio C-06, ocupado"><span class="space-code">C-06</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">VWX 371</span></button>
+                <button type="button" class="space space--occupied"
+                  data-space="C-07" data-level="Sótano 2" data-type="Carro" data-status="Ocupado"
+                  data-plate="YZA 625" data-vehicle="Toyota Fortuner · Negro" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T08:50" data-ticket="T-004810" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio C-07, ocupado"><span class="space-code">C-07</span><svg class="space-car" viewBox="0 0 26 46" aria-hidden="true"><use href="#car-top"/></svg><span class="space-plate">YZA 625</span></button>
+                <button type="button" class="space space--free"
+                  data-space="C-08" data-level="Sótano 2" data-type="Carro" data-status="Libre"
+                  data-plate="" data-vehicle="" data-client="" data-holder=""
+                  data-entry="" data-ticket="" data-rate-minute="120" data-day-cap="28000"
+                  data-note="" aria-label="Espacio C-08, libre"><span class="space-code">C-08</span><span class="space-tag">LIBRE</span></button>
+              </div>
+            <div class="lane" aria-hidden="true"><span>← RAMPA S1</span><span>← CIRCULACIÓN ←</span><span>SALIDA ←</span></div>
+            <div class="row row--bottom" style="--cols:12">
+                <button type="button" class="space space--occupied space--moto"
+                  data-space="M-01" data-level="Sótano 2" data-type="Moto" data-status="Ocupado"
+                  data-plate="XKP 45F" data-vehicle="Yamaha NMAX · Azul" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T07:40" data-ticket="T-004811" data-rate-minute="60" data-day-cap="12000"
+                  data-note="" aria-label="Espacio M-01, ocupado"><span class="space-code">M-01</span><svg class="space-car" viewBox="0 0 14 34" aria-hidden="true"><use href="#moto-top"/></svg><span class="space-plate">XKP 45F</span></button>
+                <button type="button" class="space space--occupied space--moto"
+                  data-space="M-02" data-level="Sótano 2" data-type="Moto" data-status="Ocupado"
+                  data-plate="RTV 82G" data-vehicle="Honda CB 190 · Rojo" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T12:05" data-ticket="T-004812" data-rate-minute="60" data-day-cap="12000"
+                  data-note="" aria-label="Espacio M-02, ocupado"><span class="space-code">M-02</span><svg class="space-car" viewBox="0 0 14 34" aria-hidden="true"><use href="#moto-top"/></svg><span class="space-plate">RTV 82G</span></button>
+                <button type="button" class="space space--free space--moto"
+                  data-space="M-03" data-level="Sótano 2" data-type="Moto" data-status="Libre"
+                  data-plate="" data-vehicle="" data-client="" data-holder=""
+                  data-entry="" data-ticket="" data-rate-minute="60" data-day-cap="12000"
+                  data-note="" aria-label="Espacio M-03, libre"><span class="space-code">M-03</span><span class="space-tag">LIBRE</span></button>
+                <button type="button" class="space space--occupied space--moto"
+                  data-space="M-04" data-level="Sótano 2" data-type="Moto" data-status="Ocupado"
+                  data-plate="BQS 19E" data-vehicle="AKT NKD 125 · Negro" data-client="Mensualidad" data-holder="Sebastián Duque"
+                  data-entry="2026-10-13T06:50" data-ticket="T-004813" data-rate-minute="60" data-day-cap="12000"
+                  data-note="" aria-label="Espacio M-04, ocupado"><span class="space-code">M-04</span><svg class="space-car" viewBox="0 0 14 34" aria-hidden="true"><use href="#moto-top"/></svg><span class="space-plate">BQS 19E</span></button>
+                <button type="button" class="space space--occupied space--moto"
+                  data-space="M-05" data-level="Sótano 2" data-type="Moto" data-status="Ocupado"
+                  data-plate="HNZ 33C" data-vehicle="Suzuki Gixxer · Azul" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T16:30" data-ticket="T-004814" data-rate-minute="60" data-day-cap="12000"
+                  data-note="" aria-label="Espacio M-05, ocupado"><span class="space-code">M-05</span><svg class="space-car" viewBox="0 0 14 34" aria-hidden="true"><use href="#moto-top"/></svg><span class="space-plate">HNZ 33C</span></button>
+                <button type="button" class="space space--free space--moto"
+                  data-space="M-06" data-level="Sótano 2" data-type="Moto" data-status="Libre"
+                  data-plate="" data-vehicle="" data-client="" data-holder=""
+                  data-entry="" data-ticket="" data-rate-minute="60" data-day-cap="12000"
+                  data-note="" aria-label="Espacio M-06, libre"><span class="space-code">M-06</span><span class="space-tag">LIBRE</span></button>
+                <button type="button" class="space space--occupied space--moto"
+                  data-space="M-07" data-level="Sótano 2" data-type="Moto" data-status="Ocupado"
+                  data-plate="LPW 71H" data-vehicle="Bajaj Pulsar NS · Negro" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T17:10" data-ticket="T-004815" data-rate-minute="60" data-day-cap="12000"
+                  data-note="" aria-label="Espacio M-07, ocupado"><span class="space-code">M-07</span><svg class="space-car" viewBox="0 0 14 34" aria-hidden="true"><use href="#moto-top"/></svg><span class="space-plate">LPW 71H</span></button>
+                <button type="button" class="space space--occupied space--moto"
+                  data-space="M-08" data-level="Sótano 2" data-type="Moto" data-status="Ocupado"
+                  data-plate="DTY 06B" data-vehicle="Yamaha FZ · Gris" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T09:25" data-ticket="T-004816" data-rate-minute="60" data-day-cap="12000"
+                  data-note="" aria-label="Espacio M-08, ocupado"><span class="space-code">M-08</span><svg class="space-car" viewBox="0 0 14 34" aria-hidden="true"><use href="#moto-top"/></svg><span class="space-plate">DTY 06B</span></button>
+                <button type="button" class="space space--free space--moto"
+                  data-space="M-09" data-level="Sótano 2" data-type="Moto" data-status="Libre"
+                  data-plate="" data-vehicle="" data-client="" data-holder=""
+                  data-entry="" data-ticket="" data-rate-minute="60" data-day-cap="12000"
+                  data-note="" aria-label="Espacio M-09, libre"><span class="space-code">M-09</span><span class="space-tag">LIBRE</span></button>
+                <button type="button" class="space space--occupied space--moto"
+                  data-space="M-10" data-level="Sótano 2" data-type="Moto" data-status="Ocupado"
+                  data-plate="GMR 58K" data-vehicle="Honda XRE 300 · Rojo" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T14:40" data-ticket="T-004817" data-rate-minute="60" data-day-cap="12000"
+                  data-note="" aria-label="Espacio M-10, ocupado"><span class="space-code">M-10</span><svg class="space-car" viewBox="0 0 14 34" aria-hidden="true"><use href="#moto-top"/></svg><span class="space-plate">GMR 58K</span></button>
+                <button type="button" class="space space--free space--moto"
+                  data-space="M-11" data-level="Sótano 2" data-type="Moto" data-status="Libre"
+                  data-plate="" data-vehicle="" data-client="" data-holder=""
+                  data-entry="" data-ticket="" data-rate-minute="60" data-day-cap="12000"
+                  data-note="" aria-label="Espacio M-11, libre"><span class="space-code">M-11</span><span class="space-tag">LIBRE</span></button>
+                <button type="button" class="space space--occupied space--moto"
+                  data-space="M-12" data-level="Sótano 2" data-type="Moto" data-status="Ocupado"
+                  data-plate="FJS 27D" data-vehicle="TVS Apache · Blanco" data-client="Visitante" data-holder=""
+                  data-entry="2026-10-13T18:20" data-ticket="T-004818" data-rate-minute="60" data-day-cap="12000"
+                  data-note="" aria-label="Espacio M-12, ocupado"><span class="space-code">M-12</span><svg class="space-car" viewBox="0 0 14 34" aria-hidden="true"><use href="#moto-top"/></svg><span class="space-plate">FJS 27D</span></button>
+              </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== DETALLE DEL ESPACIO ===================== -->
+      <aside class="detail-column" aria-live="polite">
+        <div class="empty-state" id="space-empty">
+          <strong>Selecciona un espacio</strong>
+          <p>Toca cualquier celda del mapa para ver el vehículo, el tiempo y el valor a cobrar.</p>
+        </div>
+
+        <article class="panel" id="space-detail">
+          <div class="space-hero">
+            <div>
+              <p class="label-caps" id="detail-level">Sótano 1 · Carro</p>
+              <p class="big-code" id="detail-code">A-03</p>
+            </div>
+            <span class="status-chip status-chip--occupied" id="detail-status">Ocupado</span>
+          </div>
+
+          <div class="detail-block">
+            <p class="label-caps" style="margin-bottom:8px">Vehículo</p>
+            <div class="vehicle-line">
+              <span class="plate" id="detail-plate">JKL 482</span>
+              <p id="detail-vehicle">Chevrolet Spark · Rojo</p>
+            </div>
+          </div>
+
+          <div class="detail-block">
+            <dl class="data-list">
+              <div><dt>Cliente</dt><dd id="detail-client">Visitante</dd></div>
+              <div><dt>Ticket</dt><dd id="detail-ticket">T-004792</dd></div>
+              <div><dt>Hora de entrada</dt><dd id="detail-entry">16:05</dd></div>
+              <div><dt>Tiempo dentro</dt><dd id="detail-elapsed">2 h 37 min</dd></div>
+              <div><dt>Tarifa</dt><dd id="detail-rate">$120 / min</dd></div>
+              <div><dt>Tope del día</dt><dd id="detail-cap">$28.000</dd></div>
+            </dl>
+          </div>
+
+          <div class="detail-block">
+            <div class="charge">
+              <div>
+                <p class="label-caps">Valor a pagar</p>
+                <p class="charge-value" id="detail-charge">$18.840</p>
+              </div>
+              <p class="mono" style="font-size:.8125rem" id="detail-cap-pct">67 % del tope</p>
+            </div>
+            <div class="meter meter--orange"><span id="detail-cap-bar" style="--v:67"></span></div>
+            <p class="charge-note" id="detail-note">157 min × $120 = $18.840</p>
+          </div>
+
+          <div class="detail-actions">
+            <button type="button" class="btn" id="btn-checkout">Registrar salida y cobrar</button>
+            <button type="button" class="icon-button" id="btn-print-ticket" aria-label="Imprimir ticket"><svg class="icon"><use href="#i-print"/></svg></button>
+            <button type="button" class="btn btn--ghost" id="btn-close-detail" style="grid-column:1/-1">Cerrar detalle</button>
+          </div>
+        </article>
+      </aside>
+    </div>
+
+    <div class="bottom">
+      <section class="panel" aria-labelledby="chart-title">
+        <div class="panel-head"><h2 id="chart-title">Ocupación por hora · hoy</h2></div>
+        <div class="panel-body">
+          <div class="col-chart" role="img" aria-label="Ocupación por hora: 6 h 14 %, 8 h 58 %, 10 h 79 %, 12 h 86 %, 14 h 82 %, 16 h 71 %, 18 h 65 %">
+            <div class="y-axis"><span>100</span><span>75</span><span>50</span><span>25</span><span>0</span></div>
+            <div class="plot">
+              <div class="bar" style="--v:14" title="6:00 · 14 %"></div>
+              <div class="bar" style="--v:58" title="8:00 · 58 %"></div>
+              <div class="bar" style="--v:79" title="10:00 · 79 %"></div>
+              <div class="bar" style="--v:86" title="12:00 · 86 %"><span class="bar-value">86 %</span></div>
+              <div class="bar" style="--v:82" title="14:00 · 82 %"></div>
+              <div class="bar" style="--v:71" title="16:00 · 71 %"></div>
+              <div class="bar bar--current" style="--v:65" title="18:00 · 65 %"><span class="bar-value">65 %</span></div>
+              <div class="bar bar--future" title="20:00 · pendiente"></div>
+              <div class="bar bar--future" title="22:00 · pendiente"></div>
+            </div>
+            <div class="x-axis"><span>6h</span><span>8h</span><span>10h</span><span>12h</span><span>14h</span><span>16h</span><span>18h</span><span>20h</span><span>22h</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="log-title">
+        <div class="panel-head"><h2 id="log-title">Últimos movimientos</h2></div>
+        <div class="panel-body" style="padding-top:8px">
+          <table class="log">
+            <thead><tr><th>Hora</th><th>Placa</th><th>Espacio</th><th>Movimiento</th><th class="right">Valor</th></tr></thead>
+            <tbody id="movement-log">
+              <tr><td>18:20</td><td>FJS 27D</td><td>M-12</td><td><span class="move move--in">Entrada</span></td><td class="right">—</td></tr>
+              <tr><td>18:10</td><td>FGH 802</td><td>A-11</td><td><span class="move move--in">Entrada</span></td><td class="right">—</td></tr>
+              <tr><td>18:02</td><td>KLP 518</td><td>A-06</td><td><span class="move move--out">Salida</span></td><td class="right">$21.360</td></tr>
+              <tr><td>17:55</td><td>WER 381</td><td>B-06</td><td><span class="move move--in">Entrada</span></td><td class="right">—</td></tr>
+              <tr><td>17:48</td><td>ASD 902</td><td>B-07</td><td><span class="move move--out">Salida</span></td><td class="right">$28.000</td></tr>
+              <tr><td>17:35</td><td>STU 846</td><td>C-04</td><td><span class="move move--in">Entrada</span></td><td class="right">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+
+  <!-- ======================================================================
+       MODAL · REGISTRAR INGRESO
+       ====================================================================== -->
+  <div class="modal-overlay" id="modal-new-entry">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="entry-title">
+      <header class="modal-head">
+        <div>
+          <h2 id="entry-title">Registrar ingreso</h2>
+          <p>// asigna un espacio libre y genera el ticket</p>
+        </div>
+        <button type="button" class="icon-button" id="btn-close-entry" aria-label="Cerrar formulario"><svg class="icon"><use href="#i-x"/></svg></button>
+      </header>
+
+      <form id="new-entry-form" style="display:contents">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="field field--full">
+              <label for="entry-plate">Placa <span class="req">*</span></label>
+              <input class="input input--plate" type="text" id="entry-plate" name="plate" maxlength="7" placeholder="ABC 123" required>
+            </div>
+            <div class="field field--full">
+              <span class="label" id="entry-type-label">Tipo de vehículo</span>
+              <div class="tiles" role="radiogroup" aria-labelledby="entry-type-label">
+                <label class="tile"><input type="radio" name="vehicleType" value="Carro" checked><span><svg class="icon"><use href="#i-car"/></svg>Carro</span></label>
+                <label class="tile"><input type="radio" name="vehicleType" value="Moto"><span><svg class="icon"><use href="#i-moto"/></svg>Moto</span></label>
+                <label class="tile"><input type="radio" name="vehicleType" value="Accesible"><span><svg class="icon"><use href="#i-wheel"/></svg>Accesible</span></label>
+              </div>
+            </div>
+            <div class="field field--full">
+              <label for="entry-vehicle">Marca, modelo y color</label>
+              <input class="input" type="text" id="entry-vehicle" name="vehicle" placeholder="Ej. Kia Picanto · Blanco">
+            </div>
+            <div class="field">
+              <label for="entry-space">Espacio asignado <span class="req">*</span></label>
+              <select class="select" id="entry-space" name="space" required>
+                <optgroup label="Sótano 1"><option value="A-01">A-01 · Accesible</option><option value="A-06" selected>A-06 · Carro</option><option value="A-12">A-12 · Carro</option><option value="B-03">B-03 · Carro</option><option value="B-07">B-07 · Carro</option><option value="B-12">B-12 · Carro</option></optgroup>
+                <optgroup label="Sótano 2"><option value="C-02">C-02 · Carro</option><option value="C-05">C-05 · Carro</option><option value="C-08">C-08 · Carro</option><option value="M-03">M-03 · Moto</option><option value="M-06">M-06 · Moto</option><option value="M-09">M-09 · Moto</option><option value="M-11">M-11 · Moto</option></optgroup>
+              </select>
+            </div>
+            <div class="field">
+              <label for="entry-time">Hora de entrada</label>
+              <input class="input" type="time" id="entry-time" name="time" value="18:42">
+            </div>
+            <div class="field field--full">
+              <span class="label" id="entry-client-label">Tipo de cliente</span>
+              <div class="tiles" style="grid-template-columns:repeat(2,minmax(0,1fr))" role="radiogroup" aria-labelledby="entry-client-label">
+                <label class="tile"><input type="radio" name="clientType" value="Visitante" checked><span>Visitante</span></label>
+                <label class="tile"><input type="radio" name="clientType" value="Mensualidad"><span>Mensualidad</span></label>
+              </div>
+            </div>
+            <div class="field field--full">
+              <label for="entry-notes">Observaciones (daños visibles, objetos de valor)</label>
+              <textarea class="textarea" id="entry-notes" name="notes" placeholder="Ej. rayón en la puerta trasera derecha"></textarea>
+            </div>
+            <div class="field field--full">
+              <label class="check"><input type="checkbox" id="entry-keys" name="keys"> El conductor deja las llaves en la caseta</label>
+            </div>
+          </div>
+
+          <aside class="ticket" aria-labelledby="ticket-title">
+            <div class="ticket-head"><span id="ticket-title">TICKET DE INGRESO</span></div>
+            <dl>
+              <div><dt>N.º</dt><dd id="ticket-number">T-004819</dd></div>
+              <div><dt>Placa</dt><dd id="ticket-plate">ABC 123</dd></div>
+              <div><dt>Espacio</dt><dd id="ticket-space">A-06 · Sótano 1</dd></div>
+              <div><dt>Entrada</dt><dd id="ticket-time">13/10/2026 18:42</dd></div>
+              <div><dt>Tarifa</dt><dd id="ticket-rate">$120/min</dd></div>
+            </dl>
+            <div class="barcode" aria-hidden="true"></div>
+            <p class="ticket-note">Vista previa: actualízala con JavaScript a partir del formulario.</p>
+          </aside>
+        </div>
+
+        <footer class="modal-foot">
+          <button type="button" class="btn btn--ghost" id="btn-cancel-entry">Cancelar</button>
+          <button type="submit" class="btn" id="btn-save-entry">Generar ticket</button>
+        </footer>
+      </form>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

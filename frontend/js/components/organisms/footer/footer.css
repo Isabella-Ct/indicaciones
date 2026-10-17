@@ -1,0 +1,32 @@
+/* Organism · footer (nuevo): banda de asfalto con texto mono. */
+.footer {
+  margin-top: auto;
+  background: var(--asphalt);
+  color: var(--ink-on-dark);
+}
+
+.footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 24px;
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 18px 28px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.footer-brand {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--yellow);
+}
+
+@media (max-width: 760px) {
+  .footer-inner {
+    padding: 16px;
+  }
+}

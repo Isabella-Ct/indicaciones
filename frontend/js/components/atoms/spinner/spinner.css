@@ -1,0 +1,22 @@
+/* Atom · spinner (nuevo, mismo lenguaje: bordes rectos, trazo grueso) */
+.spinner {
+  display: inline-block;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border: 4px solid currentColor;
+  border-right-color: var(--yellow);
+  animation: spinner-giro 0.8s steps(8) infinite;
+}
+
+.spinner--sm {
+  width: 16px;
+  height: 16px;
+  border-width: 3px;
+}
+
+@keyframes spinner-giro {
+  to {
+    transform: rotate(360deg);
+  }
+}

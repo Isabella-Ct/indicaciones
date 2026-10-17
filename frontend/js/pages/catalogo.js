@@ -1,0 +1,351 @@
+/**
+ * Catálogo de componentes (SOLO DESARROLLO): muestra atoms, molecules y
+ * organisms con sus variantes para compararlos con docs/diseno-parko/.
+ * Usa datos de ejemplo; no llama a la API.
+ */
+import { el } from '../utils/dom.js';
+import { createButton, setButtonLoading } from '../components/atoms/button/button.js';
+import { createIconButton } from '../components/atoms/icon-button/icon-button.js';
+import { createIcon } from '../components/atoms/icon/icon.js';
+import { createInput } from '../components/atoms/input/input.js';
+import { createSelect } from '../components/atoms/select/select.js';
+import { createTextarea } from '../components/atoms/textarea/textarea.js';
+import { createLabelCaps } from '../components/atoms/label-caps/label-caps.js';
+import { createStatusChip, ESTADOS_CELDA } from '../components/atoms/status-chip/status-chip.js';
+import { createPlate } from '../components/atoms/plate/plate.js';
+import { createMeter } from '../components/atoms/meter/meter.js';
+import { createSpinner } from '../components/atoms/spinner/spinner.js';
+import { createLink } from '../components/atoms/link/link.js';
+import { createAvatar } from '../components/atoms/avatar/avatar.js';
+import { createBrandMark } from '../components/atoms/brand-mark/brand-mark.js';
+import { createHazardStrip } from '../components/atoms/hazard-strip/hazard-strip.js';
+import { createField } from '../components/molecules/field/field.js';
+import { createTiles } from '../components/molecules/tiles/tiles.js';
+import { createCheck } from '../components/molecules/check/check.js';
+import { createKpi } from '../components/molecules/kpi/kpi.js';
+import { createEmptyState } from '../components/molecules/empty-state/empty-state.js';
+import { createBrand } from '../components/molecules/brand/brand.js';
+import { createShift } from '../components/molecules/shift/shift.js';
+import { showToast } from '../components/molecules/toast/toast.js';
+import { createAlert } from '../components/molecules/alert/alert.js';
+import { createPanel } from '../components/molecules/panel/panel.js';
+import { createPageHead } from '../components/molecules/page-head/page-head.js';
+import { createDataList } from '../components/molecules/data-list/data-list.js';
+import { createUserMenu } from '../components/molecules/user-menu/user-menu.js';
+import { createHeader } from '../components/organisms/header/header.js';
+import { createNavbar } from '../components/organisms/navbar/navbar.js';
+import { createModal, openModal, closeModal } from '../components/organisms/modal/modal.js';
+import { createFooter } from '../components/organisms/footer/footer.js';
+import { createAppLayout } from '../components/templates/app-layout/app-layout.js';
+import { ITEMS_NAVEGACION } from '../utils/navegacion.js';
+import { normalizarPlaca } from '../utils/placa.js';
+
+const SEDE = {
+  nombre: 'Parqueadero ABC',
+  direccion: 'Carrera 43 # 47-53',
+  ciudad: 'Medellín',
+  horario: 'Abierto 24 horas',
+};
+
+/** Una muestra: título del componente + clase CSS + contenido. */
+function muestra(nombre, clase, ...contenido) {
+  return el('div', { className: 'catalogo-muestra' }, [
+    el('p', { className: 'catalogo-nombre' }, [nombre, el('code', { text: clase })]),
+    el('div', { className: 'catalogo-demo' }, contenido),
+  ]);
+}
+
+function seccion(titulo, ...muestras) {
+  return createPanel({
+    title: titulo,
+    children: [el('div', { className: 'catalogo-rejilla' }, muestras)],
+  });
+}
+
+// ---------------- Atoms ----------------
+const botonCargando = createButton({ label: 'Guardar', icon: 'i-check' });
+setButtonLoading(botonCargando, true, 'Guardando…');
+
+const placa = createInput({ id: 'cat-placa', plate: true, placeholder: 'ABC 123', maxLength: 7 });
+placa.addEventListener('input', () => (placa.value = normalizarPlaca(placa.value)));
+
+const atoms = seccion(
+  'Atoms',
+  muestra(
+    'Botones',
+    '.btn · --dark · --ghost · --block',
+    createButton({ label: 'Registrar ingreso', icon: 'i-in' }),
+    createButton({ label: 'Oscuro', variant: 'dark' }),
+    createButton({ label: 'Cancelar', variant: 'ghost' }),
+    botonCargando,
+    createButton({ label: 'Botón de bloque', block: true })
+  ),
+  muestra(
+    'Botón de icono',
+    '.icon-button',
+    createIconButton({ icon: 'i-x', label: 'Cerrar' }),
+    createIconButton({ icon: 'i-print', label: 'Imprimir' }),
+    createIconButton({ icon: 'i-menu', label: 'Menú' })
+  ),
+  muestra(
+    'Iconos del sprite',
+    '.icon · assets/icons.svg',
+    el(
+      'div',
+      { className: 'catalogo-iconos' },
+      [
+        'i-in',
+        'i-out',
+        'i-x',
+        'i-print',
+        'i-car',
+        'i-moto',
+        'i-wheel',
+        'i-menu',
+        'i-user',
+        'i-logout',
+        'i-key',
+        'i-chevron-down',
+        'i-check',
+        'i-alert',
+        'i-info',
+        'i-eye',
+        'i-home',
+        'i-map',
+      ].map((nombre) =>
+        el('span', { attrs: { title: nombre } }, [
+          createIcon({ name: nombre }),
+          el('small', { text: nombre }),
+        ])
+      )
+    ),
+    el('div', { className: 'catalogo-autos' }, [
+      createIcon({ name: 'car-top', className: 'catalogo-car', viewBox: '0 0 26 46' }),
+      createIcon({ name: 'moto-top', className: 'catalogo-moto', viewBox: '0 0 14 34' }),
+    ])
+  ),
+  muestra('Placa (input)', '.input--plate', placa),
+  muestra(
+    'Input / select / textarea',
+    '.input · .select · .textarea',
+    createInput({ placeholder: 'Texto normal' }),
+    createSelect({
+      placeholder: 'Selecciona…',
+      groups: [
+        { label: 'Sótano 1', options: [{ value: 'A-06', label: 'A-06 · Carro' }] },
+        { label: 'Sótano 2', options: [{ value: 'M-03', label: 'M-03 · Moto' }] },
+      ],
+    }),
+    createTextarea({ placeholder: 'Ej. rayón en la puerta trasera derecha' })
+  ),
+  muestra('Etiqueta', '.label-caps', createLabelCaps({ text: 'Ocupación actual' })),
+  muestra(
+    'Chips de estado',
+    '.status-chip--free · --occupied · --reserved · --out',
+    ...Object.values(ESTADOS_CELDA).map((e) => createStatusChip(e))
+  ),
+  muestra(
+    'Placas',
+    '.plate · .plate--large',
+    createPlate({ placa: 'JKL482' }),
+    createPlate({ placa: 'XKP45F' }),
+    createPlate({ placa: 'MNP908', large: true })
+  ),
+  muestra(
+    'Medidor',
+    '.meter · .meter--orange',
+    createMeter({ value: 65 }),
+    createMeter({ value: 67, variant: 'orange' })
+  ),
+  muestra(
+    'Spinner, enlace, avatar, marca',
+    '.spinner · .link · .avatar · .brand-mark',
+    createSpinner(),
+    createSpinner({ size: 'sm' }),
+    createLink({ href: '#', text: 'Enlace de texto' }),
+    createAvatar({ nombre: 'Laura Gómez' }),
+    createAvatar({ nombre: 'Juan Pérez', size: 'md' }),
+    createBrandMark()
+  ),
+  muestra('Franja de peligro', '.hazard-strip', createHazardStrip())
+);
+
+// ---------------- Molecules ----------------
+const conError = createField({
+  label: 'Número de documento',
+  control: createInput({ value: '12.345' }),
+  required: true,
+  error: 'Solo letras y números, sin puntos ni espacios.',
+});
+
+const molecules = seccion(
+  'Molecules',
+  muestra(
+    'Campo',
+    '.field (+ .field-hint / .field-error)',
+    el('div', { className: 'form-grid' }, [
+      createField({
+        label: 'Correo',
+        control: createInput({ type: 'email' }),
+        required: true,
+        hint: 'Lo usamos para avisos.',
+      }),
+      conError,
+    ])
+  ),
+  muestra(
+    'Mosaicos',
+    '.tiles / .tile',
+    createTiles({
+      name: 'tipo-vehiculo',
+      label: 'Tipo de vehículo',
+      value: 'carro',
+      options: [
+        { value: 'carro', label: 'Carro', icon: 'i-car' },
+        { value: 'moto', label: 'Moto', icon: 'i-moto' },
+      ],
+    })
+  ),
+  muestra(
+    'Casilla',
+    '.check',
+    createCheck({ label: 'El conductor deja las llaves en la caseta' }),
+    createCheck({ label: 'Requiere celda accesible', checked: true })
+  ),
+  muestra(
+    'Indicadores',
+    '.kpi · .kpi--main',
+    el('div', { className: 'catalogo-kpis' }, [
+      createKpi({
+        label: 'Ocupación actual',
+        value: 65,
+        unit: '%',
+        note: '28 de 43 espacios habilitados',
+        main: true,
+        meter: 65,
+      }),
+      createKpi({ label: 'Espacios libres', value: 13, note: 'S1: 6 · S2: 7' }),
+      createKpi({ label: 'Recaudo de hoy', value: '$ 1,28 M', note: '143 salidas cobradas' }),
+    ])
+  ),
+  muestra(
+    'Estado vacío',
+    '.empty-state',
+    createEmptyState({
+      title: 'Selecciona un espacio',
+      text: 'Toca cualquier celda del mapa para ver el vehículo, el tiempo y el valor a cobrar.',
+    })
+  ),
+  muestra(
+    'Marca y turno (sobre asfalto)',
+    '.brand · .shift',
+    el('div', { className: 'catalogo-oscuro' }, [
+      createBrand({ sede: 'Parqueadero ABC · Medellín' }),
+      createShift({ turno: 'Norte · L. Gómez' }),
+    ])
+  ),
+  muestra(
+    'Avisos',
+    '.toast · .alert',
+    createButton({
+      label: 'Toast éxito',
+      variant: 'dark',
+      onClick: () => showToast('Ingreso registrado: ticket T-000123.', 'success'),
+    }),
+    createButton({
+      label: 'Toast error',
+      variant: 'dark',
+      onClick: () => showToast('Entrada rechazada por pico y placa.', 'error'),
+    }),
+    createButton({
+      label: 'Toast info',
+      variant: 'dark',
+      onClick: () => showToast('La celda A-09 sigue fuera de servicio.'),
+    }),
+    createAlert({ message: 'Documento o contraseña incorrectos.', variant: 'error' }),
+    createAlert({ message: 'Contraseña actualizada.', variant: 'success' })
+  ),
+  muestra(
+    'Lista de datos',
+    '.data-list',
+    createDataList({
+      items: [
+        { term: 'Cliente', value: 'Visitante' },
+        { term: 'Ticket', value: 'T-004792' },
+        { term: 'Hora de entrada', value: '16:05' },
+        { term: 'Tarifa', value: '$ 120 / min' },
+      ],
+    })
+  ),
+  muestra(
+    'Menú de usuario',
+    '.user-menu',
+    el('div', { className: 'catalogo-oscuro' }, [
+      createUserMenu({
+        nombre: 'Laura Gómez Ríos',
+        rol: 'Administrador',
+        items: [
+          { label: 'Mi cuenta', icon: 'i-user', href: '#' },
+          { label: 'Cerrar sesión', icon: 'i-logout', href: '#' },
+        ],
+      }),
+    ])
+  )
+);
+
+// ---------------- Organisms ----------------
+const modal = createModal({
+  title: 'Registrar ingreso',
+  subtitle: 'asigna un espacio libre y genera el ticket',
+  body: [
+    el('div', { className: 'form-grid' }, [
+      createField({
+        label: 'Placa',
+        control: createInput({ plate: true, placeholder: 'ABC 123', maxLength: 7 }),
+        required: true,
+        full: true,
+      }),
+      createField({ label: 'Observaciones', control: createTextarea({}), full: true }),
+    ]),
+  ],
+  footer: [
+    createButton({ label: 'Cancelar', variant: 'ghost', onClick: () => closeModal(modal) }),
+    createButton({ label: 'Generar ticket', onClick: () => closeModal(modal) }),
+  ],
+});
+const abrirModal = createButton({
+  label: 'Abrir modal',
+  icon: 'i-in',
+  onClick: (e) => openModal(modal, e.currentTarget),
+});
+
+const organisms = seccion(
+  'Organisms',
+  muestra('Modal (Esc o clic en el fondo para cerrar)', '.modal-overlay / .modal', abrirModal),
+  muestra(
+    'Navbar (todos los ítems)',
+    '.navbar · .navbar-item.is-active',
+    createNavbar({ items: ITEMS_NAVEGACION.slice(0, 6), activeId: 'celdas' })
+  ),
+  muestra('Footer', '.footer', createFooter({ sede: SEDE }))
+);
+
+// ---------------- Página ----------------
+const layout = createAppLayout({
+  header: createHeader({
+    sede: 'Parqueadero ABC · Medellín',
+    turno: 'Norte · L. Gómez',
+    usuario: { nombre: 'Laura Gómez Ríos', rol: 'Administrador' },
+    menuItems: [{ label: 'Cerrar sesión', icon: 'i-logout', href: '#' }],
+  }),
+  navbar: createNavbar({ items: ITEMS_NAVEGACION.slice(0, 8), activeId: 'inicio' }),
+  pageHead: createPageHead({
+    title: 'Catálogo de componentes',
+    subtitle: 'solo desarrollo · compáralo con docs/diseno-parko/index.html',
+    actions: [createButton({ label: 'Acción principal', icon: 'i-in' })],
+  }),
+  content: [el('div', { className: 'catalogo' }, [atoms, molecules, organisms])],
+  footer: createFooter({ sede: SEDE }),
+});
+
+document.getElementById('app').replaceChildren(layout);

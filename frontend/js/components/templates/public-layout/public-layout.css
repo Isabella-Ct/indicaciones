@@ -1,0 +1,59 @@
+/* Template · public-layout (nuevo) */
+.public-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* Bloque principal de la portada */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 24px;
+}
+
+.hero-copy {
+  display: grid;
+  align-content: center;
+  gap: 16px;
+  padding: 28px;
+  background: var(--yellow);
+  border: 2px solid var(--asphalt);
+}
+
+.hero-copy h1 {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.hero-copy p {
+  font-size: 1.0625rem;
+  font-weight: 500;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 1180px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero-copy {
+    padding: 20px 16px;
+  }
+
+  .hero-copy h1 {
+    font-size: 2.5rem;
+  }
+}
