@@ -14,7 +14,7 @@ export const ITEMS_NAVEGACION = [
     href: '/app/movimientos.html',
     permiso: 'movimientos.registrar',
   },
-  { id: 'usuarios', etiqueta: 'Usuarios', href: '/app/usuarios.html', permiso: 'usuarios.ver' },
+  { id: 'usuarios', etiqueta: 'Usuarios', href: '/app/usuarios.html', permiso: 'usuarios.crear' },
   { id: 'vehiculos', etiqueta: 'Vehículos', href: '/app/vehiculos.html', permiso: 'vehiculos.ver' },
   {
     id: 'pico-placa',

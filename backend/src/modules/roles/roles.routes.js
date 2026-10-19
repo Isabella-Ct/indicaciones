@@ -7,6 +7,6 @@ const controller = require('./roles.controller');
 const router = Router();
 
 // GET /api/v1/roles
-router.get('/', auth(), requirePermiso('usuarios.ver'), controller.listar);
+router.get('/', auth(), requirePermiso('usuarios.crear'), controller.listar);
 
 module.exports = router;

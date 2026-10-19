@@ -7,6 +7,7 @@ import { createIcon } from '../icon/icon.js';
  *   label: string,
  *   variant?: 'primary'|'dark'|'ghost',
  *   block?: boolean,
+ *   size?: 'md'|'sm',       // sm: botones dentro de tablas y barras
  *   icon?: string,
  *   type?: 'button'|'submit'|'reset',
  *   href?: string,          // si se da, se dibuja como <a> con aspecto de botón
@@ -21,6 +22,7 @@ export function createButton({
   label,
   variant = 'primary',
   block = false,
+  size = 'md',
   icon,
   type = 'button',
   href,
@@ -32,6 +34,7 @@ export function createButton({
   const clases = ['btn'];
   if (variant !== 'primary') clases.push(`btn--${variant}`);
   if (block) clases.push('btn--block');
+  if (size === 'sm') clases.push('btn--sm');
 
   const contenido = [icon ? createIcon({ name: icon }) : null, el('span', { text: label })];
   const boton = href

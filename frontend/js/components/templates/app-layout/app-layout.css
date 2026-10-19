@@ -61,7 +61,7 @@
 
 @media (max-width: 1180px) {
   .page-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -70,4 +70,10 @@
     padding-left: 16px;
     padding-right: 16px;
   }
+}
+
+/* Pila vertical de bloques dentro de un panel o formulario */
+.stack {
+  display: grid;
+  gap: 16px;
 }

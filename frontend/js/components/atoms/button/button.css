@@ -44,6 +44,19 @@
   width: 100%;
 }
 
+/* Agregado: tamaño compacto para tablas y barras de filtros */
+.btn--sm {
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 0.9375rem;
+}
+
+.btn--sm .icon {
+  width: 16px;
+  height: 16px;
+}
+
 /* Estado deshabilitado / cargando (agregado) */
 .btn:disabled,
 .btn[aria-busy='true'] {

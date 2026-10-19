@@ -14,7 +14,8 @@ Contexto completo del proyecto: [`CLAUDE.md`](CLAUDE.md). Requerimientos: [`docs
 | Fase | Contenido | Estado |
 |---|---|---|
 | 0 | Base del proyecto, BD consolidada, login con roles y permisos, componentes base | ✅ |
-| 1–8 | Usuarios y vehículos, celdas, movimientos, cobro, incidencias, reportes, portal, entrega | Pendiente |
+| 1 | Usuarios y vehículos (REQ-USR-2..6, REQ-CAR-1..3), Mi cuenta, fotos | ✅ |
+| 2–8 | Celdas, movimientos, cobro, incidencias, reportes, portal, entrega | Pendiente |
 
 ## Requisitos
 
@@ -60,7 +61,10 @@ npm run db:reset     # BORRA y recrea la BD: ejecuta database/schema.sql + datab
 - `backend/database/seed.sql` — datos de prueba. **Se genera** con `npm run db:seed:generar`
   (`database/generar-seed.js`): calcula los hashes bcrypt y escribe fechas relativas a `CURDATE()`,
   así el historial siempre corresponde a las últimas 2 semanas.
-- `backend/database/migrations/` — cambios posteriores numerados (`001_*.sql`).
+- `backend/database/migrations/` — cambios posteriores numerados, para BD creadas antes de cada fase
+  (`db:reset` ya los incluye). Se aplican a mano en orden, por ejemplo con MySQL Workbench:
+  - `001_permiso_usuarios_buscar.sql` (Fase 1): `usuarios.ver` queda solo para el administrador y se
+    crea `usuarios.buscar` (administrador y operador).
 
 La semilla incluye: 3 roles y 34 permisos, 9 usuarios, la sede con 2 puertas (Norte y Sur), 2 sótanos con
 **44 celdas** (la distribución de la maqueta: A-01…A-12 y B-01…B-12 en Sótano 1; C-01…C-08 y M-01…M-12 en
@@ -82,6 +86,9 @@ npm start            # sin recarga automática
 | `/login.html` | Inicio de sesión |
 | `/app/inicio.html` | Inicio del panel interno |
 | `/app/cambiar-contrasena.html` | Cambio de contraseña (obligatorio en el primer acceso) |
+| `/app/usuarios.html` | Usuarios: listado, edición y estado (administrador); solo registro (operador) |
+| `/app/vehiculos.html` | Vehículos: registro, edición, propietario e historial |
+| `/app/mi-cuenta.html` | Mis datos, cambio de contraseña y (clientes) mis vehículos |
 | `/app/_catalogo.html` | Catálogo de componentes (**solo desarrollo**; en producción responde 404) |
 
 ## Usuarios de prueba
@@ -122,7 +129,29 @@ Respuestas: éxito `{ "data": … }`; error `{ "error": { "codigo", "mensaje", "
 | POST | `/auth/logout` | Público | Borra la cookie de sesión |
 | GET | `/auth/me` | Sesión | Usuario en sesión y sus permisos |
 | POST | `/auth/cambiar-contrasena` | Sesión | `{ contrasena_actual, contrasena_nueva }` (mín. 8) |
-| GET | `/roles` | Permiso `usuarios.ver` | Lista de roles |
+| GET | `/roles` | Permiso `usuarios.crear` | Lista de roles (formulario de usuarios) |
+| GET | `/usuarios` | `usuarios.ver` (admin) | Listado. Filtros: `q` (documento/nombre/correo), `rol`, `estado`, `orden`, `dir`, `pagina`, `limite` |
+| GET | `/usuarios/buscar?documento=` | `usuarios.buscar` (admin, operador) | Clientes activos cuyo documento empieza así (id, documento, nombre) |
+| GET | `/usuarios/me` | Sesión | Mis datos |
+| PUT | `/usuarios/me` | `perfil.editar` | Multipart: nombres, `correo`, `celular`, `foto`, `quitar_foto`. Notifica a los administradores los campos cambiados (REQ-USR-4) |
+| GET | `/usuarios/me/vehiculos` | Sesión | Mis vehículos |
+| GET | `/usuarios/:id` | Admin, o el propio usuario | Detalle |
+| POST | `/usuarios` | `usuarios.crear` | Multipart: documento, nombres, `correo`, `celular`, `rol_id`, `contrasena_temporal`, `foto` opcional. El operador no puede crear administradores (403) |
+| PUT | `/usuarios/:id` | `usuarios.editar` (admin) | Multipart, mismos datos sin contraseña + `quitar_foto` |
+| PATCH | `/usuarios/:id/estado` | `usuarios.cambiar_estado` (admin) | `{ estado: "activo" | "inactivo" }`. No sobre sí mismo (409) |
+| GET | `/vehiculos` | `vehiculos.ver` | Filtros: `placa`, `tipo`, `propietario=con|sin`, `usuario_id`, `q` (documento/nombre del dueño), `activo`, orden y paginación |
+| GET | `/vehiculos/placa/:placa` | `vehiculos.ver` | Búsqueda exacta (la placa se normaliza) |
+| GET | `/vehiculos/:id` · `/vehiculos/:id/historial` | `vehiculos.ver` | Detalle · historial de propietarios |
+| POST | `/vehiculos` | `vehiculos.crear` | `{ placa, tipo, color, marca, modelo, usuario_id? }`. Placa validada según el tipo (422) y única (409) |
+| PUT | `/vehiculos/:id` | `vehiculos.editar` (admin) | `{ placa, tipo, color, marca, modelo, activo }` |
+| PATCH | `/vehiculos/:id/propietario` | `vehiculos.crear` | `{ usuario_id | null, motivo? }`. Sin dueño → admin u operador (REQ-USR-6); con dueño → solo admin (REQ-CAR-3). Queda en el historial |
+
+**Reglas de la Fase 1**
+- Solo los **clientes activos** pueden ser propietarios de un vehículo.
+- El operador **no** ve el listado de usuarios: solo los registra y busca clientes por documento al asignar vehículos.
+- Fotos: solo JPG/PNG (se verifica la firma real del archivo) y máximo 2 MB. Se guardan en `backend/uploads/usuarios/`
+  con nombre aleatorio y `/uploads/…` solo se sirve con sesión iniciada.
+- Errores de duplicado: `409 DOCUMENTO_DUPLICADO`, `CORREO_DUPLICADO`, `PLACA_DUPLICADA`.
 
 Mientras un usuario tenga la contraseña temporal (`debe_cambiar_contrasena`), cualquier ruta protegida
 distinta de `/auth/me`, `/auth/logout` y `/auth/cambiar-contrasena` responde `403 DEBE_CAMBIAR_CONTRASENA`.

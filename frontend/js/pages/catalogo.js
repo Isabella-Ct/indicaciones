@@ -39,6 +39,33 @@ import { createFooter } from '../components/organisms/footer/footer.js';
 import { createAppLayout } from '../components/templates/app-layout/app-layout.js';
 import { ITEMS_NAVEGACION } from '../utils/navegacion.js';
 import { normalizarPlaca } from '../utils/placa.js';
+import { createSearchBox } from '../components/molecules/search-box/search-box.js';
+import { createPagination } from '../components/molecules/pagination/pagination.js';
+import { createUserPicker } from '../components/molecules/user-picker/user-picker.js';
+import { createPhotoInput } from '../components/molecules/photo-input/photo-input.js';
+import { createDataTable } from '../components/organisms/data-table/data-table.js';
+
+// Datos de ejemplo para la tabla y el buscador de usuarios (sin API).
+const CLIENTES = [
+  {
+    id: 4,
+    nombre_completo: 'Andrea Salcedo Vélez',
+    tipo_documento: 'CC',
+    numero_documento: '1000000004',
+  },
+  {
+    id: 5,
+    nombre_completo: 'Paula Andrea Giraldo',
+    tipo_documento: 'CC',
+    numero_documento: '1000000005',
+  },
+];
+const buscarEjemplo = async (doc) => CLIENTES.filter((c) => c.numero_documento.startsWith(doc));
+const FILAS = [
+  { id: 1, placa: 'MNP908', tipo: 'Carro', vehiculo: 'Mazda CX-30', dueno: 'Andrea Salcedo' },
+  { id: 2, placa: 'XKP45F', tipo: 'Moto', vehiculo: 'Yamaha NMAX', dueno: 'Andrea Salcedo' },
+  { id: 3, placa: 'JKL482', tipo: 'Carro', vehiculo: 'Chevrolet Spark', dueno: null },
+];
 
 const SEDE = {
   nombre: 'Parqueadero ABC',
@@ -327,7 +354,64 @@ const organisms = seccion(
     '.navbar · .navbar-item.is-active',
     createNavbar({ items: ITEMS_NAVEGACION.slice(0, 6), activeId: 'celdas' })
   ),
-  muestra('Footer', '.footer', createFooter({ sede: SEDE }))
+  muestra('Footer', '.footer', createFooter({ sede: SEDE })),
+  muestra(
+    'Tabla de datos',
+    '.data-table · .log',
+    createDataTable({
+      caption: 'Vehículos de ejemplo',
+      minWidth: 520,
+      rows: FILAS,
+      sort: { key: 'placa', dir: 'asc' },
+      onSort: () => showToast('Orden: en las páginas se vuelve a pedir a la API.'),
+      columns: [
+        {
+          key: 'placa',
+          label: 'Placa',
+          sortable: true,
+          render: (f) => createPlate({ placa: f.placa }),
+        },
+        { key: 'tipo', label: 'Tipo', sortable: true },
+        { key: 'vehiculo', label: 'Vehículo' },
+        { key: 'dueno', label: 'Propietario' },
+      ],
+      pagination: { pagina: 1, totalPaginas: 3, total: 54, onChange: () => {} },
+    })
+  ),
+  muestra(
+    'Tabla vacía',
+    '.data-table → .empty-state',
+    createDataTable({ caption: 'Vacía', columns: [{ key: 'a', label: 'A' }], rows: [] })
+  )
+);
+
+const moleculesFase1 = seccion(
+  'Molecules · Fase 1',
+  muestra(
+    'Búsqueda y paginación',
+    '.search-box · .pagination',
+    createSearchBox({
+      label: 'Placa',
+      placeholder: 'Ej. MNP908',
+      transform: normalizarPlaca,
+      onSearch: () => {},
+    }),
+    createPagination({ pagina: 2, totalPaginas: 5, total: 87, onChange: () => {} })
+  ),
+  muestra(
+    'Buscador de usuario',
+    '.user-picker (prueba 1000000004)',
+    el('div', { className: 'form-grid' }, [
+      createUserPicker({ label: 'Propietario', buscar: buscarEjemplo }),
+    ])
+  ),
+  muestra(
+    'Foto con vista previa',
+    '.photo-input',
+    el('div', { className: 'form-grid' }, [
+      createPhotoInput({ label: 'Fotografía', nombre: 'Laura Gómez' }),
+    ])
+  )
 );
 
 // ---------------- Página ----------------
@@ -344,7 +428,7 @@ const layout = createAppLayout({
     subtitle: 'solo desarrollo · compáralo con docs/diseno-parko/index.html',
     actions: [createButton({ label: 'Acción principal', icon: 'i-in' })],
   }),
-  content: [el('div', { className: 'catalogo' }, [atoms, molecules, organisms])],
+  content: [el('div', { className: 'catalogo' }, [atoms, molecules, moleculesFase1, organisms])],
   footer: createFooter({ sede: SEDE }),
 });
 

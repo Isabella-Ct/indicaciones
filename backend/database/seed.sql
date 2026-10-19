@@ -14,7 +14,7 @@ INSERT INTO roles (id, nombre, descripcion) VALUES
   (3, 'usuario', 'Cliente: consulta sus vehículos, facturas y reservas');
 
 INSERT INTO permisos (id, codigo, modulo, descripcion) VALUES
-  (1, 'usuarios.ver', 'usuarios', 'Consultar usuarios'),
+  (1, 'usuarios.ver', 'usuarios', 'Consultar el listado completo de usuarios'),
   (2, 'usuarios.crear', 'usuarios', 'Crear usuarios (REQ-USR-2)'),
   (3, 'usuarios.crear_administrador', 'usuarios', 'Crear usuarios con rol administrador'),
   (4, 'usuarios.editar', 'usuarios', 'Editar cualquier usuario (REQ-USR-5)'),
@@ -47,7 +47,8 @@ INSERT INTO permisos (id, codigo, modulo, descripcion) VALUES
   (31, 'reportes.ver', 'reportes', 'Ver reportes (REQ-REP-*)'),
   (32, 'notificaciones.enviar', 'notificaciones', 'Enviar mensajes manuales (REQ-NOT-1)'),
   (33, 'configuracion.gestionar', 'configuracion', 'Editar parámetros del sistema'),
-  (34, 'portal.ver', 'portal', 'Mis vehículos, mis facturas y mis reservas');
+  (34, 'portal.ver', 'portal', 'Mis vehículos, mis facturas y mis reservas'),
+  (35, 'usuarios.buscar', 'usuarios', 'Buscar clientes por documento (asignar vehículos)');
 
 INSERT INTO roles_permisos (rol_id, permiso_id) VALUES
   (1, 1),
@@ -83,7 +84,7 @@ INSERT INTO roles_permisos (rol_id, permiso_id) VALUES
   (1, 31),
   (1, 32),
   (1, 33),
-  (2, 1),
+  (1, 35),
   (2, 2),
   (2, 6),
   (2, 7),
@@ -103,6 +104,7 @@ INSERT INTO roles_permisos (rol_id, permiso_id) VALUES
   (2, 26),
   (2, 28),
   (2, 29),
+  (2, 35),
   (3, 6),
   (3, 17),
   (3, 29),
@@ -110,15 +112,15 @@ INSERT INTO roles_permisos (rol_id, permiso_id) VALUES
 
 -- Usuarios de prueba (1 administrador, 2 operadores, 5 clientes activos + 1 inactivo)
 INSERT INTO usuarios (id, tipo_documento, numero_documento, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, correo, celular, contrasena_hash, debe_cambiar_contrasena, estado, rol_id, creado_por) VALUES
-  (1, 'CC', '1000000001', 'Laura', 'Marcela', 'Gómez', 'Ríos', 'laura.gomez@parko.test', '3001000001', '$2b$10$b3YsFm1Gc12mKQ8i1EmOQ.ctXKRrcczdvgjSvdyaSGmj2L5pcLOnq', 0, 'activo', 1, NULL),
-  (2, 'CC', '1000000002', 'Juan', NULL, 'Pérez', 'Arango', 'juan.perez@parko.test', '3001000002', '$2b$10$DLdWq/bAdfZ8GDQXZSZ7b.hxAzclhx0/OQvROVKZCQHoWH0nZmt72', 0, 'activo', 2, 1),
-  (3, 'CC', '1000000003', 'Sebastián', NULL, 'Duque', 'Mejía', 'sebastian.duque@parko.test', '3001000003', '$2b$10$DLdWq/bAdfZ8GDQXZSZ7b.hxAzclhx0/OQvROVKZCQHoWH0nZmt72', 0, 'activo', 2, 1),
-  (4, 'CC', '1000000004', 'Andrea', NULL, 'Salcedo', 'Vélez', 'andrea.salcedo@correo.test', '3101000004', '$2b$10$jrMMwB5Ll1eowfcbYtPW5umB9daLUWGE5tS9R5jq9TWHAJ2HZP3xq', 0, 'activo', 3, 1),
-  (5, 'CC', '1000000005', 'Paula', 'Andrea', 'Giraldo', NULL, 'paula.giraldo@correo.test', '3101000005', '$2b$10$jrMMwB5Ll1eowfcbYtPW5umB9daLUWGE5tS9R5jq9TWHAJ2HZP3xq', 0, 'activo', 3, 1),
-  (6, 'CC', '1000000006', 'Hernán', NULL, 'Quintero', 'Zapata', 'hernan.quintero@correo.test', '3101000006', '$2b$10$jrMMwB5Ll1eowfcbYtPW5umB9daLUWGE5tS9R5jq9TWHAJ2HZP3xq', 0, 'activo', 3, 1),
-  (7, 'CE', '1000000007', 'Lucía', NULL, 'Ortega', NULL, 'lucia.ortega@correo.test', '3101000007', '$2b$10$jrMMwB5Ll1eowfcbYtPW5umB9daLUWGE5tS9R5jq9TWHAJ2HZP3xq', 0, 'activo', 3, 1),
-  (8, 'CC', '1000000008', 'Camilo', 'José', 'Restrepo', 'Ochoa', 'camilo.restrepo@correo.test', '3101000008', '$2b$10$jrMMwB5Ll1eowfcbYtPW5umB9daLUWGE5tS9R5jq9TWHAJ2HZP3xq', 1, 'activo', 3, 1),
-  (9, 'CC', '1000000009', 'Felipe', NULL, 'Mora', 'Cano', 'felipe.mora@correo.test', '3101000009', '$2b$10$jrMMwB5Ll1eowfcbYtPW5umB9daLUWGE5tS9R5jq9TWHAJ2HZP3xq', 0, 'inactivo', 3, 1);
+  (1, 'CC', '1000000001', 'Laura', 'Marcela', 'Gómez', 'Ríos', 'laura.gomez@parko.test', '3001000001', '$2b$10$RPtDf1UxR.SsD63IKSAN8Oav9YY.VatRfCe6DcVBiBrBZGPUh4km2', 0, 'activo', 1, NULL),
+  (2, 'CC', '1000000002', 'Juan', NULL, 'Pérez', 'Arango', 'juan.perez@parko.test', '3001000002', '$2b$10$/kTJ1IiJcrS4SdBRHwfRGeqWkhIvzEngmiF/qAXiYLdtCHV6GeP0i', 0, 'activo', 2, 1),
+  (3, 'CC', '1000000003', 'Sebastián', NULL, 'Duque', 'Mejía', 'sebastian.duque@parko.test', '3001000003', '$2b$10$/kTJ1IiJcrS4SdBRHwfRGeqWkhIvzEngmiF/qAXiYLdtCHV6GeP0i', 0, 'activo', 2, 1),
+  (4, 'CC', '1000000004', 'Andrea', NULL, 'Salcedo', 'Vélez', 'andrea.salcedo@correo.test', '3101000004', '$2b$10$bCqKM2WU2Rjo/.VFEdFrlO4tW4ADzCRw6eG40OYtVM7KrDhS/QoK.', 0, 'activo', 3, 1),
+  (5, 'CC', '1000000005', 'Paula', 'Andrea', 'Giraldo', NULL, 'paula.giraldo@correo.test', '3101000005', '$2b$10$bCqKM2WU2Rjo/.VFEdFrlO4tW4ADzCRw6eG40OYtVM7KrDhS/QoK.', 0, 'activo', 3, 1),
+  (6, 'CC', '1000000006', 'Hernán', NULL, 'Quintero', 'Zapata', 'hernan.quintero@correo.test', '3101000006', '$2b$10$bCqKM2WU2Rjo/.VFEdFrlO4tW4ADzCRw6eG40OYtVM7KrDhS/QoK.', 0, 'activo', 3, 1),
+  (7, 'CE', '1000000007', 'Lucía', NULL, 'Ortega', NULL, 'lucia.ortega@correo.test', '3101000007', '$2b$10$bCqKM2WU2Rjo/.VFEdFrlO4tW4ADzCRw6eG40OYtVM7KrDhS/QoK.', 0, 'activo', 3, 1),
+  (8, 'CC', '1000000008', 'Camilo', 'José', 'Restrepo', 'Ochoa', 'camilo.restrepo@correo.test', '3101000008', '$2b$10$bCqKM2WU2Rjo/.VFEdFrlO4tW4ADzCRw6eG40OYtVM7KrDhS/QoK.', 1, 'activo', 3, 1),
+  (9, 'CC', '1000000009', 'Felipe', NULL, 'Mora', 'Cano', 'felipe.mora@correo.test', '3101000009', '$2b$10$bCqKM2WU2Rjo/.VFEdFrlO4tW4ADzCRw6eG40OYtVM7KrDhS/QoK.', 0, 'inactivo', 3, 1);
 
 -- Sede, pisos y puertas
 INSERT INTO parqueaderos (id, nombre, direccion, ciudad, telefono, horario) VALUES

@@ -75,7 +75,7 @@ const ROLES = [
 
 // [codigo, modulo, descripcion, roles que lo tienen]
 const PERMISOS = [
-  ['usuarios.ver', 'usuarios', 'Consultar usuarios', 'AO'],
+  ['usuarios.ver', 'usuarios', 'Consultar el listado completo de usuarios', 'A'],
   ['usuarios.crear', 'usuarios', 'Crear usuarios (REQ-USR-2)', 'AO'],
   ['usuarios.crear_administrador', 'usuarios', 'Crear usuarios con rol administrador', 'A'],
   ['usuarios.editar', 'usuarios', 'Editar cualquier usuario (REQ-USR-5)', 'A'],
@@ -114,6 +114,8 @@ const PERMISOS = [
   ['notificaciones.enviar', 'notificaciones', 'Enviar mensajes manuales (REQ-NOT-1)', 'A'],
   ['configuracion.gestionar', 'configuracion', 'Editar parámetros del sistema', 'A'],
   ['portal.ver', 'portal', 'Mis vehículos, mis facturas y mis reservas', 'U'],
+  // Fase 1: el operador busca clientes (user-picker) sin ver el listado completo
+  ['usuarios.buscar', 'usuarios', 'Buscar clientes por documento (asignar vehículos)', 'AO'],
 ];
 const LETRA_ROL = { A: 1, O: 2, U: 3 };
 

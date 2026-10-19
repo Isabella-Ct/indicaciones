@@ -24,18 +24,14 @@ function errorHandler(err, req, res, _next) {
 
   // JSON mal formado o cuerpo demasiado grande (express.json)
   if (err.type === 'entity.parse.failed') {
-    return res
-      .status(400)
-      .json({
-        error: { codigo: 'JSON_INVALIDO', mensaje: 'El cuerpo de la solicitud no es JSON válido.' },
-      });
+    return res.status(400).json({
+      error: { codigo: 'JSON_INVALIDO', mensaje: 'El cuerpo de la solicitud no es JSON válido.' },
+    });
   }
   if (err.type === 'entity.too.large') {
-    return res
-      .status(413)
-      .json({
-        error: { codigo: 'CUERPO_DEMASIADO_GRANDE', mensaje: 'La solicitud es demasiado grande.' },
-      });
+    return res.status(413).json({
+      error: { codigo: 'CUERPO_DEMASIADO_GRANDE', mensaje: 'La solicitud es demasiado grande.' },
+    });
   }
 
   // Violación de UNIQUE no controlada por el service

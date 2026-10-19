@@ -20,7 +20,7 @@ Para verlos todos: `npm run dev` y abre <http://localhost:3000/app/_catalogo.htm
 
 | Componente | Función | Clase(s) | Props principales |
 |---|---|---|---|
-| button | `createButton` · `setButtonLoading` | `.btn`, `--dark`, `--ghost`, `--block` | `label`, `variant`, `icon`, `block`, `type`, `href`, `onClick` |
+| button | `createButton` · `setButtonLoading` | `.btn`, `--dark`, `--ghost`, `--block`, `--sm` | `label`, `variant`, `size`, `icon`, `block`, `type`, `href`, `onClick` |
 | icon-button | `createIconButton` | `.icon-button` | `icon`, `label` (obligatorio), `onClick`, `attrs` |
 | icon | `createIcon` | `.icon` | `name` (símbolo del sprite), `className`, `viewBox`, `label` |
 | input | `createInput` | `.input`, `.input--plate` | `id`, `name`, `type`, `plate`, `maxLength`, `autocomplete`… |
@@ -58,6 +58,10 @@ Iconos: un solo sprite en `frontend/assets/icons.svg`. Símbolos de la maqueta: 
 | page-head | `createPageHead` | `.page-head` | Subtítulo se muestra como `// …` |
 | data-list | `createDataList` | `.data-list` | `items: [{ term, value }]` |
 | user-menu | `createUserMenu` | `.user-menu` | Esc devuelve el foco al botón |
+| search-box | `createSearchBox` | `.search-box`, `.filters` | Debounce + Enter; `transform` (p. ej. normalizar placa) |
+| pagination | `createPagination` | `.pagination` | Anterior / "Página X de Y · N registros" / Siguiente |
+| user-picker | `createUserPicker` · `setUserPickerError` | `.user-picker` | Busca por documento con la función `buscar` que le pasa la página; el id viaja en un input oculto |
+| photo-input | `createPhotoInput` | `.photo-input` | `name="foto"` + `quitar_foto`; vista previa y validación JPG/PNG ≤ 2 MB |
 
 ## Organisms (`js/components/organisms/`)
 
@@ -67,6 +71,7 @@ Iconos: un solo sprite en `frontend/assets/icons.svg`. Símbolos de la maqueta: 
 | navbar | `createNavbar` | `.navbar`, `.navbar-item.is-active` | Recibe solo ítems permitidos (`utils/navegacion.js`); ≤ 760 px se vuelve desplegable |
 | modal | `createModal` · `openModal` · `closeModal` | `.modal-overlay`, `.modal`, `.modal-head/-body/-foot` | `aria-modal`, Esc, clic en el fondo, foco atrapado y devuelto; `.modal-body--split` = formulario + ticket |
 | footer | `createFooter` | `.footer` | Datos de la sede |
+| data-table | `createDataTable` | `.data-table`, `.log`, `.row-actions`, `.cell-*` | Estilo bitácora de la maqueta; orden (`aria-sort`), paginación, estado vacío, carga y scroll horizontal (`minWidth`) |
 
 ## Templates (`js/components/templates/`)
 

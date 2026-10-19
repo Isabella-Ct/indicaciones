@@ -27,13 +27,15 @@ function irALogin() {
  * @returns {Promise<{ data: any, meta?: any }>}
  */
 export async function api(ruta, { method = 'GET', body, redirigir401 = true, signal } = {}) {
+  const esFormData = body instanceof FormData;
   let respuesta;
   try {
     respuesta = await fetch(`${BASE}${ruta}`, {
       method,
       credentials: 'include',
-      headers: body !== undefined ? { 'Content-Type': 'application/json' } : {},
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      // FormData (fotos) la codifica el navegador como multipart con su propio boundary.
+      headers: body !== undefined && !esFormData ? { 'Content-Type': 'application/json' } : {},
+      body: body === undefined || esFormData ? body : JSON.stringify(body),
       signal,
     });
   } catch (err) {

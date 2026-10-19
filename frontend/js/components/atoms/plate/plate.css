@@ -8,6 +8,7 @@
   font-family: var(--font-mono);
   font-weight: 600;
   letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 
 /* Tamaño del detalle de celda (maqueta: .vehicle-line .plate) */

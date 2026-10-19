@@ -61,7 +61,10 @@
 .catalogo-demo > .textarea,
 .catalogo-demo > .catalogo-kpis,
 .catalogo-demo > .catalogo-oscuro,
-.catalogo-demo > .catalogo-iconos {
+.catalogo-demo > .catalogo-iconos,
+.catalogo-demo > .data-table,
+.catalogo-demo > .search-box,
+.catalogo-demo > .pagination {
   flex: 1 1 100%;
 }
 

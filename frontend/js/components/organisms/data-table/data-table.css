@@ -1,0 +1,114 @@
+/* Organism · data-table — base: bitácora de la maqueta (.log, .log th/td, .log .right) */
+.log {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.log th {
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--asphalt);
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.log td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-mono);
+}
+
+.log .right {
+  text-align: right;
+}
+
+/* Agregados para la tabla de datos */
+.data-table {
+  position: relative;
+}
+
+.data-table-scroll {
+  overflow-x: auto;
+}
+
+.data-table-table {
+  min-width: var(--min-width, 720px);
+}
+
+.data-table-table td {
+  vertical-align: middle;
+}
+
+.data-table-table tbody tr:hover {
+  background: var(--concrete-2);
+}
+
+.data-table-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
+.data-table-sort:hover {
+  color: var(--orange-dark);
+}
+
+.data-table-arrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--ink-2);
+}
+
+[aria-sort='ascending'] .data-table-arrow,
+[aria-sort='descending'] .data-table-arrow {
+  color: var(--ink);
+}
+
+.data-table-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--panel-veil);
+}
+
+/* Celdas frecuentes */
+.cell-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font);
+  font-weight: 600;
+}
+
+.cell-muted {
+  color: var(--ink-2);
+}
+
+.cell-sub {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--ink-2);
+}
+
+.cell-nowrap {
+  white-space: nowrap;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+}

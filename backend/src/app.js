@@ -11,6 +11,10 @@ const saludRoutes = require('./modules/salud/salud.routes');
 const authRoutes = require('./modules/auth/auth.routes');
 const parqueaderoRoutes = require('./modules/parqueadero/parqueadero.routes');
 const rolesRoutes = require('./modules/roles/roles.routes');
+const usuariosRoutes = require('./modules/usuarios/usuarios.routes');
+const vehiculosRoutes = require('./modules/vehiculos/vehiculos.routes');
+const { auth } = require('./middlewares/auth');
+const { CARPETA_UPLOADS } = require('./utils/archivos');
 
 const CARPETA_FRONTEND = path.join(__dirname, '..', '..', 'frontend');
 
@@ -46,7 +50,16 @@ function crearApp() {
   api.use('/auth', authRoutes);
   api.use('/parqueadero', parqueaderoRoutes);
   api.use('/roles', rolesRoutes);
+  api.use('/usuarios', usuariosRoutes);
+  api.use('/vehiculos', vehiculosRoutes);
   app.use('/api/v1', api);
+
+  // ---------- Archivos subidos (fotos): solo con sesión iniciada ----------
+  app.use(
+    '/uploads',
+    auth({ permitirCambioPendiente: true }),
+    express.static(CARPETA_UPLOADS, { index: false, dotfiles: 'deny' })
+  );
 
   // ---------- Frontend estático ----------
   // El catálogo de componentes es solo para desarrollo.
