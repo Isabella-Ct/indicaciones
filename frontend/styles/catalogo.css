@@ -64,7 +64,9 @@
 .catalogo-demo > .catalogo-iconos,
 .catalogo-demo > .data-table,
 .catalogo-demo > .search-box,
-.catalogo-demo > .pagination {
+.catalogo-demo > .pagination,
+.catalogo-demo > .map-legend,
+.catalogo-demo > .catalogo-lote {
   flex: 1 1 100%;
 }
 
@@ -133,4 +135,27 @@
   .catalogo-rejilla {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* Fila de espacios de ejemplo sobre el asfalto del lote */
+.catalogo-lote {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  padding: 14px;
+  background: var(--asphalt-2);
+}
+
+.catalogo-lote .space {
+  border-top: 2px solid var(--line);
+}
+
+.catalogo-lote .space:last-child {
+  border-right: 2px solid var(--line);
+}
+
+/* Los hijos flex pueden encogerse: la tabla hace scroll dentro de su muestra */
+.catalogo-muestra,
+.catalogo-demo,
+.catalogo-demo > * {
+  min-width: 0;
 }

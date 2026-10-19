@@ -77,3 +77,19 @@
   display: grid;
   gap: 16px;
 }
+
+/* Mapa + detalle (maqueta, sección 5 .workspace y responsive de la sección 10) */
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 24px;
+  align-items: start;
+}
+
+/* minmax(0, 1fr) en vez de 1fr: así el lote del mapa hace scroll dentro de su
+   contenedor en móvil, en lugar de ensanchar la página. */
+@media (max-width: 1180px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,107 @@
+/* Organism · space-detail (maqueta, sección 6: .detail-column, .space-hero, .detail-block,
+   .vehicle-line, .charge, .detail-actions). */
+.detail-column {
+  position: sticky;
+  top: 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.space-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px;
+  background: var(--asphalt-2);
+  color: var(--line);
+}
+
+.space-hero .big-code {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 0.9;
+}
+
+.space-hero .label-caps {
+  color: var(--ink-on-dark);
+}
+
+.detail-block {
+  padding: 16px 18px;
+  border-top: 2px solid var(--asphalt);
+}
+
+.detail-block:first-of-type {
+  border-top: 0;
+}
+
+.vehicle-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.vehicle-line .plate {
+  font-size: 1.375rem;
+}
+
+.vehicle-line p {
+  font-weight: 600;
+}
+
+.charge {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.charge-value {
+  font-family: var(--font-display);
+  font-size: 2.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.charge-note {
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.detail-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 16px 18px;
+  border-top: 2px solid var(--asphalt);
+}
+
+/* Agregados: el primer bloque tras el hero no lleva borde (el hero ya separa);
+   botones que ocupan toda la fila (la maqueta usaba style="grid-column:1/-1"). */
+.space-hero + .detail-block {
+  border-top: 0;
+}
+
+.detail-block > .label-caps {
+  margin-bottom: 8px;
+}
+
+.detail-message {
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+}
+
+.detail-actions .detail-actions-full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1180px) {
+  .detail-column {
+    position: static;
+  }
+}

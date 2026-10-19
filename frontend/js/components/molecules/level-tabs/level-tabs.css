@@ -1,0 +1,22 @@
+/* Molecule · level-tabs (maqueta, sección 5: .level-tabs, .level-tab, .is-active) */
+.level-tabs {
+  display: flex;
+  gap: 2px;
+}
+
+.level-tab {
+  padding: 8px 16px;
+  border: 0;
+  background: var(--asphalt-3);
+  color: var(--line);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.level-tab.is-active {
+  background: var(--yellow);
+  color: var(--ink);
+}

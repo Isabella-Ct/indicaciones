@@ -44,6 +44,39 @@ import { createPagination } from '../components/molecules/pagination/pagination.
 import { createUserPicker } from '../components/molecules/user-picker/user-picker.js';
 import { createPhotoInput } from '../components/molecules/photo-input/photo-input.js';
 import { createDataTable } from '../components/organisms/data-table/data-table.js';
+import { createSpace } from '../components/molecules/space/space.js';
+import { createMapLegend } from '../components/molecules/map-legend/map-legend.js';
+import { createLiveStatus } from '../components/molecules/live-status/live-status.js';
+
+// Celdas de ejemplo (formato de GET /celdas para el personal).
+const celdaBase = {
+  piso: { id: 1, nombre: 'Sótano 1' },
+  fila_mapa: 'superior',
+  es_accesible: false,
+  tipo: 'carro',
+};
+const CELDAS = [
+  { ...celdaBase, id: 901, codigo: 'A-01', estado: 'disponible', es_accesible: true },
+  { ...celdaBase, id: 902, codigo: 'A-03', estado: 'ocupada', ocupante: { placa: 'JKL482' } },
+  {
+    ...celdaBase,
+    id: 903,
+    codigo: 'A-04',
+    estado: 'reservada',
+    reserva_origen: 'mensualidad',
+    mensualidad: { placa: 'MNP908' },
+  },
+  { ...celdaBase, id: 904, codigo: 'A-09', estado: 'fuera_servicio' },
+  {
+    ...celdaBase,
+    id: 905,
+    codigo: 'M-01',
+    estado: 'ocupada',
+    tipo: 'moto',
+    ocupante: { placa: 'XKP45F' },
+  },
+  { ...celdaBase, id: 906, codigo: 'M-02', estado: 'disponible', tipo: 'moto' },
+];
 
 // Datos de ejemplo para la tabla y el buscador de usuarios (sin API).
 const CLIENTES = [
@@ -385,6 +418,27 @@ const organisms = seccion(
   )
 );
 
+const moleculesFase2 = seccion(
+  'Molecules · Fase 2',
+  muestra(
+    'Espacios del mapa',
+    '.space --free/--occupied/--reserved/--out/--accessible/--moto · .is-selected',
+    el(
+      'div',
+      { className: 'catalogo-lote' },
+      CELDAS.map((celda, i) => createSpace({ celda, seleccionada: i === 1 }))
+    )
+  ),
+  muestra('Leyenda del mapa', '.map-legend', createMapLegend()),
+  muestra(
+    'Estado de la conexión',
+    '.live-status--conectando/--en-vivo/--reconectando',
+    createLiveStatus({ estado: 'conectando' }),
+    createLiveStatus({ estado: 'en-vivo' }),
+    createLiveStatus({ estado: 'reconectando' })
+  )
+);
+
 const moleculesFase1 = seccion(
   'Molecules · Fase 1',
   muestra(
@@ -428,7 +482,15 @@ const layout = createAppLayout({
     subtitle: 'solo desarrollo · compáralo con docs/diseno-parko/index.html',
     actions: [createButton({ label: 'Acción principal', icon: 'i-in' })],
   }),
-  content: [el('div', { className: 'catalogo' }, [atoms, molecules, moleculesFase1, organisms])],
+  content: [
+    el('div', { className: 'catalogo' }, [
+      atoms,
+      molecules,
+      moleculesFase1,
+      moleculesFase2,
+      organisms,
+    ]),
+  ],
   footer: createFooter({ sede: SEDE }),
 });
 

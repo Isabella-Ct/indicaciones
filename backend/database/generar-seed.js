@@ -116,6 +116,8 @@ const PERMISOS = [
   ['portal.ver', 'portal', 'Mis vehículos, mis facturas y mis reservas', 'U'],
   // Fase 1: el operador busca clientes (user-picker) sin ver el listado completo
   ['usuarios.buscar', 'usuarios', 'Buscar clientes por documento (asignar vehículos)', 'AO'],
+  // Fase 2: CRUD de puertas
+  ['puertas.gestionar', 'puertas', 'Crear, editar y desactivar puertas de acceso', 'A'],
 ];
 const LETRA_ROL = { A: 1, O: 2, U: 3 };
 

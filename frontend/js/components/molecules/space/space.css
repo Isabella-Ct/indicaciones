@@ -1,0 +1,134 @@
+/* Molecule · space — maqueta, sección 5 ("Espacio de parqueo": las líneas
+   blancas imitan la pintura del piso). Colores sueltos → tokens con el mismo valor. */
+.space {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-height: 112px;
+  padding: 8px 4px;
+  border: 0;
+  border-left: 2px solid var(--line);
+  background: transparent;
+  color: var(--line);
+  font-family: var(--font-mono);
+  transition: background 0.15s ease;
+}
+
+.row .space:last-child {
+  border-right: 2px solid var(--line);
+}
+
+.row--top .space {
+  border-top: 2px solid var(--line);
+}
+
+.row--bottom .space {
+  border-bottom: 2px solid var(--line);
+}
+
+.space:hover {
+  background: var(--asphalt-3);
+}
+
+.space.is-selected {
+  background: var(--asphalt-3);
+  box-shadow: inset 0 0 0 4px var(--yellow);
+}
+
+.space-code {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.space-plate {
+  padding: 1px 4px;
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 0.625rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.space-car {
+  width: 26px;
+  height: 46px;
+  color: var(--car-body);
+}
+
+.space--free .space-tag {
+  color: var(--green);
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.space--free {
+  box-shadow: inset 0 0 0 3px var(--free-glow);
+}
+
+.space--reserved {
+  background: repeating-linear-gradient(-45deg, var(--reserved-stripe) 0 6px, transparent 6px 14px);
+}
+
+.space--reserved .space-tag {
+  padding: 1px 4px;
+  background: var(--yellow);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.space--out {
+  background: repeating-linear-gradient(-45deg, var(--orange) 0 8px, var(--asphalt) 8px 16px);
+}
+
+.space--out .space-tag {
+  padding: 2px 4px;
+  background: var(--asphalt);
+  color: var(--orange);
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.space--accessible::after {
+  content: '';
+  position: absolute;
+  top: 28px;
+  bottom: 28px;
+  left: 4px;
+  width: 5px;
+  background: var(--blue);
+}
+
+.space--accessible .space-code::before {
+  content: '♿ ';
+  color: var(--blue-light);
+}
+
+.space--moto {
+  min-height: 84px;
+}
+
+.space--moto .space-car {
+  width: 14px;
+  height: 34px;
+}
+
+/* Agregado: el seleccionado tiene prioridad sobre el fondo de reservado/fuera de servicio */
+.space--reserved.is-selected,
+.space--out.is-selected {
+  box-shadow: inset 0 0 0 4px var(--yellow);
+}
+
+.space:focus-visible {
+  outline-offset: -3px;
+}

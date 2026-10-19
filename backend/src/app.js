@@ -13,6 +13,10 @@ const parqueaderoRoutes = require('./modules/parqueadero/parqueadero.routes');
 const rolesRoutes = require('./modules/roles/roles.routes');
 const usuariosRoutes = require('./modules/usuarios/usuarios.routes');
 const vehiculosRoutes = require('./modules/vehiculos/vehiculos.routes');
+const pisosRoutes = require('./modules/pisos/pisos.routes');
+const celdasRoutes = require('./modules/celdas/celdas.routes');
+const puertasRoutes = require('./modules/puertas/puertas.routes');
+const publicoRoutes = require('./modules/publico/publico.routes');
 const { auth } = require('./middlewares/auth');
 const { CARPETA_UPLOADS } = require('./utils/archivos');
 
@@ -52,6 +56,10 @@ function crearApp() {
   api.use('/roles', rolesRoutes);
   api.use('/usuarios', usuariosRoutes);
   api.use('/vehiculos', vehiculosRoutes);
+  api.use('/pisos', pisosRoutes);
+  api.use('/celdas', celdasRoutes);
+  api.use('/puertas', puertasRoutes);
+  api.use('/publico', publicoRoutes);
   app.use('/api/v1', api);
 
   // ---------- Archivos subidos (fotos): solo con sesión iniciada ----------

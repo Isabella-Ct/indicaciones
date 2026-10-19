@@ -15,7 +15,8 @@ Contexto completo del proyecto: [`CLAUDE.md`](CLAUDE.md). Requerimientos: [`docs
 |---|---|---|
 | 0 | Base del proyecto, BD consolidada, login con roles y permisos, componentes base | ✅ |
 | 1 | Usuarios y vehículos (REQ-USR-2..6, REQ-CAR-1..3), Mi cuenta, fotos | ✅ |
-| 2–8 | Celdas, movimientos, cobro, incidencias, reportes, portal, entrega | Pendiente |
+| 2 | Celdas y mapa en tiempo real (REQ-CLD-01..03), puertas, disponibilidad pública | ✅ |
+| 3–8 | Pico y placa y movimientos, cobro, incidencias, reportes, portal, entrega | Pendiente |
 
 ## Requisitos
 
@@ -65,6 +66,7 @@ npm run db:reset     # BORRA y recrea la BD: ejecuta database/schema.sql + datab
   (`db:reset` ya los incluye). Se aplican a mano en orden, por ejemplo con MySQL Workbench:
   - `001_permiso_usuarios_buscar.sql` (Fase 1): `usuarios.ver` queda solo para el administrador y se
     crea `usuarios.buscar` (administrador y operador).
+  - `002_permiso_puertas.sql` (Fase 2): permiso `puertas.gestionar` (administrador).
 
 La semilla incluye: 3 roles y 34 permisos, 9 usuarios, la sede con 2 puertas (Norte y Sur), 2 sótanos con
 **44 celdas** (la distribución de la maqueta: A-01…A-12 y B-01…B-12 en Sótano 1; C-01…C-08 y M-01…M-12 en
@@ -86,6 +88,7 @@ npm start            # sin recarga automática
 | `/login.html` | Inicio de sesión |
 | `/app/inicio.html` | Inicio del panel interno |
 | `/app/cambiar-contrasena.html` | Cambio de contraseña (obligatorio en el primer acceso) |
+| `/app/celdas.html` | Control de espacios: indicadores, mapa por piso en vivo y detalle de la celda (cliente: solo lectura, sin placas) |
 | `/app/usuarios.html` | Usuarios: listado, edición y estado (administrador); solo registro (operador) |
 | `/app/vehiculos.html` | Vehículos: registro, edición, propietario e historial |
 | `/app/mi-cuenta.html` | Mis datos, cambio de contraseña y (clientes) mis vehículos |
@@ -146,6 +149,26 @@ Respuestas: éxito `{ "data": … }`; error `{ "error": { "codigo", "mensaje", "
 | PUT | `/vehiculos/:id` | `vehiculos.editar` (admin) | `{ placa, tipo, color, marca, modelo, activo }` |
 | PATCH | `/vehiculos/:id/propietario` | `vehiculos.crear` | `{ usuario_id | null, motivo? }`. Sin dueño → admin u operador (REQ-USR-6); con dueño → solo admin (REQ-CAR-3). Queda en el historial |
 
+| GET | `/pisos` | `celdas.ver` | Pisos con los tramos del carril (`carril: [...]`) |
+| GET | `/celdas` | `celdas.ver` | Filtros: `piso_id`, `area`, `tipo`, `estado`, `accesible=0|1`, `incluir_inactivas=1` (admin). Placas, titulares y tickets **solo** para admin/operador |
+| GET | `/celdas/resumen` | `celdas.ver` | Totales por estado, tipo, piso y área; `ocupacion_pct` = ocupadas / habilitadas |
+| GET | `/celdas/stream` | `celdas.ver` | SSE: `celda-actualizada`, `resumen-actualizado` (heartbeat cada 25 s). Cada conexión recibe los datos filtrados según su rol |
+| GET | `/celdas/:id` | `celdas.ver` | Detalle |
+| POST · PUT | `/celdas` · `/celdas/:id` | `celdas.gestionar` (admin) | `{ codigo, piso_id, area, tipo, es_accesible, fila_mapa, posicion }` (crear admite `estado` inicial y `nota`). 409 si el código o la posición ya existen |
+| PATCH | `/celdas/:id/estado` | `celdas.cambiar_estado` (admin, operador) | `{ estado, vehiculo_id?, nota? }` — ver reglas abajo (REQ-CLD-03) |
+| PATCH | `/celdas/:id/activa` | `celdas.gestionar` | `{ activa }`. Solo celdas libres o fuera de servicio y sin mensualidad/reserva |
+| GET | `/puertas` | Sesión | Puertas activas (admin: `?incluir_inactivas=1`) |
+| POST · PUT · PATCH | `/puertas` · `/puertas/:id` · `/puertas/:id/activa` | `puertas.gestionar` (admin) | `{ nombre, tipo: entrada|salida|mixta }`; debe quedar al menos una activa |
+| GET | `/publico/disponibilidad` | Público | `{ carro: { disponibles, habilitadas }, moto: {…}, actualizado_en }` — sin celdas ni personas |
+| GET | `/publico/disponibilidad/stream` | Público | SSE con el evento `disponibilidad` (los mismos totales) |
+
+**Reglas de la Fase 2 (estado de celdas)**
+- `ocupada`: exige un vehículo activo del mismo tipo que la celda (422 `TIPO_INCOMPATIBLE`) y que no esté en otra celda (409 `VEHICULO_YA_UBICADO`). En una celda reservada solo entra el vehículo titular.
+- `disponible`: nunca con una estadía en curso (409 `ESTADIA_EN_CURSO`: se debe registrar la salida). Si es la celda fija de una mensualidad vigente (o tiene reserva activa) vuelve a `reservada` (`meta.estado_final`).
+- `fuera_servicio`: exige nota; no sobre una celda ocupada.
+- `reservada` no se asigna a mano (422): la ponen las mensualidades y las reservas.
+- Tiempo real: cualquier módulo que cambie una celda llama a `publicarCambioCelda(id)` de `backend/src/realtime/celdas-tiempo-real.js`.
+
 **Reglas de la Fase 1**
 - Solo los **clientes activos** pueden ser propietarios de un vehículo.
 - El operador **no** ve el listado de usuarios: solo los registra y busca clientes por documento al asignar vehículos.
@@ -168,9 +191,10 @@ distinta de `/auth/me`, `/auth/logout` y `/auth/cambiar-contrasena` responde `40
 │   │   ├── server.js         arranque y apagado ordenado
 │   │   ├── config/           env (validado con zod), pool MySQL, constantes
 │   │   ├── middlewares/      auth, require-permiso, validate, rate-limit, error-handler
-│   │   ├── modules/          auth, salud, parqueadero, roles (routes → controller → service → repository)
+│   │   ├── modules/          auth, salud, parqueadero, roles, usuarios, vehiculos, notificaciones,
+│   │   │                     pisos, celdas, puertas, publico (routes → controller → service → repository)
 │   │   ├── utils/            errores
-│   │   └── realtime/         (SSE de celdas, Fase 2)
+│   │   └── realtime/         emisor (pub/sub), helper SSE y publicación de cambios de celdas
 │   ├── database/             schema.sql, seed.sql, generar-seed.js, reset.js, migrations/
 │   ├── tests/                Jest + supertest
 │   └── uploads/              fotos (ignorado por git)

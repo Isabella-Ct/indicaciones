@@ -141,7 +141,7 @@ function abrirFormulario(vehiculo, origen) {
   let activo = null;
   if (editando) {
     activo = createCheck({ label: 'Vehículo activo', name: 'activo', checked: vehiculo.activo });
-    campos.activo = el('div', { className: 'field field--full' }, [activo]);
+    campos.activo = el('div', { className: 'field--full' }, [activo]);
   } else {
     campos.usuario_id = createUserPicker({
       label: 'Propietario (opcional)',
