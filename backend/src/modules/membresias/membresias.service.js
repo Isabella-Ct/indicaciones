@@ -8,7 +8,7 @@ const { publicarCambioCelda } = require('../../realtime/celdas-tiempo-real');
 const celdasRepo = require('../celdas/celdas.repository');
 const facturasRepo = require('../facturas/facturas.repository');
 const usuariosService = require('../usuarios/usuarios.service');
-const notificacionesRepo = require('../notificaciones/notificaciones.repository');
+const notificaciones = require('../notificaciones/notificaciones.service');
 const repo = require('./membresias.repository');
 
 const ENLACE = (id) => `/app/mi-cuenta.html?membresia=${id}`;
@@ -229,9 +229,9 @@ async function ejecutarMantenimiento() {
 
   const dias = Number(await repo.valorConfiguracion('membresia_dias_aviso_vencimiento')) || 3;
   const porVencer = await repo.porVencerSinAviso(dias);
-  await notificacionesRepo.insertarVarias(
-    porVencer.map((m) => ({
-      usuario_id: m.usuario_id,
+  for (const m of porVencer) {
+    await notificaciones.notificar({
+      usuarios: [m.usuario_id],
       titulo: 'Tu mensualidad está por vencer',
       mensaje:
         m.dias_restantes === 0
@@ -239,8 +239,8 @@ async function ejecutarMantenimiento() {
           : `La mensualidad del vehículo ${m.placa} vence en ${m.dias_restantes} día(s), el ${dia(m.fecha_fin)}.`,
       tipo: 'membresia_por_vencer',
       enlace: ENLACE(m.id),
-    }))
-  );
+    });
+  }
   resumen.avisos = porVencer.length;
 
   if (celdasCambiadas.size) await publicarCambioCelda(...celdasCambiadas);

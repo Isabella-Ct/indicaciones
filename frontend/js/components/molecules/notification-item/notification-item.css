@@ -1,0 +1,54 @@
+/* Molecule · notification-item (nuevo): fila de la bandeja con borde amarillo si no está leída. */
+.notice-list {
+  display: grid;
+}
+
+.notice {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px 14px 18px;
+  border-bottom: 1px solid var(--rule);
+  border-left: 4px solid transparent;
+}
+
+.notice.is-unread {
+  border-left-color: var(--yellow);
+  background: var(--white);
+}
+
+.notice-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.notice-title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.notice-text {
+  overflow-wrap: anywhere;
+}
+
+.notice-actions {
+  justify-content: flex-start;
+}
+
+/* Barra y paginación de la bandeja (panel sin relleno) */
+.notice-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 16px;
+  border-bottom: 2px solid var(--asphalt);
+}
+
+.notice-pagination {
+  padding: 12px 16px;
+}

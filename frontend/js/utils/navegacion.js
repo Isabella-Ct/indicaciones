@@ -44,6 +44,12 @@ export const ITEMS_NAVEGACION = [
     href: '/app/incidencias.html',
     permiso: 'incidencias.ver',
   },
+  {
+    id: 'notificaciones',
+    etiqueta: 'Notificaciones',
+    href: '/app/notificaciones.html',
+    permiso: 'notificaciones.enviar',
+  },
   { id: 'reportes', etiqueta: 'Reportes', href: '/app/reportes.html', permiso: 'reportes.ver' },
   // Portal del cliente
   {

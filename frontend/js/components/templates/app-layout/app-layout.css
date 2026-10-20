@@ -128,3 +128,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Texto libre largo (descripciones): respeta saltos de línea y no desborda */
+.text-long {
+  margin-top: 6px;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}

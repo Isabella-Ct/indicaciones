@@ -18,7 +18,8 @@ Contexto completo del proyecto: [`CLAUDE.md`](CLAUDE.md). Requerimientos: [`docs
 | 2 | Celdas y mapa en tiempo real (REQ-CLD-01..03), puertas, disponibilidad pública | ✅ |
 | 3 | Pico y placa, entradas, salidas, tickets PDF e historial (REQ-CAR-4, REQ-INEX-1..4, REQ-PLA-1, REQ-TCK-1) | ✅ |
 | 4 | Tarifas, descuentos, membresías, cobro y facturas PDF (REQ-TAR-1/2, REQ-FAC-1/2, REQ-MEM-1, REQ-DES-1) | ✅ |
-| 5–8 | Reservas, incidencias, notificaciones, reportes, portal, entrega | Pendiente |
+| 5 | Incidencias y notificaciones: campana en vivo, bandeja y envío manual (REQ-INCD-1, REQ-NOT-1) | ✅ |
+| 6–8 | Reservas, reportes, portal, entrega | Pendiente |
 
 ## Requisitos
 
@@ -71,8 +72,9 @@ npm run db:reset     # BORRA y recrea la BD: ejecuta database/schema.sql + datab
   - `002_permiso_puertas.sql` (Fase 2): permiso `puertas.gestionar` (administrador).
   - `003_facturas_consecutivos.sql` (Fase 4): `facturas.tarifa_id` y `facturas.detalle_calculo` (JSON con
     el cálculo aplicado) y la tabla `consecutivos` (numeración FAC-000001 sin huecos ni duplicados).
+  - `004_permiso_tipos_incidencia.sql` (Fase 5): permiso `incidencias.gestionar_tipos` (administrador).
 
-La semilla incluye: 3 roles y 34 permisos, 9 usuarios, la sede con 2 puertas (Norte y Sur), 2 sótanos con
+La semilla incluye: 3 roles y 37 permisos, 9 usuarios, la sede con 2 puertas (Norte y Sur), 2 sótanos con
 **44 celdas** (la distribución de la maqueta: A-01…A-12 y B-01…B-12 en Sótano 1; C-01…C-08 y M-01…M-12 en
 Sótano 2; A-01/B-01 accesibles; A-09 fuera de servicio), 12 vehículos (10 de clientes + 2 de visitantes),
 3 mensualidades (A-04 y B-09 con celda fija), 7 estadías en curso, ~115 estadías y facturas de los últimos
@@ -196,6 +198,24 @@ Respuestas: éxito `{ "data": … }`; error `{ "error": { "codigo", "mensaje", "
 | GET | `/facturas/resumen-hoy` | `facturas.ver` | KPIs: `recaudo`, `salidas_cobradas`, `permanencia_promedio_min` (visitantes) |
 | GET | `/facturas/:id` · `/facturas/:id/pdf` | Sesión | Personal: cualquiera; cliente: solo las suyas (403 las ajenas) |
 | GET | `/usuarios/me/facturas` · `/usuarios/me/membresias` | Sesión | Facturas y membresías del usuario en sesión |
+
+| GET | `/notificaciones/mias` | Sesión | Bandeja propia, paginada; `?leida=0|1`. `meta.no_leidas` |
+| GET | `/notificaciones/mias/conteo` | Sesión | `{ no_leidas }` (contador de la campana) |
+| PATCH | `/notificaciones/:id/leida` · `/notificaciones/mias/leer-todas` | Sesión | Solo el destinatario: una ajena responde 404 |
+| GET | `/notificaciones/stream` | Sesión | SSE del usuario en sesión: `conteo` al conectar, `notificacion` (título) al llegar una, `leidas` |
+| POST | `/notificaciones` | `notificaciones.enviar` (admin) | `{ destino: usuario|rol|todos, usuario_id?, rol?, titulo, mensaje }` → `{ enviadas }`. Solo usuarios activos; 422 si no hay destinatarios |
+| GET | `/tipos-incidencia` | `incidencias.ver` | Admin: todos (`?activos=1`); operador: activos |
+| POST · PUT · PATCH | `/tipos-incidencia` · `/tipos-incidencia/:id` · `/tipos-incidencia/:id/activo` | `incidencias.gestionar_tipos` (admin) | `{ nombre, descripcion? }` · `{ activo }`. 409 `NOMBRE_DUPLICADO` |
+| POST | `/incidencias` | `incidencias.registrar` (admin, operador) | `{ tipo_incidencia_id, placa, celda_id?, descripcion }`. El servidor pone `codigo` y `fecha_hora`. 404 `VEHICULO_NO_REGISTRADO` |
+| GET | `/incidencias` · `/incidencias/:id` | `incidencias.ver` | Filtros `tipo_id`, `placa`, `desde`, `hasta`, paginado |
+| GET | `/usuarios/me/incidencias` | Sesión | Incidencias de los vehículos del usuario (sin quién las registró) |
+
+**Reglas de la Fase 5 (incidencias y notificaciones)**
+- Un único servicio crea notificaciones: `notificar({ usuarios | rol | todos, titulo, mensaje, tipo, enlace?, enviadaPor? }, conexion?)` en `modules/notificaciones/notificaciones.service.js`. Lo usan: edición de mis datos (REQ-USR-4 → administradores), entrada rechazada por pico y placa (→ administradores), mensualidad por vencer (→ cliente), incidencia (→ administradores y propietario) y el envío manual. Solo llega a usuarios **activos**.
+- Dentro de una transacción el aviso en tiempo real sale **después del commit** (`conexion.alConfirmar` de `enTransaccion`); si hay rollback no se avisa nada.
+- Código de incidencia `INC-AAAAMMDD-0001`: consecutivo por día en `consecutivos` con `FOR UPDATE` (registros simultáneos no se repiten). Fecha, hora y código salen de un mismo `NOW()` del servidor.
+- Si el vehículo está dentro al registrar la incidencia, queda ligada a su estadía y, si no se eligió celda, a la celda donde está.
+- Campana en todas las páginas internas (`pages/comun/campana.js`): contador por SSE, últimas 5, "Ver todas"; un toast avisa cada notificación nueva. Pantallas: Notificaciones (bandeja Todas / No leídas y envío del admin), Incidencias (registro, tabla con detalle, tipos) y Mi cuenta → "Incidencias de mis vehículos".
 
 **Reglas de la Fase 4 (cobro, facturas y membresías)**
 - Cobro (`calcularCobro`, función pura en `modules/tarifas/tarifas.calculo.js`): gracia → `ceil(min / minutos_fraccion) × valor_fraccion` → tope `valor_dia_maximo` por cada bloque de 24 h → membresía activa = $0 → descuento (uno por factura) redondeado a la centena. Devuelve `detalle[]` con cada paso.

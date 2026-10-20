@@ -8,10 +8,11 @@ import { el } from '../../../utils/dom.js';
  *   activoId: number,
  *   idPanel: (id: number) => string,   // id del tabpanel que controla cada pestaña
  *   onChange: (id: number) => void,
+ *   label?: string,                    // nombre accesible del tablist
  * }} props
  * @returns {HTMLDivElement}
  */
-export function createLevelTabs({ niveles, activoId, idPanel, onChange }) {
+export function createLevelTabs({ niveles, activoId, idPanel, onChange, label = 'Niveles' }) {
   const pestanas = niveles.map((nivel) => {
     const activa = nivel.id === activoId;
     return el('button', {
@@ -31,7 +32,7 @@ export function createLevelTabs({ niveles, activoId, idPanel, onChange }) {
 
   const lista = el(
     'div',
-    { className: 'level-tabs', attrs: { role: 'tablist', 'aria-label': 'Niveles' } },
+    { className: 'level-tabs', attrs: { role: 'tablist', 'aria-label': label } },
     pestanas
   );
   lista.addEventListener('keydown', (e) => {

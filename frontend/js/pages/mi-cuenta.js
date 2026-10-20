@@ -1,7 +1,8 @@
 /**
  * Mi cuenta (todos los roles) — REQ-USR-4: editar mis nombres, correo, celular y
  * foto (notifica a los administradores) y cambiar mi contraseña. Los clientes
- * ven además "Mis vehículos", "Mis membresías" y "Mis facturas" (REQ-MEM-1, REQ-FAC-2).
+ * ven además "Mis vehículos", "Mis membresías", "Mis facturas" e "Incidencias de mis
+ * vehículos" (REQ-MEM-1, REQ-FAC-2, REQ-INCD-1).
  */
 import { el } from '../utils/dom.js';
 import { montarApp } from './comun/montar-app.js';
@@ -29,9 +30,10 @@ import {
 } from '../services/usuarios.service.js';
 import { cambiarContrasena } from '../services/auth.service.js';
 import { misMembresias, misFacturas } from '../services/facturacion.service.js';
+import { misIncidencias } from '../services/incidencias.service.js';
 import { columnasFacturas } from './comun/tabla-facturas.js';
 import { createStatusChip } from '../components/atoms/status-chip/status-chip.js';
-import { formatearCOP, formatearFecha } from '../utils/formato.js';
+import { formatearCOP, formatearFecha, formatearFechaHora } from '../utils/formato.js';
 import { guardarAviso } from '../utils/almacen.js';
 import { etiquetaRol, tienePermiso } from '../utils/sesion.js';
 
@@ -372,6 +374,57 @@ function panelMisFacturas() {
   return el('div', { className: 'page-grid-full' }, [panel]);
 }
 
+async function panelMisIncidencias() {
+  let incidencias = [];
+  try {
+    incidencias = (await misIncidencias({ limite: 50 })).data;
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+  const panel = createPanel({
+    title: 'Incidencias de mis vehículos',
+    children: [
+      createDataTable({
+        caption: 'Incidencias de mis vehículos',
+        minWidth: 640,
+        rows: incidencias,
+        empty: {
+          title: 'Sin incidencias',
+          text: 'No hay incidencias registradas con tus vehículos.',
+        },
+        columns: [
+          {
+            key: 'codigo',
+            label: 'Código',
+            render: (i) =>
+              el('span', {}, [
+                el('strong', { className: 'cell-nowrap', text: i.codigo }),
+                el('span', {
+                  className: 'cell-sub cell-nowrap',
+                  text: formatearFechaHora(i.fecha_hora),
+                }),
+              ]),
+          },
+          {
+            key: 'placa',
+            label: 'Vehículo',
+            render: (i) => createPlate({ placa: i.vehiculo.placa }),
+          },
+          { key: 'tipo', label: 'Tipo', render: (i) => i.tipo.nombre },
+          { key: 'celda', label: 'Celda', render: (i) => i.celda?.codigo ?? '—' },
+          {
+            key: 'descripcion',
+            label: 'Descripción',
+            render: (i) => el('span', { className: 'text-long', text: i.descripcion }),
+          },
+        ],
+      }),
+    ],
+  });
+  panel.id = 'mis-incidencias';
+  return el('div', { className: 'page-grid-full' }, [panel]);
+}
+
 async function iniciar() {
   const app = await montarApp({
     paginaId: 'mi-cuenta',
@@ -384,7 +437,12 @@ async function iniciar() {
   const perfil = await obtenerMiPerfil();
   const paneles = [panelMisDatos(perfil, app.sesion), panelContrasena()];
   if (tienePermiso(app.sesion, 'portal.ver')) {
-    paneles.push(await panelMisVehiculos(), await panelMisMembresias(), panelMisFacturas());
+    paneles.push(
+      await panelMisVehiculos(),
+      await panelMisMembresias(),
+      panelMisFacturas(),
+      await panelMisIncidencias()
+    );
   }
   app.main.append(el('div', { className: 'page-grid' }, paneles));
   // Enlaces del navbar y de las notificaciones (#mis-facturas, ?membresia=ID).

@@ -530,6 +530,7 @@ CREATE TABLE configuracion (
 --   · membresias: vehículo, valor, estado y celda fija opcional.
 --   · reservas: vehículo, expiración y estados cumplida/expirada.
 --   · Fase 4: facturas guarda tarifa_id y detalle_calculo (JSON); tabla consecutivos.
+--   · Fase 5: consecutivos también numera las incidencias por día (fila incidencia-AAAAMMDD).
 --   · Nuevas: pisos (texto del carril del mapa), puertas, accesos_denegados,
 --     vehiculos_historial_propietario y configuracion.
 --   · Reglas "un vehículo / una celda con una sola estadía abierta" y "una

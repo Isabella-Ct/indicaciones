@@ -210,8 +210,9 @@ async function actualizarMiPerfil(usuarioId, datos, imagen) {
   try {
     await enTransaccion(async (conexion) => {
       await repo.actualizar(usuarioId, campos, conexion);
-      await notificaciones.notificarAdministradores(
+      await notificaciones.notificar(
         {
+          rol: 'administrador',
           titulo: 'Un usuario actualizó sus datos',
           mensaje: `${nombreCompleto(actual)} (${actual.tipo_documento} ${actual.numero_documento}) cambió: ${cambiados
             .map((c) => ETIQUETAS_CAMPO[c])

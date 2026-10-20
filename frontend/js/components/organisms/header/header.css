@@ -31,4 +31,11 @@
     order: 2;
     width: 100%;
   }
+
+  /* La marca cede espacio (el subtítulo de la sede se parte) para que la campana y el
+     menú quepan en la misma fila desde 360 px. */
+  .header-inner .brand {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 }

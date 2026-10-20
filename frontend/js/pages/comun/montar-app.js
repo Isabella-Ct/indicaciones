@@ -13,6 +13,7 @@ import { showToast } from '../../components/molecules/toast/toast.js';
 import { obtenerSesion, cerrarSesion } from '../../services/auth.service.js';
 import { obtenerSede, subtituloSede } from '../../services/parqueadero.service.js';
 import { itemsPermitidos } from '../../utils/navegacion.js';
+import { montarCampana } from './campana.js';
 import { leerPuertaPreferida, tomarAviso } from '../../utils/almacen.js';
 import {
   esPersonal,
@@ -67,6 +68,7 @@ export async function montarApp({ paginaId, cabecera }) {
       rol: etiquetaRol(sesion.rol),
       fotoUrl: sesion.foto_url,
     },
+    extra: [montarCampana()],
     menuItems: [
       { label: 'Mi cuenta', icon: 'i-user', href: '/app/mi-cuenta.html' },
       { label: 'Cambiar contraseña', icon: 'i-key', href: RUTA_CAMBIAR_CONTRASENA },

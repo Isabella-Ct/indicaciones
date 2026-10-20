@@ -119,6 +119,13 @@ const PERMISOS = [
   ['usuarios.buscar', 'usuarios', 'Buscar clientes por documento (asignar vehículos)', 'AO'],
   // Fase 2: CRUD de puertas
   ['puertas.gestionar', 'puertas', 'Crear, editar y desactivar puertas de acceso', 'A'],
+  // Fase 5: CRUD de tipos de incidencia
+  [
+    'incidencias.gestionar_tipos',
+    'incidencias',
+    'Crear, editar y desactivar tipos de incidencia',
+    'A',
+  ],
 ];
 const LETRA_ROL = { A: 1, O: 2, U: 3 };
 
@@ -891,7 +898,7 @@ ORDER BY pp.digito LIMIT 1;
         titulo: 'Nueva incidencia',
         mensaje: 'Rayón registrado al vehículo BNM350.',
         tipo: 'incidencia',
-        enlace: null,
+        enlace: '/app/incidencias.html?id=1',
         leida: 1,
         enviada_por: null,
         created_at: fechaHora(3, 10 * 60 + 21),
@@ -902,7 +909,7 @@ ORDER BY pp.digito LIMIT 1;
         mensaje:
           'Se registró un rayón a tu vehículo BNM350. Acércate a la caseta para más información.',
         tipo: 'incidencia',
-        enlace: null,
+        enlace: '/app/mi-cuenta.html#mis-incidencias',
         leida: 0,
         enviada_por: null,
         created_at: fechaHora(3, 10 * 60 + 21),
@@ -912,7 +919,7 @@ ORDER BY pp.digito LIMIT 1;
         titulo: 'Nueva incidencia',
         mensaje: 'Golpe contra muro registrado al vehículo OPQ119.',
         tipo: 'incidencia',
-        enlace: null,
+        enlace: '/app/incidencias.html?id=2',
         leida: 0,
         enviada_por: null,
         created_at: fechaHora(9, 15 * 60 + 6),

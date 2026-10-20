@@ -199,7 +199,8 @@ async function registrarEntrada(datos, imagen, solicitante) {
       regla_pico_placa_id: restriccion.regla.id,
       registrado_por: solicitante.id,
     });
-    await notificaciones.notificarAdministradores({
+    await notificaciones.notificar({
+      rol: 'administrador',
       titulo: 'Entrada rechazada por pico y placa',
       mensaje: `${vehiculo.placa} intentó ingresar por la puerta ${puerta.nombre}. ${motivo}.`,
       tipo: 'pico_placa',

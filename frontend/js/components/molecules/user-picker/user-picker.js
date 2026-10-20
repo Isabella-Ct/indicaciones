@@ -14,6 +14,7 @@ import { createAvatar } from '../../atoms/avatar/avatar.js';
  *   hint?: string,
  *   buscar: (documento: string) => Promise<Array<{ id: number, nombre_completo: string, tipo_documento: string, numero_documento: string }>>,
  *   onChange?: (usuario: object|null) => void,
+ *   vacio?: string,         // mensaje cuando la búsqueda no encuentra a nadie
  * }} props
  * @returns {HTMLDivElement}
  */
@@ -24,6 +25,7 @@ export function createUserPicker({
   hint,
   buscar,
   onChange,
+  vacio = 'No hay clientes activos con ese documento.',
 }) {
   const idInput = idUnico('picker');
   const oculto = el('input', { attrs: { type: 'hidden', name, value: value?.id ?? '' } });
@@ -101,7 +103,7 @@ export function createUserPicker({
       const encontrados = await buscar(texto);
       estado.textContent = encontrados.length
         ? `${encontrados.length} resultado(s). Elige uno.`
-        : 'No hay clientes activos con ese documento.';
+        : vacio;
       for (const usuario of encontrados) {
         resultados.append(
           el('li', {}, [

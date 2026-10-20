@@ -60,9 +60,10 @@ Iconos: un solo sprite en `frontend/assets/icons.svg`. Símbolos de la maqueta: 
 | user-menu | `createUserMenu` | `.user-menu` | Esc devuelve el foco al botón |
 | search-box | `createSearchBox` | `.search-box`, `.filters` | Debounce + Enter; `transform` (p. ej. normalizar placa) |
 | pagination | `createPagination` | `.pagination` | Anterior / "Página X de Y · N registros" / Siguiente |
-| user-picker | `createUserPicker` · `setUserPickerError` | `.user-picker` | Busca por documento con la función `buscar` que le pasa la página; el id viaja en un input oculto |
+| user-picker | `createUserPicker` · `setUserPickerError` | `.user-picker` | Busca por documento con la función `buscar` que le pasa la página; el id viaja en un input oculto; `vacio` = mensaje sin resultados |
+| notification-item | `createNotificationItem` | `.notice`, `.notice.is-unread`, `.notice-list`, `.notice-toolbar` | Fila de la bandeja: tipo, fecha, remitente, "Abrir" y "Marcar leída" |
 | space | `createSpace` | `.space`, `--free/--occupied/--reserved/--out/--accessible/--moto`, `.is-selected` | Celda del mapa (sección 5 de la maqueta); placa solo si la API la envía |
-| level-tabs | `createLevelTabs` | `.level-tabs`, `.level-tab.is-active` | `role="tablist"`, `aria-selected`, flechas/Inicio/Fin |
+| level-tabs | `createLevelTabs` | `.level-tabs`, `.level-tab.is-active` | `role="tablist"`, `aria-selected`, flechas/Inicio/Fin; `label` = nombre accesible (pisos, bandeja) |
 | map-legend | `createMapLegend` | `.map-legend`, `.lg-*` | Leyenda fija de la maqueta |
 | live-status | `createLiveStatus` · `setLiveStatus` | `.live-status--conectando/--en-vivo/--reconectando` | Estado de la conexión SSE |
 | photo-input | `createPhotoInput` | `.photo-input` | `name="foto"` + `quitar_foto`; vista previa y validación JPG/PNG ≤ 2 MB |
@@ -72,7 +73,8 @@ Iconos: un solo sprite en `frontend/assets/icons.svg`. Símbolos de la maqueta: 
 
 | Componente | Función | Clase(s) | Notas |
 |---|---|---|---|
-| header | `createHeader` | `.header`, `.header-inner` | brand + shift + `extra` (campana, Fase 5) + user-menu |
+| header | `createHeader` | `.header`, `.header-inner` | brand + shift + `extra` (campana) + user-menu; en ≤ 760 px la marca cede espacio para que campana y menú quepan |
+| notification-bell | `createNotificationBell` · `setBellCount` · `setBellItems` | `.bell`, `.bell-count`, `.bell-panel`, `.bell-item.is-unread` | Contador + desplegable con las últimas; no llama a la API (la conecta `pages/comun/campana.js`); Esc devuelve el foco |
 | navbar | `createNavbar` | `.navbar`, `.navbar-item.is-active` | Recibe solo ítems permitidos (`utils/navegacion.js`); ≤ 760 px se vuelve desplegable |
 | modal | `createModal` · `openModal` · `closeModal` | `.modal-overlay`, `.modal`, `.modal-head/-body/-foot` | `aria-modal`, Esc, clic en el fondo, foco atrapado y devuelto; `.modal-body--split` = formulario + ticket |
 | footer | `createFooter` | `.footer` | Datos de la sede |

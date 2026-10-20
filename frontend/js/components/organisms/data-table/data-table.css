@@ -106,6 +106,15 @@
   white-space: nowrap;
 }
 
+/* Texto largo recortado a 2 líneas (el completo va en el detalle) */
+.cell-clamp {
+  display: -webkit-box;
+  max-width: 320px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .row-actions {
   display: flex;
   flex-wrap: nowrap;

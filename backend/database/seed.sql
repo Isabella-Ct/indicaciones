@@ -49,7 +49,8 @@ INSERT INTO permisos (id, codigo, modulo, descripcion) VALUES
   (33, 'configuracion.gestionar', 'configuracion', 'Editar parámetros del sistema'),
   (34, 'portal.ver', 'portal', 'Mis vehículos, mis facturas y mis reservas'),
   (35, 'usuarios.buscar', 'usuarios', 'Buscar clientes por documento (asignar vehículos)'),
-  (36, 'puertas.gestionar', 'puertas', 'Crear, editar y desactivar puertas de acceso');
+  (36, 'puertas.gestionar', 'puertas', 'Crear, editar y desactivar puertas de acceso'),
+  (37, 'incidencias.gestionar_tipos', 'incidencias', 'Crear, editar y desactivar tipos de incidencia');
 
 INSERT INTO roles_permisos (rol_id, permiso_id) VALUES
   (1, 1),
@@ -87,6 +88,7 @@ INSERT INTO roles_permisos (rol_id, permiso_id) VALUES
   (1, 33),
   (1, 35),
   (1, 36),
+  (1, 37),
   (2, 2),
   (2, 6),
   (2, 7),
@@ -114,15 +116,15 @@ INSERT INTO roles_permisos (rol_id, permiso_id) VALUES
 
 -- Usuarios de prueba (1 administrador, 2 operadores, 5 clientes activos + 1 inactivo)
 INSERT INTO usuarios (id, tipo_documento, numero_documento, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, correo, celular, contrasena_hash, debe_cambiar_contrasena, estado, rol_id, creado_por) VALUES
-  (1, 'CC', '1000000001', 'Laura', 'Marcela', 'Gómez', 'Ríos', 'laura.gomez@parko.test', '3001000001', '$2b$10$S0wkTj.y231R6LUMk1CXruaEldvgzoCjgslTNnRLxph3deE.xNTB6', 0, 'activo', 1, NULL),
-  (2, 'CC', '1000000002', 'Juan', NULL, 'Pérez', 'Arango', 'juan.perez@parko.test', '3001000002', '$2b$10$Zyi3.YD263Ky8eRXvz7KtOWQhr1rpwlTf3WeKufrkkSVLva0PvwRq', 0, 'activo', 2, 1),
-  (3, 'CC', '1000000003', 'Sebastián', NULL, 'Duque', 'Mejía', 'sebastian.duque@parko.test', '3001000003', '$2b$10$Zyi3.YD263Ky8eRXvz7KtOWQhr1rpwlTf3WeKufrkkSVLva0PvwRq', 0, 'activo', 2, 1),
-  (4, 'CC', '1000000004', 'Andrea', NULL, 'Salcedo', 'Vélez', 'andrea.salcedo@correo.test', '3101000004', '$2b$10$L62rksmHJ7fpbp.kO1dYj.rdcOymfBU.qZGAPWmT5934ZA1ELV2TS', 0, 'activo', 3, 1),
-  (5, 'CC', '1000000005', 'Paula', 'Andrea', 'Giraldo', NULL, 'paula.giraldo@correo.test', '3101000005', '$2b$10$L62rksmHJ7fpbp.kO1dYj.rdcOymfBU.qZGAPWmT5934ZA1ELV2TS', 0, 'activo', 3, 1),
-  (6, 'CC', '1000000006', 'Hernán', NULL, 'Quintero', 'Zapata', 'hernan.quintero@correo.test', '3101000006', '$2b$10$L62rksmHJ7fpbp.kO1dYj.rdcOymfBU.qZGAPWmT5934ZA1ELV2TS', 0, 'activo', 3, 1),
-  (7, 'CE', '1000000007', 'Lucía', NULL, 'Ortega', NULL, 'lucia.ortega@correo.test', '3101000007', '$2b$10$L62rksmHJ7fpbp.kO1dYj.rdcOymfBU.qZGAPWmT5934ZA1ELV2TS', 0, 'activo', 3, 1),
-  (8, 'CC', '1000000008', 'Camilo', 'José', 'Restrepo', 'Ochoa', 'camilo.restrepo@correo.test', '3101000008', '$2b$10$L62rksmHJ7fpbp.kO1dYj.rdcOymfBU.qZGAPWmT5934ZA1ELV2TS', 1, 'activo', 3, 1),
-  (9, 'CC', '1000000009', 'Felipe', NULL, 'Mora', 'Cano', 'felipe.mora@correo.test', '3101000009', '$2b$10$L62rksmHJ7fpbp.kO1dYj.rdcOymfBU.qZGAPWmT5934ZA1ELV2TS', 0, 'inactivo', 3, 1);
+  (1, 'CC', '1000000001', 'Laura', 'Marcela', 'Gómez', 'Ríos', 'laura.gomez@parko.test', '3001000001', '$2b$10$qm7.b2axUHk5VA1tRBBCpuHpkYCHd0.zikuvOYMn.kc2F19DrALnO', 0, 'activo', 1, NULL),
+  (2, 'CC', '1000000002', 'Juan', NULL, 'Pérez', 'Arango', 'juan.perez@parko.test', '3001000002', '$2b$10$HqZBPFDD2Zur7hjtK6E4C.2A9UnZ4wiYkwgXVXXRzXTcS9wWxZtcW', 0, 'activo', 2, 1),
+  (3, 'CC', '1000000003', 'Sebastián', NULL, 'Duque', 'Mejía', 'sebastian.duque@parko.test', '3001000003', '$2b$10$HqZBPFDD2Zur7hjtK6E4C.2A9UnZ4wiYkwgXVXXRzXTcS9wWxZtcW', 0, 'activo', 2, 1),
+  (4, 'CC', '1000000004', 'Andrea', NULL, 'Salcedo', 'Vélez', 'andrea.salcedo@correo.test', '3101000004', '$2b$10$RoN.QJBiLgF.YK.4LMSCSubISYFFLfxWE/0ZBW.T5v7C/YsHXHweG', 0, 'activo', 3, 1),
+  (5, 'CC', '1000000005', 'Paula', 'Andrea', 'Giraldo', NULL, 'paula.giraldo@correo.test', '3101000005', '$2b$10$RoN.QJBiLgF.YK.4LMSCSubISYFFLfxWE/0ZBW.T5v7C/YsHXHweG', 0, 'activo', 3, 1),
+  (6, 'CC', '1000000006', 'Hernán', NULL, 'Quintero', 'Zapata', 'hernan.quintero@correo.test', '3101000006', '$2b$10$RoN.QJBiLgF.YK.4LMSCSubISYFFLfxWE/0ZBW.T5v7C/YsHXHweG', 0, 'activo', 3, 1),
+  (7, 'CE', '1000000007', 'Lucía', NULL, 'Ortega', NULL, 'lucia.ortega@correo.test', '3101000007', '$2b$10$RoN.QJBiLgF.YK.4LMSCSubISYFFLfxWE/0ZBW.T5v7C/YsHXHweG', 0, 'activo', 3, 1),
+  (8, 'CC', '1000000008', 'Camilo', 'José', 'Restrepo', 'Ochoa', 'camilo.restrepo@correo.test', '3101000008', '$2b$10$RoN.QJBiLgF.YK.4LMSCSubISYFFLfxWE/0ZBW.T5v7C/YsHXHweG', 1, 'activo', 3, 1),
+  (9, 'CC', '1000000009', 'Felipe', NULL, 'Mora', 'Cano', 'felipe.mora@correo.test', '3101000009', '$2b$10$RoN.QJBiLgF.YK.4LMSCSubISYFFLfxWE/0ZBW.T5v7C/YsHXHweG', 0, 'inactivo', 3, 1);
 
 -- Sede, pisos y puertas
 INSERT INTO parqueaderos (id, nombre, direccion, ciudad, telefono, horario) VALUES
@@ -567,8 +569,8 @@ INSERT INTO incidencias (id, codigo, tipo_incidencia_id, vehiculo_id, celda_id, 
 
 -- Notificaciones de ejemplo
 INSERT INTO notificaciones (usuario_id, titulo, mensaje, tipo, enlace, leida, enviada_por, created_at) VALUES
-  (1, 'Nueva incidencia', 'Rayón registrado al vehículo BNM350.', 'incidencia', NULL, 1, NULL, TIMESTAMP(CURDATE() - INTERVAL 3 DAY, '10:21:00')),
-  (7, 'Incidencia con tu vehículo', 'Se registró un rayón a tu vehículo BNM350. Acércate a la caseta para más información.', 'incidencia', NULL, 0, NULL, TIMESTAMP(CURDATE() - INTERVAL 3 DAY, '10:21:00')),
-  (1, 'Nueva incidencia', 'Golpe contra muro registrado al vehículo OPQ119.', 'incidencia', NULL, 0, NULL, TIMESTAMP(CURDATE() - INTERVAL 9 DAY, '15:06:00')),
+  (1, 'Nueva incidencia', 'Rayón registrado al vehículo BNM350.', 'incidencia', '/app/incidencias.html?id=1', 1, NULL, TIMESTAMP(CURDATE() - INTERVAL 3 DAY, '10:21:00')),
+  (7, 'Incidencia con tu vehículo', 'Se registró un rayón a tu vehículo BNM350. Acércate a la caseta para más información.', 'incidencia', '/app/mi-cuenta.html#mis-incidencias', 0, NULL, TIMESTAMP(CURDATE() - INTERVAL 3 DAY, '10:21:00')),
+  (1, 'Nueva incidencia', 'Golpe contra muro registrado al vehículo OPQ119.', 'incidencia', '/app/incidencias.html?id=2', 0, NULL, TIMESTAMP(CURDATE() - INTERVAL 9 DAY, '15:06:00')),
   (5, 'Tu mensualidad está por vencer', 'La mensualidad del vehículo CVB275 vence en 2 días.', 'membresia_por_vencer', '/app/mi-cuenta.html?membresia=2', 0, NULL, NOW() - INTERVAL 60 MINUTE),
   (4, 'Bienvenida', 'Ya puedes consultar tus vehículos y facturas desde PARKO.', 'manual', NULL, 0, 1, TIMESTAMP(CURDATE() - INTERVAL 10 DAY, '09:00:00'));
