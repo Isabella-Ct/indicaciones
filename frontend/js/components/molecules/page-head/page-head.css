@@ -34,4 +34,9 @@
   .page-head h1 {
     font-size: 2rem;
   }
+
+  /* Las acciones ocupan el ancho de la página y se acomodan en varias líneas */
+  .page-head-actions {
+    width: 100%;
+  }
 }

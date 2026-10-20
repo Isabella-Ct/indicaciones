@@ -6,6 +6,8 @@ const { validate } = require('../../middlewares/validate');
 const { subirImagen } = require('../../middlewares/upload');
 const esquemas = require('./usuarios.schemas');
 const controller = require('./usuarios.controller');
+const estadiasController = require('../estadias/estadias.controller');
+const esquemasEstadias = require('../estadias/estadias.schemas');
 
 const router = Router();
 router.use(auth());
@@ -38,6 +40,13 @@ router.put(
 
 // GET /api/v1/usuarios/me/vehiculos — vehículos del usuario en sesión
 router.get('/me/vehiculos', controller.misVehiculos);
+
+// GET /api/v1/usuarios/me/estadias — historial de entradas y salidas de mis vehículos
+router.get(
+  '/me/estadias',
+  validate({ query: esquemasEstadias.historial }),
+  estadiasController.misEstadias
+);
 
 // GET /api/v1/usuarios/:id — administrador, o el propio usuario
 router.get('/:id', validate({ params: esquemas.params }), controller.obtener);

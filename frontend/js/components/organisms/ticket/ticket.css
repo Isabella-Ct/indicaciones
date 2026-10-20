@@ -1,0 +1,74 @@
+/* Organism · ticket (maqueta, sección 8: .ticket, .ticket-head, .barcode, .ticket-note) */
+.ticket {
+  align-self: start;
+  background: var(--white);
+  border: 2px solid var(--asphalt);
+  font-family: var(--font-mono);
+}
+
+.ticket-head {
+  padding: 12px 16px;
+  background: var(--hazard);
+}
+
+.ticket-head span {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--asphalt);
+  color: var(--yellow);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.ticket dl {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.ticket dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.875rem;
+}
+
+.ticket dt {
+  color: var(--ink-2);
+}
+
+.ticket dd {
+  font-weight: 600;
+}
+
+.barcode {
+  height: 54px;
+  margin: 0 16px 16px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--ink) 0 2px,
+    transparent 2px 4px,
+    var(--ink) 4px 5px,
+    transparent 5px 8px,
+    var(--ink) 8px 11px,
+    transparent 11px 13px
+  );
+}
+
+.ticket-note {
+  padding: 0 16px 16px;
+  font-size: 0.6875rem;
+  color: var(--ink-2);
+}
+
+/* Agregados: valores largos sin desbordar; ticket ya emitido con su número grande */
+.ticket dd {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.ticket--emitido .ticket-numero dd {
+  font-size: 1.125rem;
+}

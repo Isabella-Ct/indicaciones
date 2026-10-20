@@ -24,6 +24,8 @@ async function stream(req, res) {
       'celda-actualizada': (fila) =>
         fila.activa || verInactivas ? aPublico(fila, verOcupantes) : { id: fila.id, activa: false },
       'resumen-actualizado': (datos) => datos,
+      // Bitácora de entradas/salidas: lleva placas, solo para el personal.
+      'movimiento-registrado': (mov) => (verOcupantes ? mov : null),
     },
   });
 }

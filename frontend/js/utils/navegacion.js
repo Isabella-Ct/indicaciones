@@ -8,11 +8,12 @@ import { tienePermiso } from './sesion.js';
 export const ITEMS_NAVEGACION = [
   { id: 'inicio', etiqueta: 'Inicio', href: '/app/inicio.html', permiso: null },
   { id: 'celdas', etiqueta: 'Celdas', href: '/app/celdas.html', permiso: 'celdas.ver' },
+  // La operación (ingreso/salida) se hace en Celdas; aquí, el historial de movimientos.
   {
-    id: 'movimientos',
+    id: 'historial',
     etiqueta: 'Movimientos',
-    href: '/app/movimientos.html',
-    permiso: 'movimientos.registrar',
+    href: '/app/historial.html',
+    permiso: 'movimientos.ver',
   },
   { id: 'usuarios', etiqueta: 'Usuarios', href: '/app/usuarios.html', permiso: 'usuarios.crear' },
   { id: 'vehiculos', etiqueta: 'Vehículos', href: '/app/vehiculos.html', permiso: 'vehiculos.ver' },

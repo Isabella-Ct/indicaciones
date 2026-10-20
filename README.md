@@ -16,7 +16,8 @@ Contexto completo del proyecto: [`CLAUDE.md`](CLAUDE.md). Requerimientos: [`docs
 | 0 | Base del proyecto, BD consolidada, login con roles y permisos, componentes base | ✅ |
 | 1 | Usuarios y vehículos (REQ-USR-2..6, REQ-CAR-1..3), Mi cuenta, fotos | ✅ |
 | 2 | Celdas y mapa en tiempo real (REQ-CLD-01..03), puertas, disponibilidad pública | ✅ |
-| 3–8 | Pico y placa y movimientos, cobro, incidencias, reportes, portal, entrega | Pendiente |
+| 3 | Pico y placa, entradas, salidas, tickets PDF e historial (REQ-CAR-4, REQ-INEX-1..4, REQ-PLA-1, REQ-TCK-1) | ✅ |
+| 4–8 | Cobro y facturas, incidencias, reportes, portal, entrega | Pendiente |
 
 ## Requisitos
 
@@ -88,7 +89,9 @@ npm start            # sin recarga automática
 | `/login.html` | Inicio de sesión |
 | `/app/inicio.html` | Inicio del panel interno |
 | `/app/cambiar-contrasena.html` | Cambio de contraseña (obligatorio en el primer acceso) |
-| `/app/celdas.html` | Control de espacios: indicadores, mapa por piso en vivo y detalle de la celda (cliente: solo lectura, sin placas) |
+| `/app/celdas.html` | Control de espacios: indicadores, mapa en vivo, **Registrar ingreso**, salida por placa/ticket, detalle de la celda y últimos movimientos (cliente: solo lectura, sin placas) |
+| `/app/pico-placa.html` | Reglas de pico y placa (las de hoy resaltadas) |
+| `/app/historial.html` | Historial de movimientos con filtros, PDF del ticket y exportación CSV |
 | `/app/usuarios.html` | Usuarios: listado, edición y estado (administrador); solo registro (operador) |
 | `/app/vehiculos.html` | Vehículos: registro, edición, propietario e historial |
 | `/app/mi-cuenta.html` | Mis datos, cambio de contraseña y (clientes) mis vehículos |
@@ -162,6 +165,27 @@ Respuestas: éxito `{ "data": … }`; error `{ "error": { "codigo", "mensaje", "
 | GET | `/publico/disponibilidad` | Público | `{ carro: { disponibles, habilitadas }, moto: {…}, actualizado_en }` — sin celdas ni personas |
 | GET | `/publico/disponibilidad/stream` | Público | SSE con el evento `disponibilidad` (los mismos totales) |
 
+| GET | `/pico-placa` · `/pico-placa/hoy` | `pico_placa.ver` | Reglas (filtros `tipo_vehiculo`, `dia_semana`, `activa`) · reglas activas de hoy |
+| POST · PUT · PATCH | `/pico-placa` · `/pico-placa/:id` · `/pico-placa/:id/activa` | `pico_placa.gestionar` (admin, operador) | `{ tipo_vehiculo, dia_semana 1–7, digito 0–9, hora_inicio, hora_fin }`. 409 si se cruza con otra regla |
+| GET | `/estadias/previsualizar?placa=` | `movimientos.registrar` | Para el modal: vehículo, tipo de cliente, celda sugerida, pico y placa de hoy |
+| POST | `/estadias/entrada` | `movimientos.registrar` | Multipart: `puerta_id`, `placa`, `celda_id?`, `requiere_accesible`, `confirmar_accesible`, `observaciones_entrada`, `deja_llaves`, `foto?`. Respuesta: ticket. Errores: 404 `VEHICULO_NO_REGISTRADO`, 403 `PICO_Y_PLACA`, 409 `ESTADIA_ABIERTA` / `SIN_CUPO` / `CELDA_ACCESIBLE` / `CONFIRMAR_ACCESIBLE` |
+| POST | `/estadias/salida` | `movimientos.registrar` | `{ puerta_id, placa \| codigo_ticket }` → liquidación preliminar (minutos, "2 h 37 min"); **no** cierra |
+| POST | `/estadias/:id/cerrar` | `movimientos.registrar` | `{ puerta_id }`: cierra la estadía y libera la celda (en la Fase 4 se integra con la factura) |
+| GET | `/estadias/en-curso` · `/estadias/ultimos-movimientos?limite=10` | `movimientos.ver` | Vehículos dentro · bitácora de entradas y salidas |
+| GET | `/estadias` | `movimientos.ver` | Historial: `placa`, `desde`, `hasta` (AAAA-MM-DD), `puerta_id`, `estado`, paginado |
+| GET | `/estadias/:id/ticket` · `/estadias/:id/ticket.pdf` | `movimientos.ver` | Ticket (JSON) · PDF de 80 mm con código de barras Code 39 |
+| GET | `/accesos-denegados` | `reportes.ver` (admin) | Entradas rechazadas (`placa`, `desde`, `hasta`, paginado) |
+| GET | `/usuarios/me/estadias` | Sesión | Historial de los vehículos del usuario en sesión |
+
+**Reglas de la Fase 3 (entradas y salidas)**
+- Ninguna fecha u hora de movimiento viene del cliente: entrada, salida, lectura de placa y acceso denegado usan la hora del servidor.
+- Cada intento de entrada guarda una lectura en `lecturas_placa` (REQ-PLA-1), aunque se rechace.
+- Pico y placa: carro = último dígito, moto = primer dígito; el horario incluye el inicio y excluye el fin. Si aplica, se guarda en `accesos_denegados` y se notifica a los administradores. Las mensualidades no están exentas.
+- Celda: primero la reserva vigente o la celda fija de la mensualidad; si no, la elegida por el operador o la primera libre del tipo (piso, fila, posición). Las accesibles van primero a quien las requiere; los demás solo las usan si no queda otra y el operador confirma (`confirmar_accesible`).
+- Minutos de estadía = minutos completos (16:05 → 18:42 = 157 min).
+- Al cerrar, la celda vuelve a `disponible` (o a `reservada` si es celda fija de una mensualidad o tiene reserva).
+- El stream `/celdas/stream` emite también `movimiento-registrado` (solo personal) para la bitácora en vivo.
+
 **Reglas de la Fase 2 (estado de celdas)**
 - `ocupada`: exige un vehículo activo del mismo tipo que la celda (422 `TIPO_INCOMPATIBLE`) y que no esté en otra celda (409 `VEHICULO_YA_UBICADO`). En una celda reservada solo entra el vehículo titular.
 - `disponible`: nunca con una estadía en curso (409 `ESTADIA_EN_CURSO`: se debe registrar la salida). Si es la celda fija de una mensualidad vigente (o tiene reserva activa) vuelve a `reservada` (`meta.estado_final`).
@@ -192,8 +216,9 @@ distinta de `/auth/me`, `/auth/logout` y `/auth/cambiar-contrasena` responde `40
 │   │   ├── config/           env (validado con zod), pool MySQL, constantes
 │   │   ├── middlewares/      auth, require-permiso, validate, rate-limit, error-handler
 │   │   ├── modules/          auth, salud, parqueadero, roles, usuarios, vehiculos, notificaciones,
-│   │   │                     pisos, celdas, puertas, publico (routes → controller → service → repository)
-│   │   ├── utils/            errores
+│   │   │                     pisos, celdas, puertas, publico, pico-placa, estadias
+│   │   │                     (routes → controller → service → repository)
+│   │   ├── utils/            errores, paginación, placas, archivos, fechas (Bogotá), pdf (ticket)
 │   │   └── realtime/         emisor (pub/sub), helper SSE y publicación de cambios de celdas
 │   ├── database/             schema.sql, seed.sql, generar-seed.js, reset.js, migrations/
 │   ├── tests/                Jest + supertest

@@ -45,6 +45,7 @@ const globalesNavegador = {
   sessionStorage: 'readonly',
   URL: 'readonly',
   URLSearchParams: 'readonly',
+  Blob: 'readonly',
   FormData: 'readonly',
   Intl: 'readonly',
   HTMLElement: 'readonly',

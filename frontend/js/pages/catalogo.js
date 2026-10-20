@@ -47,6 +47,8 @@ import { createDataTable } from '../components/organisms/data-table/data-table.j
 import { createSpace } from '../components/molecules/space/space.js';
 import { createMapLegend } from '../components/molecules/map-legend/map-legend.js';
 import { createLiveStatus } from '../components/molecules/live-status/live-status.js';
+import { createTicket } from '../components/organisms/ticket/ticket.js';
+import { createMovementLog } from '../components/organisms/movement-log/movement-log.js';
 
 // Celdas de ejemplo (formato de GET /celdas para el personal).
 const celdaBase = {
@@ -409,6 +411,44 @@ const organisms = seccion(
         { key: 'dueno', label: 'Propietario' },
       ],
       pagination: { pagina: 1, totalPaginas: 3, total: 54, onChange: () => {} },
+    })
+  ),
+  muestra(
+    'Ticket de ingreso',
+    '.ticket · .barcode',
+    createTicket({
+      nota: 'Vista previa: el número se asigna al generar el ticket.',
+      datos: {
+        numero: 'T-000123',
+        placa: 'JKL 482',
+        espacio: 'A-06 · Sótano 1',
+        entrada: '19/10/2026 18:42',
+        tarifa: '$ 120/min',
+        cliente: 'Visitante',
+        puerta: 'Norte',
+      },
+    })
+  ),
+  muestra(
+    'Últimos movimientos',
+    '.log · .move--in / .move--out',
+    createMovementLog({
+      movimientos: [
+        {
+          movimiento: 'entrada',
+          fecha: new Date().toISOString(),
+          placa: 'FJS27D',
+          celda: 'M-12',
+          valor: null,
+        },
+        {
+          movimiento: 'salida',
+          fecha: new Date().toISOString(),
+          placa: 'KLP518',
+          celda: 'A-06',
+          valor: 21360,
+        },
+      ],
     })
   ),
   muestra(

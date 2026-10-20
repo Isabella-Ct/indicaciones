@@ -17,6 +17,9 @@ const pisosRoutes = require('./modules/pisos/pisos.routes');
 const celdasRoutes = require('./modules/celdas/celdas.routes');
 const puertasRoutes = require('./modules/puertas/puertas.routes');
 const publicoRoutes = require('./modules/publico/publico.routes');
+const picoPlacaRoutes = require('./modules/pico-placa/pico-placa.routes');
+const estadiasRoutes = require('./modules/estadias/estadias.routes');
+const accesosDenegadosRoutes = require('./modules/estadias/accesos-denegados.routes');
 const { auth } = require('./middlewares/auth');
 const { CARPETA_UPLOADS } = require('./utils/archivos');
 
@@ -60,6 +63,9 @@ function crearApp() {
   api.use('/celdas', celdasRoutes);
   api.use('/puertas', puertasRoutes);
   api.use('/publico', publicoRoutes);
+  api.use('/pico-placa', picoPlacaRoutes);
+  api.use('/estadias', estadiasRoutes);
+  api.use('/accesos-denegados', accesosDenegadosRoutes);
   app.use('/api/v1', api);
 
   // ---------- Archivos subidos (fotos): solo con sesión iniciada ----------

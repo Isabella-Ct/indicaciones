@@ -48,13 +48,16 @@
 
 /* organisms */
 @import url('../js/components/organisms/data-table/data-table.css');
+@import url('../js/components/organisms/entry-modal/entry-modal.css');
 @import url('../js/components/organisms/footer/footer.css');
 @import url('../js/components/organisms/header/header.css');
 @import url('../js/components/organisms/kpis/kpis.css');
 @import url('../js/components/organisms/modal/modal.css');
+@import url('../js/components/organisms/movement-log/movement-log.css');
 @import url('../js/components/organisms/navbar/navbar.css');
 @import url('../js/components/organisms/parking-map/parking-map.css');
 @import url('../js/components/organisms/space-detail/space-detail.css');
+@import url('../js/components/organisms/ticket/ticket.css');
 
 /* templates */
 @import url('../js/components/templates/app-layout/app-layout.css');

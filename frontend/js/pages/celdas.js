@@ -34,7 +34,25 @@ import {
   cambiarActivaCelda,
   suscribirCeldas,
 } from '../services/celdas.service.js';
-import { obtenerVehiculoPorPlaca } from '../services/vehiculos.service.js';
+import { obtenerVehiculoPorPlaca, crearVehiculo } from '../services/vehiculos.service.js';
+import {
+  previsualizarEntrada,
+  registrarEntrada,
+  liquidarSalida,
+  cerrarEstadia,
+  ultimosMovimientos,
+  urlTicketPdf,
+} from '../services/estadias.service.js';
+import {
+  createEntryModal,
+  abrirEntryModal,
+} from '../components/organisms/entry-modal/entry-modal.js';
+import { createMovementLog } from '../components/organisms/movement-log/movement-log.js';
+import { createIconButton } from '../components/atoms/icon-button/icon-button.js';
+import { createDataList } from '../components/molecules/data-list/data-list.js';
+import { leerPuertaPreferida, guardarPuertaPreferida } from '../utils/almacen.js';
+import { formatearFechaHora } from '../utils/formato.js';
+import { formatearPlaca } from '../utils/placa.js';
 import { normalizarPlaca } from '../utils/placa.js';
 import { tienePermiso } from '../utils/sesion.js';
 
@@ -53,6 +71,7 @@ const puede = (codigo) => tienePermiso(estado.sesion, codigo);
 const verOcupantes = () => puede('celdas.cambiar_estado');
 
 const zonas = {
+  bitacora: el('div', { className: 'bottom' }),
   kpis: el('div'),
   mapa: el('div'),
   detalle: el('aside', {
@@ -196,16 +215,21 @@ function acciones(celda) {
         })
       );
     }
-    if (celda.estado === 'ocupada' && celda.estadia) {
-      lista.push(
-        el('p', {
-          className: 'detail-message detail-actions-full',
-          text:
-            'Para liberarla registra la salida del vehículo (ticket ' +
-            celda.estadia.codigo_ticket +
-            ').',
-        })
-      );
+    if (celda.estado === 'ocupada' && celda.estadia && puede('movimientos.registrar')) {
+      // Fase 4: se convierte en "Registrar salida y cobrar".
+      const salida = boton({
+        label: 'Registrar salida',
+        icon: 'i-out',
+        onClick: (e) => abrirSalida(celda, e.currentTarget),
+      });
+      const imprimir = createIconButton({
+        icon: 'i-print',
+        label: `Imprimir ticket ${celda.estadia.codigo_ticket}`,
+        onClick: () => imprimirTicket(celda.estadia.id),
+      });
+      salida.classList.add('detail-actions-pair');
+      imprimir.classList.add('detail-actions-pair');
+      lista.push(salida, imprimir);
     }
   }
   if (puede('celdas.gestionar')) {
@@ -231,7 +255,9 @@ function acciones(celda) {
   cerrar.classList.add('detail-actions-full');
   lista.push(cerrar);
   // La rejilla .detail-actions es "1fr auto": los botones de acción van a lo ancho.
-  lista.forEach((b) => b.classList.add('detail-actions-full'));
+  lista
+    .filter((b) => !b.classList.contains('detail-actions-pair'))
+    .forEach((b) => b.classList.add('detail-actions-full'));
   return lista;
 }
 
@@ -612,6 +638,170 @@ async function abrirGestion(celdaInicial, origen) {
 }
 
 // ---------------------------------------------------------------------------
+// Entradas, salidas y bitácora (Fase 3)
+// ---------------------------------------------------------------------------
+function puertaActual() {
+  const puertas = estado.sede?.puertas ?? [];
+  const preferida = puertas.find((p) => p.id === leerPuertaPreferida());
+  return (preferida ?? puertas[0])?.id ?? null;
+}
+
+function imprimirTicket(estadiaId) {
+  window.open(urlTicketPdf(estadiaId), '_blank', 'noopener');
+}
+
+/** Celdas libres del tipo, desde el estado del mapa (para el select del modal). */
+function celdasLibres(tipo) {
+  return [...estado.celdas.values()]
+    .filter((c) => c.tipo === tipo && c.estado === 'disponible')
+    .map((c) => ({
+      id: c.id,
+      codigo: c.codigo,
+      piso: c.piso.nombre,
+      es_accesible: c.es_accesible,
+    }));
+}
+
+/** REQ-INEX-1: modal "Registrar ingreso" (abrir, placa, Enter). */
+function abrirIngreso(origen) {
+  const modal = createEntryModal({
+    puertas: estado.sede?.puertas ?? [],
+    puertaId: puertaActual(),
+    celdasLibres,
+    previsualizar: previsualizarEntrada,
+    registrar: registrarEntrada,
+    registrarVisitante: crearVehiculo,
+    onPuerta: guardarPuertaPreferida,
+    onImprimir: (ticket) => imprimirTicket(ticket.id),
+    onRegistrado: (ticket) => {
+      showToast(
+        `Ingreso registrado: ${formatearPlaca(ticket.vehiculo.placa)} → ${ticket.celda.codigo}.`,
+        'success'
+      );
+      // El mapa se actualiza por SSE; se deja seleccionada la celda para ver su detalle.
+      estado.seleccionadaId = ticket.celda.id;
+      const celda = estado.celdas.get(ticket.celda.id);
+      if (celda) estado.pisoActivoId = celda.piso.id;
+    },
+  });
+  abrirEntryModal(modal, origen);
+}
+
+/** REQ-INEX-2/3: liquidación preliminar (tiempo) y cierre de la estadía. */
+async function abrirSalida(celda, origen) {
+  const puertas = (estado.sede?.puertas ?? []).filter((p) => p.tipo !== 'entrada');
+  const puerta = createSelect({
+    options: puertas.map((p) => ({ value: String(p.id), label: p.nombre })),
+    value: String(puertas.find((p) => p.id === puertaActual())?.id ?? puertas[0]?.id ?? ''),
+  });
+  let liquidacion;
+  try {
+    liquidacion = await liquidarSalida({
+      puerta_id: Number(puerta.value),
+      placa: celda.ocupante.placa,
+    });
+  } catch (error) {
+    showToast(error.message, 'error');
+    return;
+  }
+  const { estadia } = liquidacion;
+  const { modal } = modalFormulario({
+    titulo: `Salida de ${formatearPlaca(estadia.vehiculo.placa)}`,
+    subtitulo: `ticket ${estadia.codigo_ticket} · celda ${estadia.celda.codigo}`,
+    textoGuardar: 'Confirmar salida',
+    contenido: [
+      el('div', { className: 'vehicle-line' }, [
+        createPlate({ placa: estadia.vehiculo.placa, large: true }),
+        el('p', {
+          text: [
+            `${estadia.vehiculo.marca ?? ''} ${estadia.vehiculo.modelo ?? ''}`.trim(),
+            estadia.vehiculo.color,
+          ]
+            .filter(Boolean)
+            .join(' · '),
+        }),
+      ]),
+      createDataList({
+        items: [
+          { term: 'Entrada', value: formatearFechaHora(liquidacion.fecha_hora_entrada) },
+          { term: 'Salida', value: formatearFechaHora(liquidacion.fecha_hora_salida) },
+          { term: 'Tiempo dentro', value: liquidacion.tiempo },
+          { term: 'Minutos', value: String(liquidacion.minutos) },
+          {
+            term: 'Cliente',
+            value: estadia.tipo_cliente === 'mensualidad' ? 'Mensualidad' : 'Visitante',
+          },
+          { term: 'Llaves', value: estadia.deja_llaves ? 'En la caseta' : 'Con el conductor' },
+        ],
+      }),
+      createField({ label: 'Puerta de salida', control: puerta, required: true }),
+      el('p', {
+        className: 'field-hint',
+        text: 'La hora de salida definitiva la registra el servidor al confirmar.',
+      }),
+    ],
+    onGuardar: async () => {
+      const cerrada = await cerrarEstadia(estadia.id, Number(puerta.value));
+      guardarPuertaPreferida(Number(puerta.value));
+      showToast(
+        `Salida registrada: ${formatearPlaca(cerrada.vehiculo.placa)} · ${cerrada.tiempo}.`,
+        'success'
+      );
+      return true;
+    },
+  });
+  openModal(modal, origen);
+}
+
+/** Atajo del page-head: busca por placa o ticket entre los vehículos dentro. */
+function buscarVehiculo(texto) {
+  const valor = texto.trim().toUpperCase();
+  if (!valor) return;
+  const placa = normalizarPlaca(valor);
+  const celda = [...estado.celdas.values()].find(
+    (c) => c.ocupante?.placa === placa || c.estadia?.codigo_ticket === valor
+  );
+  if (!celda) {
+    showToast(`No hay un vehículo dentro con la placa o ticket "${valor}".`, 'error');
+    return;
+  }
+  estado.seleccionadaId = celda.id;
+  estado.pisoActivoId = celda.piso.id;
+  pintarMapa();
+  pintarDetalle();
+  zonas.detalle.querySelector('.detail-actions .btn')?.focus();
+}
+
+function crearBuscador() {
+  const campo = createInput({
+    type: 'search',
+    placeholder: 'Placa o ticket',
+    maxLength: 12,
+    autocomplete: 'off',
+  });
+  campo.setAttribute('aria-label', 'Buscar un vehículo dentro por placa o ticket');
+  const formulario = el('form', { className: 'exit-search', attrs: { role: 'search' } }, [
+    campo,
+    createButton({ label: 'Buscar', variant: 'dark', type: 'submit', icon: 'i-out' }),
+  ]);
+  formulario.addEventListener('submit', (e) => {
+    e.preventDefault();
+    buscarVehiculo(campo.value);
+  });
+  return formulario;
+}
+
+async function cargarBitacora() {
+  if (!puede('movimientos.ver')) return;
+  try {
+    const movimientos = await ultimosMovimientos(10);
+    zonas.bitacora.replaceChildren(createMovementLog({ movimientos }));
+  } catch {
+    /* la bitácora es secundaria: no bloquea la pantalla */
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Datos y tiempo real
 // ---------------------------------------------------------------------------
 async function cargarDatos() {
@@ -651,6 +841,7 @@ function conectar() {
       estado.resumen = resumen;
       pintarKpis();
     },
+    onMovimiento: () => cargarBitacora(),
     onEstado: async (nuevo, reconectado) => {
       setLiveStatus(indicador, nuevo);
       // Tras una caída pudo haber cambios perdidos: se vuelve a cargar todo.
@@ -676,6 +867,14 @@ async function iniciar() {
       subtitulo: 'mapa de celdas por piso, actualizado en tiempo real',
       acciones: [
         indicador,
+        tienePermiso(sesion, 'movimientos.registrar') ? crearBuscador() : null,
+        tienePermiso(sesion, 'movimientos.registrar')
+          ? createButton({
+              label: 'Registrar ingreso',
+              icon: 'i-in',
+              onClick: (e) => abrirIngreso(e.currentTarget),
+            })
+          : null,
         tienePermiso(sesion, 'celdas.gestionar')
           ? createButton({
               label: 'Gestionar celdas',
@@ -688,8 +887,13 @@ async function iniciar() {
   });
   if (!app) return;
   estado.sesion = app.sesion;
+  estado.sede = app.sede;
 
-  app.main.append(zonas.kpis, el('div', { className: 'workspace' }, [zonas.mapa, zonas.detalle]));
+  app.main.append(
+    zonas.kpis,
+    el('div', { className: 'workspace' }, [zonas.mapa, zonas.detalle]),
+    zonas.bitacora
+  );
   try {
     await cargarDatos();
   } catch (error) {
@@ -698,6 +902,7 @@ async function iniciar() {
   }
   pintarTodo();
   conectar();
+  cargarBitacora();
 
   // El "tiempo dentro" del detalle avanza solo.
   setInterval(() => {

@@ -112,3 +112,15 @@
   justify-content: flex-end;
   gap: 6px;
 }
+
+/* Fila resaltada (ej. reglas que aplican hoy) */
+.data-table-table tbody tr.is-highlighted {
+  background: var(--reserved-stripe);
+  box-shadow: inset 4px 0 0 var(--yellow);
+}
+
+.cell-digit {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+}

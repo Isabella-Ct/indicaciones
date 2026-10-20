@@ -78,6 +78,9 @@ Iconos: un solo sprite en `frontend/assets/icons.svg`. Símbolos de la maqueta: 
 | parking-map | `createParkingMap` | `.parking-map`, `.level`, `.level-title`, `.lot`, `.row--top/--bottom` (`--cols`), `.lane` | Solo se ve el piso activo; en móvil el lote hace scroll |
 | space-detail | `createSpaceDetail` · `formatearDuracion` | `.space-hero`, `.detail-block`, `.vehicle-line`, `.detail-actions` | Sin celda: empty-state. Mensaje distinto para libre/reservado/fuera de servicio (reto 5) |
 | kpis | `createKpis` | `.kpis` | Fila de `kpi` de la maqueta (5 columnas; 2 en ≤ 1180 px) |
+| ticket | `createTicket` · `updateTicket` | `.ticket`, `.ticket-head`, `.barcode`, `.ticket-note` | Vista previa en vivo y ticket emitido (sección 8) |
+| entry-modal | `createEntryModal` · `abrirEntryModal` | `.modal-body--split`, `.entry-client`, `.alert--grande` | "Registrar ingreso": recibe las funciones de la página (`previsualizar`, `registrar`, `registrarVisitante`); maneja los errores por código |
+| movement-log | `createMovementLog` | `.bottom`, `.log`, `.move--in/--out` | "Últimos movimientos" (sección 7) |
 | data-table | `createDataTable` | `.data-table`, `.log`, `.row-actions`, `.cell-*` | Estilo bitácora de la maqueta; orden (`aria-sort`), paginación, estado vacío, carga y scroll horizontal (`minWidth`) |
 
 ## Templates (`js/components/templates/`)

@@ -15,6 +15,7 @@ import { createSpinner } from '../../atoms/spinner/spinner.js';
  *   }>,
  *   rows: Array<object>,
  *   rowKey?: (fila: object) => string|number,  // va en data-id
+ *   rowClass?: (fila: object) => string,       // clase extra de la fila (ej. resaltar)
  *   sort?: { key: string, dir: 'asc'|'desc' },
  *   onSort?: (key: string) => void,
  *   loading?: boolean,
@@ -29,6 +30,7 @@ export function createDataTable({
   columns,
   rows,
   rowKey = (fila) => fila.id,
+  rowClass,
   sort,
   onSort,
   loading = false,
@@ -82,7 +84,7 @@ export function createDataTable({
     rows.map((fila) =>
       el(
         'tr',
-        { attrs: { 'data-id': rowKey(fila) } },
+        { className: rowClass?.(fila) || '', attrs: { 'data-id': rowKey(fila) } },
         columns.map((col) => {
           const valor = col.render ? col.render(fila) : fila[col.key];
           return el('td', { className: col.align === 'right' ? 'right' : '' }, [

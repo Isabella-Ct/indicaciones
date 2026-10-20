@@ -38,11 +38,12 @@ export async function cambiarActivaCelda(id, activa) {
  * @param {{
  *   onCelda: (celda: object) => void,
  *   onResumen?: (resumen: object) => void,
+ *   onMovimiento?: (movimiento: object) => void,   // entradas/salidas (solo personal)
  *   onEstado?: (estado: 'conectando'|'en-vivo'|'reconectando', reconectado: boolean) => void,
  * }} manejadores
  * @returns {() => void} cerrar
  */
-export function suscribirCeldas({ onCelda, onResumen, onEstado }) {
+export function suscribirCeldas({ onCelda, onResumen, onMovimiento, onEstado }) {
   let fuente = null;
   let cerrado = false;
   let huboCaida = false;
@@ -57,6 +58,7 @@ export function suscribirCeldas({ onCelda, onResumen, onEstado }) {
     });
     fuente.addEventListener('celda-actualizada', (e) => onCelda(JSON.parse(e.data)));
     fuente.addEventListener('resumen-actualizado', (e) => onResumen?.(JSON.parse(e.data)));
+    fuente.addEventListener('movimiento-registrado', (e) => onMovimiento?.(JSON.parse(e.data)));
     fuente.addEventListener('error', () => {
       huboCaida = true;
       onEstado?.('reconectando', false);

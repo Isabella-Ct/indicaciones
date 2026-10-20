@@ -24,3 +24,27 @@
 .filters .field > label {
   font-size: 0.875rem;
 }
+
+/* Búsqueda compacta en el page-head (salida por placa o ticket) */
+.exit-search {
+  display: flex;
+  gap: 2px;
+}
+
+.exit-search .input {
+  width: 180px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .exit-search {
+    width: 100%;
+  }
+
+  .exit-search .input {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+}

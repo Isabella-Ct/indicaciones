@@ -66,7 +66,9 @@
 .catalogo-demo > .search-box,
 .catalogo-demo > .pagination,
 .catalogo-demo > .map-legend,
-.catalogo-demo > .catalogo-lote {
+.catalogo-demo > .catalogo-lote,
+.catalogo-demo > .ticket,
+.catalogo-demo > .panel {
   flex: 1 1 100%;
 }
 
