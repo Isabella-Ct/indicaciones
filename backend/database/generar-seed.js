@@ -5,14 +5,21 @@
  *
  * - Calcula los hashes bcrypt de las contraseñas de prueba (ver README).
  * - Las fechas se escriben relativas a CURDATE()/NOW() para que el historial
- *   siempre corresponda a "las últimas 2 semanas", sin importar cuándo se cargue.
- * - El historial se genera con un pseudoaleatorio con semilla fija: el archivo
- *   resultante es reproducible (salvo los hashes, que cambian de sal).
+ *   siempre corresponda a "los últimos 60 días", sin importar cuándo se cargue.
+ * - El historial se genera con un pseudoaleatorio con semilla fija. Usa el día de la
+ *   semana real (fines de semana más tranquilos, pico y placa de lunes a viernes) y la
+ *   hora actual (estadías de hoy ya terminadas): por eso `npm run db:reset` vuelve a
+ *   generar este archivo antes de cargarlo.
  */
 const fs = require('node:fs');
 const path = require('node:path');
 const bcrypt = require('bcrypt');
 const { calcularCobro } = require('../src/modules/tarifas/tarifas.calculo');
+const {
+  digitoDeRestriccion,
+  describirRegla,
+} = require('../src/modules/pico-placa/pico-placa.evaluador');
+const { enBogota } = require('../src/utils/fechas');
 
 const SALIDA = path.join(__dirname, 'seed.sql');
 const COSTO_BCRYPT = 10;
@@ -60,6 +67,9 @@ const hhmm = (minutos) => `${pad(Math.floor(minutos / 60))}:${pad(minutos % 60)}
 const fechaHora = (dias, minutos) =>
   sql(`TIMESTAMP(CURDATE() - INTERVAL ${dias} DAY, '${hhmm(minutos)}')`);
 const haceMinutos = (min) => sql(`NOW() - INTERVAL ${min} MINUTE`);
+/** Minutos absolutos desde hoy a las 00:00 (negativos = días anteriores). */
+const fechaAbs = (t) => sql(`TIMESTAMP(CURDATE()) + INTERVAL ${t} MINUTE`);
+const DIAS_HISTORIAL = 60;
 
 // ---------------------------------------------------------------------------
 // Roles y permisos (CLAUDE.md §6)
@@ -317,6 +327,65 @@ const VEHICULOS = [
   modelo,
   usuario_id: usuario,
 }));
+
+// Visitantes generados (sin propietario) para que los reportes tengan volumen.
+// Se evitan los prefijos que usan las pruebas (ABC, KLM, PRB, ZZZ…).
+const MODELOS = {
+  carro: [
+    ['Chevrolet', 'Onix'],
+    ['Renault', 'Logan'],
+    ['Mazda', '3'],
+    ['Kia', 'Picanto'],
+    ['Toyota', 'Fortuner'],
+    ['Nissan', 'Versa'],
+    ['Renault', 'Duster'],
+    ['Suzuki', 'Swift'],
+    ['Volkswagen', 'Gol'],
+    ['Ford', 'Escape'],
+    ['Hyundai', 'Accent'],
+    ['Kia', 'Rio'],
+  ],
+  moto: [
+    ['Yamaha', 'FZ 2.0'],
+    ['Bajaj', 'Pulsar NS 200'],
+    ['AKT', 'NKD 125'],
+    ['Honda', 'CB 125F'],
+    ['Suzuki', 'Gixxer'],
+    ['TVS', 'Raider'],
+    ['Bajaj', 'Boxer CT'],
+  ],
+};
+const COLORES = ['Blanco', 'Gris', 'Negro', 'Rojo', 'Azul', 'Plata', 'Verde'];
+const VISITANTES = { carro: 80, moto: 30 };
+{
+  const azarPlacas = crearAleatorio(77);
+  const letra = () => 'BCDFGHJLMNPRSTVWXY'[Math.floor(azarPlacas() * 18)];
+  const digito = () => String(Math.floor(azarPlacas() * 10));
+  const usadas = new Set(VEHICULOS.map((v) => v.placa));
+  for (const tipo of ['carro', 'moto']) {
+    for (let i = 0; i < VISITANTES[tipo]; i++) {
+      let placa;
+      do {
+        const letras = letra() + letra() + letra();
+        placa =
+          tipo === 'carro'
+            ? letras + digito() + digito() + digito()
+            : letras + digito() + digito() + letra();
+      } while (usadas.has(placa));
+      usadas.add(placa);
+      const [marca, modelo] = MODELOS[tipo][Math.floor(azarPlacas() * MODELOS[tipo].length)];
+      VEHICULOS.push({
+        id: VEHICULOS.length + 1,
+        placa,
+        tipo,
+        color: COLORES[Math.floor(azarPlacas() * COLORES.length)],
+        marca,
+        modelo,
+        usuario_id: null,
+      });
+    }
+  }
+}
 const vehiculo = (placa) => VEHICULOS.find((v) => v.placa === placa);
 
 // ---------------------------------------------------------------------------
@@ -466,47 +535,148 @@ const EN_CURSO = [
 // El cobro usa calcularCobro de src/modules/tarifas (el mismo del servidor).
 
 // ---------------------------------------------------------------------------
-// Historial: estadías finalizadas y facturas de los últimos 14 días
+// Historial: 60 días de estadías finalizadas (más las de hoy que ya salieron)
+// - Entre semana ~60 estadías/día, sábado ~45, domingo ~25 (después de pico y placa y cupo).
+// - "Pendulares" (vehículos de quien trabaja cerca) entran 6:30–9:00 y salen 8–10.5 h después.
+// - El resto llega en picos: 7–9 h, 11–14 h y 17–19 h (más algo repartido en el día).
+// - Respeta pico y placa (L–V 05:00–20:00); parte de los rechazados queda en accesos_denegados.
+// - La celda sugerida es casi siempre la primera libre (como el sistema): hay celdas más usadas.
+// Tiempos en minutos absolutos desde hoy 00:00 (t < 0 = días anteriores).
 // ---------------------------------------------------------------------------
-function generarHistorial() {
-  const enCursoIds = new Set(EN_CURSO.map((e) => vehiculo(e.placa).id));
+const PENDULARES = new Set(
+  [
+    'MNP908',
+    'CVB275',
+    'QWE731',
+    'BNM350',
+    'HJK740',
+    'OPQ119',
+    'XKP45F',
+    'GMR58K',
+    'BQS19E',
+    ...VEHICULOS.filter((v) => v.usuario_id === null && v.id > 12)
+      .filter((_, i) => i % 6 === 0)
+      .map((v) => v.placa),
+  ].map((p) => vehiculo(p).id)
+);
+const BASE_POR_DIA = { 1: 80, 2: 82, 3: 82, 4: 85, 5: 90, 6: 55, 7: 32 };
+const PROB_PENDULAR = { 1: 0.8, 2: 0.8, 3: 0.8, 4: 0.8, 5: 0.75, 6: 0.25, 7: 0.05 };
+
+/** Llegada y duración (minutos) de una visita no pendular según la franja. */
+function visitaAleatoria() {
+  const r = azar();
+  if (r < 0.32) return [entero(7 * 60, 9 * 60), entero(60, 300)];
+  if (r < 0.57) return [entero(11 * 60, 14 * 60), entero(30, 180)];
+  if (r < 0.87) return [entero(17 * 60, 19 * 60 + 30), entero(90, 330)];
+  return [entero(6 * 60, 22 * 60), entero(20, 240)];
+}
+
+const reglaQueRestringe = (v, dow, minuto) => {
+  const digito = digitoDeRestriccion(v.placa, v.tipo);
+  return (
+    PICO_PLACA.find(
+      (r) =>
+        r.activa &&
+        r.tipo_vehiculo === v.tipo &&
+        r.dia_semana === dow &&
+        r.digito === digito &&
+        minuto >= 5 * 60 &&
+        minuto < 20 * 60
+    ) ?? null
+  );
+};
+
+function generarHistorial({ hoyDow, ahoraMin }) {
   const celdasFijas = new Map(
     MEMBRESIAS.filter((m) => m.celda).map((m) => [celda(m.celda).id, vehiculo(m.placa).id])
   );
+  const ordenCelda = (c) => [c.piso_id, c.area, c.fila_mapa === 'superior' ? 0 : 1, c.posicion];
+  const celdasOrdenadas = [...CELDAS].sort((a, b) => {
+    const x = ordenCelda(a);
+    const y = ordenCelda(b);
+    for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i] < y[i] ? -1 : 1;
+    return 0;
+  });
+  // Intervalos ocupados por vehículo y por celda (incluye las estadías en curso).
+  const porVehiculo = new Map();
+  const porCelda = new Map();
+  const agregar = (mapa, id, intervalo) => mapa.set(id, [...(mapa.get(id) || []), intervalo]);
+  const libre = (mapa, id, [a, b]) => !(mapa.get(id) || []).some(([i, f]) => a < f && b > i);
+  for (const e of EN_CURSO) {
+    const desde = ahoraMin - e.minutos;
+    agregar(porVehiculo, vehiculo(e.placa).id, [desde - 30, Infinity]);
+    agregar(porCelda, celda(e.celda).id, [desde - 5, Infinity]);
+  }
+
+  const pesos = VEHICULOS.map((v, i) => ({
+    v,
+    peso: v.usuario_id ? 1.2 : 1 / Math.pow(1 + ((i * 37) % 110), 0.75),
+  }));
+  const pesoTotal = pesos.reduce((s, p) => s + p.peso, 0);
+  const vehiculoAlAzar = () => {
+    let r = azar() * pesoTotal;
+    for (const p of pesos) if ((r -= p.peso) <= 0) return p.v;
+    return pesos[pesos.length - 1].v;
+  };
+
   const historial = [];
+  const denegados = [];
+  for (let dias = DIAS_HISTORIAL; dias >= 0; dias--) {
+    const dow = ((((hoyDow - 1 - dias) % 7) + 7) % 7) + 1;
+    const candidatos = [];
+    for (const id of PENDULARES) {
+      if (azar() < PROB_PENDULAR[dow])
+        candidatos.push({
+          v: VEHICULOS[id - 1],
+          entrada: entero(390, 540),
+          duracion: entero(480, 630),
+        });
+    }
+    const total = Math.round(BASE_POR_DIA[dow] * (0.85 + azar() * 0.3));
+    while (candidatos.length < total) {
+      const v = vehiculoAlAzar();
+      if (PENDULARES.has(v.id) && dow <= 5) continue;
+      const [entrada, duracion] = visitaAleatoria();
+      candidatos.push({ v, entrada, duracion });
+    }
+    candidatos.sort((a, b) => a.entrada - b.entrada);
 
-  for (let dias = 14; dias >= 1; dias--) {
-    // Hoy - 1: se excluyen los vehículos que hoy están dentro, para no solapar estadías.
-    const candidatos = VEHICULOS.filter((v) => !(dias === 1 && enCursoIds.has(v.id)));
-    const cantidad = Math.min(candidatos.length, entero(6, 11));
-    const elegidos = [...candidatos].sort(() => azar() - 0.5).slice(0, cantidad);
-    const ocupacion = new Map(); // celdaId -> [[ini, fin]]
-
-    for (const v of elegidos) {
-      const entrada = entero(6 * 60, 20 * 60);
-      const duracion = Math.min(entero(15, 540), 23 * 60 + 30 - entrada);
-      const salida = entrada + duracion;
+    for (const { v, entrada, duracion } of candidatos) {
+      const t0 = -dias * 1440 + entrada;
+      const t1 = t0 + duracion;
+      if (dias === 0 && t1 > ahoraMin - 10) continue; // hoy: solo las que ya salieron
+      if (!libre(porVehiculo, v.id, [t0 - 30, t1 + 30])) continue;
+      const regla = dow <= 5 ? reglaQueRestringe(v, dow, entrada) : null;
+      if (regla) {
+        if (azar() < 0.12) denegados.push({ t: t0, v, regla, puerta: entero(1, 2) });
+        continue;
+      }
       const membresia = membresiaDe(v.id, dias);
       const fija = membresia && membresia.celda ? celda(membresia.celda) : null;
-
-      const libres = CELDAS.filter(
+      const libres = celdasOrdenadas.filter(
         (c) =>
           c.tipo === v.tipo &&
           c.codigo !== 'A-09' &&
           (!celdasFijas.has(c.id) || celdasFijas.get(c.id) === v.id) &&
-          !(ocupacion.get(c.id) || []).some(([i, f]) => entrada < f && salida > i)
+          libre(porCelda, c.id, [t0, t1])
       );
+      const comunes = libres.filter((c) => !c.es_accesible && !celdasFijas.has(c.id));
+      const opciones = comunes.length ? comunes : libres.filter((c) => !celdasFijas.has(c.id));
       const asignada =
-        fija && libres.includes(fija) ? fija : elegir(libres.filter((c) => !celdasFijas.has(c.id)));
-      if (!asignada) continue;
-      ocupacion.set(asignada.id, [...(ocupacion.get(asignada.id) || []), [entrada, salida]]);
-
-      historial.push({ dias, entrada, salida, duracion, vehiculo: v, celda: asignada, membresia });
+        fija && libres.includes(fija)
+          ? fija
+          : azar() < 0.6
+            ? opciones[0]
+            : elegir(opciones.slice(0, Math.max(1, Math.ceil(opciones.length / 2))));
+      if (!asignada) continue; // lleno
+      agregar(porCelda, asignada.id, [t0, t1]);
+      agregar(porVehiculo, v.id, [t0, t1]);
+      historial.push({ dias, t0, t1, duracion, vehiculo: v, celda: asignada, membresia });
     }
   }
-  // Orden cronológico para que tickets y facturas sean consecutivos en el tiempo.
-  historial.sort((a, b) => b.dias - a.dias || a.entrada - b.entrada);
-  return historial;
+  historial.sort((a, b) => a.t0 - b.t0);
+  denegados.sort((a, b) => a.t - b.t);
+  return { historial, denegados };
 }
 
 // ---------------------------------------------------------------------------
@@ -599,7 +769,7 @@ USE parking_lot_abc;
   );
 
   // Vehículos (antes que celdas por vehiculo_actual_id)
-  partes.push('-- Vehículos: 10 con propietario y 2 de visitantes');
+  partes.push(`-- Vehículos: 10 con propietario y ${VEHICULOS.length - 10} de visitantes`);
   partes.push(
     insertar(
       'vehiculos',
@@ -683,7 +853,12 @@ USE parking_lot_abc;
   );
 
   // Estadías y facturas
-  const historial = generarHistorial();
+  const ahora = enBogota();
+  const [h, m] = ahora.hora.split(':').map(Number);
+  const { historial, denegados } = generarHistorial({
+    hoyDow: ahora.diaSemana,
+    ahoraMin: h * 60 + m,
+  });
   const estadias = [];
   const eventosFactura = []; // { orden, fila }
   const operadores = [2, 3, 2, 3, 1];
@@ -701,8 +876,8 @@ USE parking_lot_abc;
       membresia_id: h.membresia ? h.membresia.id : null,
       puerta_entrada_id: entero(1, 2),
       puerta_salida_id: entero(1, 2),
-      fecha_hora_entrada: fechaHora(h.dias, h.entrada),
-      fecha_hora_salida: fechaHora(h.dias, h.salida),
+      fecha_hora_entrada: fechaAbs(h.t0),
+      fecha_hora_salida: fechaAbs(h.t1),
       minutos_estadia: h.duracion,
       requiere_accesible: h.celda.es_accesible && azar() < 0.5 ? 1 : 0,
       observaciones_entrada: azar() < 0.12 ? 'Sin novedades visibles' : null,
@@ -726,7 +901,7 @@ USE parking_lot_abc;
     const { subtotal, total } = cobro;
     const porcentaje = descuento ? descuento[3] : 0;
     eventosFactura.push({
-      orden: [-h.dias, h.salida],
+      orden: h.t1,
       fila: {
         concepto: 'estadia',
         estadia_id: id,
@@ -743,7 +918,7 @@ USE parking_lot_abc;
         observacion: h.membresia ? 'membresía' : null,
         tarifa_id: tarifa.id,
         detalle_calculo: JSON.stringify(cobro),
-        fecha_pago: fechaHora(h.dias, h.salida),
+        fecha_pago: fechaAbs(h.t1),
         registrada_por: entradaPor,
       },
     });
@@ -752,7 +927,7 @@ USE parking_lot_abc;
   // Pago de las mensualidades (factura propia)
   for (const m of MEMBRESIAS) {
     eventosFactura.push({
-      orden: [-m.diaInicio, 9 * 60],
+      orden: -m.diaInicio * 1440 + 9 * 60,
       fila: {
         concepto: 'membresia',
         estadia_id: null,
@@ -772,7 +947,7 @@ USE parking_lot_abc;
       },
     });
   }
-  eventosFactura.sort((a, b) => a.orden[0] - b.orden[0] || a.orden[1] - b.orden[1]);
+  eventosFactura.sort((a, b) => a.orden - b.orden);
   const facturas = eventosFactura.map((e, i) => ({
     id: i + 1,
     numero: `FAC-${pad(i + 1, 6)}`,
@@ -816,7 +991,7 @@ USE parking_lot_abc;
   });
 
   partes.push(
-    `-- Estadías: ${historial.length} históricas (14 días) + ${EN_CURSO.length} en curso`
+    `-- Estadías: ${historial.length} históricas (${DIAS_HISTORIAL} días y hoy) + ${EN_CURSO.length} en curso`
   );
   partes.push(insertar('estadias', estadias));
   partes.push(insertar('lecturas_placa', lecturas));
@@ -824,38 +999,34 @@ USE parking_lot_abc;
   partes.push(insertar('facturas', facturas));
   partes.push(insertar('consecutivos', [{ nombre: 'factura', ultimo: facturas.length }]));
 
-  // Accesos denegados: se toman las reglas del día de la semana real de cada fecha.
-  partes.push('-- Entradas rechazadas por pico y placa (solo días hábiles con regla activa)');
-  const denegados = [
-    [2, 'carro', 'KLM20', 7 * 60 + 35],
-    [3, 'carro', 'TRS54', 9 * 60 + 10],
-    [5, 'moto', 'NQW', 8 * 60 + 5],
-    [6, 'carro', 'DFG81', 17 * 60 + 40],
-    [8, 'carro', 'PWX33', 6 * 60 + 50],
-    [9, 'moto', 'HYT', 12 * 60 + 15],
-  ];
-  for (const [dias, tipo, prefijo, minuto] of denegados) {
-    const fecha = `CURDATE() - INTERVAL ${dias} DAY`;
-    // Carro: el dígito de la regla va al final; moto: es el primer dígito.
-    const placa =
-      tipo === 'carro'
-        ? `CONCAT('${prefijo}', pp.digito)`
-        : `CONCAT('${prefijo}', pp.digito, '7K')`;
-    const criterio = tipo === 'carro' ? 'terminada en' : 'con primer dígito';
-    partes.push(`INSERT INTO accesos_denegados (placa, tipo_vehiculo, puerta_id, fecha_hora, motivo, regla_pico_placa_id, registrado_por)
-SELECT ${placa}, '${tipo}', ${(dias % 2) + 1}, TIMESTAMP(${fecha}, '${hhmm(minuto)}'),
-  CONCAT('Pico y placa: ${tipo}s con placa ${criterio} ', pp.digito, ' (', TIME_FORMAT(pp.hora_inicio, '%H:%i'), '–', TIME_FORMAT(pp.hora_fin, '%H:%i'), ')'),
-  pp.id, ${(dias % 2) + 2}
-FROM pico_placa pp
-WHERE pp.tipo_vehiculo = '${tipo}' AND pp.activa = 1 AND pp.dia_semana = WEEKDAY(${fecha}) + 1
-ORDER BY pp.digito LIMIT 1;
-`);
-  }
+  // Accesos denegados: vehículos registrados que intentaron entrar con pico y placa.
+  partes.push(`-- Entradas rechazadas por pico y placa: ${denegados.length}`);
+  partes.push(
+    insertar(
+      'accesos_denegados',
+      denegados.map((d) => ({
+        placa: d.v.placa,
+        tipo_vehiculo: d.v.tipo,
+        puerta_id: d.puerta,
+        fecha_hora: fechaAbs(d.t),
+        motivo: `Pico y placa: ${describirRegla(d.regla)}`,
+        regla_pico_placa_id: d.regla.id,
+        registrado_por: d.puerta + 1,
+      }))
+    )
+  );
 
   // Incidencias históricas
   partes.push('-- Incidencias');
-  const conEstadia = (placa) =>
-    estadias.find((e) => e.estado === 'finalizada' && e.vehiculo_id === vehiculo(placa).id);
+  // Cada incidencia cae dentro de una estadía real de ese día (vehículo, celda y hora).
+  const estadiaDelDia = (dias, placa) => {
+    const i = historial.findIndex(
+      (h) =>
+        h.dias === dias &&
+        (placa ? h.vehiculo.placa === placa : h.vehiculo.tipo === 'carro' && h.duracion >= 60)
+    );
+    return i < 0 ? null : { id: i + 1, ...historial[i] };
+  };
   const incidencias = [
     {
       dias: 3,
@@ -871,22 +1042,42 @@ ORDER BY pp.digito LIMIT 1;
       placa: 'OPQ119',
       descripcion: 'Golpe del bómper trasero contra la columna C-04 al maniobrar.',
     },
-  ].map((inc, i) => {
-    const e = conEstadia(inc.placa);
-    return {
-      id: i + 1,
-      codigo: sql(
-        `CONCAT('INC-', DATE_FORMAT(CURDATE() - INTERVAL ${inc.dias} DAY, '%Y%m%d'), '-0001')`
-      ),
-      tipo_incidencia_id: inc.tipo,
-      vehiculo_id: vehiculo(inc.placa).id,
-      celda_id: e ? e.celda_id : null,
-      estadia_id: null,
-      descripcion: inc.descripcion,
-      fecha_hora: fechaHora(inc.dias, inc.minuto),
-      registrada_por: 2,
-    };
-  });
+    ...[
+      [16, 8 * 60 + 40, 2, 'Choque leve entre dos vehículos en la rampa hacia el Sótano 2.'],
+      [21, 18 * 60 + 5, 1, 'Rayón en el guardabarros delantero al parquear en reversa.'],
+      [27, 12 * 60 + 30, 4, 'Retrovisor golpeado contra la columna de la celda B-06.'],
+      [33, 7 * 60 + 55, 3, 'Peatón golpeado levemente en el carril de circulación; sin lesiones.'],
+      [38, 17 * 60 + 20, 1, 'Rayón en la puerta trasera; el conductor lo reporta al salir.'],
+      [44, 9 * 60 + 15, 2, 'Choque por alcance en la fila de entrada a la puerta Norte.'],
+      [51, 19 * 60 + 10, 4, 'Golpe del bómper delantero contra el muro del Sótano 1.'],
+      [57, 13 * 60 + 45, 1, 'Rayón en el capó por objeto caído de una moto vecina.'],
+    ].map(([dias, minuto, tipo, descripcion]) => ({
+      dias,
+      minuto,
+      tipo,
+      placa: null,
+      descripcion,
+    })),
+  ]
+    .map((inc) => ({ ...inc, e: estadiaDelDia(inc.dias, inc.placa) ?? estadiaDelDia(inc.dias) }))
+    .filter((inc) => inc.e)
+    .map((inc, i) => {
+      const { e } = inc;
+      const t = Math.min(Math.max(-inc.dias * 1440 + inc.minuto, e.t0 + 5), e.t1 - 5);
+      return {
+        id: i + 1,
+        codigo: sql(
+          `CONCAT('INC-', DATE_FORMAT(CURDATE() - INTERVAL ${inc.dias} DAY, '%Y%m%d'), '-0001')`
+        ),
+        tipo_incidencia_id: inc.tipo,
+        vehiculo_id: e.vehiculo.id,
+        celda_id: e.celda.id,
+        estadia_id: e.id,
+        descripcion: inc.descripcion,
+        fecha_hora: fechaAbs(t),
+        registrada_por: 2,
+      };
+    });
   partes.push(insertar('incidencias', incidencias));
 
   // Notificaciones de ejemplo
@@ -953,7 +1144,11 @@ ORDER BY pp.digito LIMIT 1;
   );
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+module.exports = { generarSeed: main };
+
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

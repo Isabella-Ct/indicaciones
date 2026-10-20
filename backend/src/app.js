@@ -27,6 +27,8 @@ const facturasRoutes = require('./modules/facturas/facturas.routes');
 const notificacionesRoutes = require('./modules/notificaciones/notificaciones.routes');
 const incidenciasRoutes = require('./modules/incidencias/incidencias.routes');
 const tiposIncidenciaRoutes = require('./modules/incidencias/tipos-incidencia.routes');
+const reportesRoutes = require('./modules/reportes/reportes.routes');
+const dashboardRoutes = require('./modules/dashboard/dashboard.routes');
 const { auth } = require('./middlewares/auth');
 const { CARPETA_UPLOADS } = require('./utils/archivos');
 
@@ -80,6 +82,8 @@ function crearApp() {
   api.use('/notificaciones', notificacionesRoutes);
   api.use('/incidencias', incidenciasRoutes);
   api.use('/tipos-incidencia', tiposIncidenciaRoutes);
+  api.use('/reportes', reportesRoutes);
+  api.use('/dashboard', dashboardRoutes);
   app.use('/api/v1', api);
 
   // ---------- Archivos subidos (fotos): solo con sesión iniciada ----------

@@ -39,7 +39,7 @@ const PESTANAS = [
 ];
 const ID_PANEL = 'bandeja-lista';
 const estado = { pestana: 1, pagina: 1, resultado: null };
-const zonas = { tabs: el('div'), lista: el('div', { attrs: { id: ID_PANEL, role: 'tabpanel' } }) };
+const zonas = { tabs: el('div'), lista: el('div', { attrs: { role: 'tabpanel' } }) };
 const leerTodas = createButton({
   label: 'Marcar todas leídas',
   variant: 'ghost',
@@ -64,7 +64,7 @@ function pintarTabs() {
     createLevelTabs({
       niveles: PESTANAS,
       activoId: estado.pestana,
-      idPanel: () => ID_PANEL,
+      idPanel: (id) => `${ID_PANEL}-${id}`,
       label: 'Filtrar notificaciones',
       onChange: (id) => {
         estado.pestana = id;
@@ -75,7 +75,9 @@ function pintarTabs() {
       },
     })
   );
-  zonas.lista.setAttribute('aria-labelledby', `tab-${ID_PANEL}`);
+  // Un solo panel que cambia de pestaña: su id sigue a la pestaña activa.
+  zonas.lista.id = `${ID_PANEL}-${estado.pestana}`;
+  zonas.lista.setAttribute('aria-labelledby', `tab-${zonas.lista.id}`);
 }
 
 function pintarLista() {

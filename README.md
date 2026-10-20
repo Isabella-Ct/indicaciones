@@ -19,7 +19,8 @@ Contexto completo del proyecto: [`CLAUDE.md`](CLAUDE.md). Requerimientos: [`docs
 | 3 | Pico y placa, entradas, salidas, tickets PDF e historial (REQ-CAR-4, REQ-INEX-1..4, REQ-PLA-1, REQ-TCK-1) | ✅ |
 | 4 | Tarifas, descuentos, membresías, cobro y facturas PDF (REQ-TAR-1/2, REQ-FAC-1/2, REQ-MEM-1, REQ-DES-1) | ✅ |
 | 5 | Incidencias y notificaciones: campana en vivo, bandeja y envío manual (REQ-INCD-1, REQ-NOT-1) | ✅ |
-| 6–8 | Reservas, reportes, portal, entrega | Pendiente |
+| 6 | Reportes del administrador (REQ-REP-01…11) con CSV e impresión, dashboard por rol y gráficos propios | ✅ |
+| 7–8 | Reservas, portal, entrega | Pendiente |
 
 ## Requisitos
 
@@ -57,14 +58,16 @@ node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ## Base de datos
 
 ```bash
-npm run db:reset     # BORRA y recrea la BD: ejecuta database/schema.sql + database/seed.sql
+npm run db:reset     # BORRA y recrea la BD: regenera seed.sql y ejecuta schema.sql + seed.sql
 ```
 
 - `backend/database/schema.sql` — modelo consolidado (fuente de verdad). Al final explica qué se tomó de
   cada borrador de `docs/bd-referencia/` y qué se corrigió.
-- `backend/database/seed.sql` — datos de prueba. **Se genera** con `npm run db:seed:generar`
-  (`database/generar-seed.js`): calcula los hashes bcrypt y escribe fechas relativas a `CURDATE()`,
-  así el historial siempre corresponde a las últimas 2 semanas.
+- `backend/database/seed.sql` — datos de prueba. **Se genera** con `database/generar-seed.js`
+  (`npm run db:seed:generar`, y `db:reset` lo hace solo antes de cargar): calcula los hashes bcrypt y
+  escribe fechas relativas a `CURDATE()`/`NOW()`. El historial (60 días) usa el **día de la semana y la
+  hora reales** —fines de semana más tranquilos, pico y placa de lunes a viernes, estadías de hoy ya
+  terminadas—, por eso se regenera en cada reset. El pseudoaleatorio tiene semilla fija.
 - `backend/database/migrations/` — cambios posteriores numerados, para BD creadas antes de cada fase
   (`db:reset` ya los incluye). Se aplican a mano en orden, por ejemplo con MySQL Workbench:
   - `001_permiso_usuarios_buscar.sql` (Fase 1): `usuarios.ver` queda solo para el administrador y se
@@ -76,10 +79,12 @@ npm run db:reset     # BORRA y recrea la BD: ejecuta database/schema.sql + datab
 
 La semilla incluye: 3 roles y 37 permisos, 9 usuarios, la sede con 2 puertas (Norte y Sur), 2 sótanos con
 **44 celdas** (la distribución de la maqueta: A-01…A-12 y B-01…B-12 en Sótano 1; C-01…C-08 y M-01…M-12 en
-Sótano 2; A-01/B-01 accesibles; A-09 fuera de servicio), 12 vehículos (10 de clientes + 2 de visitantes),
-3 mensualidades (A-04 y B-09 con celda fija), 7 estadías en curso, ~115 estadías y facturas de los últimos
-14 días, reglas de pico y placa, tarifas (carro $120/min tope $28.000; moto $60/min tope $12.000),
-3 descuentos, 4 tipos de incidencia y parámetros de `configuracion`.
+Sótano 2; A-01/B-01 accesibles; A-09 fuera de servicio), 122 vehículos (10 de clientes + 112 de
+visitantes), 3 mensualidades (A-04 y B-09 con celda fija), 7 estadías en curso, **~2.900 estadías y facturas
+de los últimos 60 días** (picos de llegada 7–9 h y 17–19 h, "pendulares" que entran temprano y salen en la
+tarde, menos movimiento el fin de semana), ~85 entradas rechazadas por pico y placa, 10 incidencias,
+reglas de pico y placa, tarifas (carro $120/min tope $28.000; moto $60/min tope $12.000), 3 descuentos,
+4 tipos de incidencia y parámetros de `configuracion`.
 
 ## Ejecutar
 
@@ -209,6 +214,25 @@ Respuestas: éxito `{ "data": … }`; error `{ "error": { "codigo", "mensaje", "
 | POST | `/incidencias` | `incidencias.registrar` (admin, operador) | `{ tipo_incidencia_id, placa, celda_id?, descripcion }`. El servidor pone `codigo` y `fecha_hora`. 404 `VEHICULO_NO_REGISTRADO` |
 | GET | `/incidencias` · `/incidencias/:id` | `incidencias.ver` | Filtros `tipo_id`, `placa`, `desde`, `hasta`, paginado |
 | GET | `/usuarios/me/incidencias` | Sesión | Incidencias de los vehículos del usuario (sin quién las registró) |
+
+| GET | `/reportes/usuarios` | `reportes.ver` (admin) | REP-01: usuarios con todos sus datos (sin hash) y su rol. `?rol`, `?estado`, paginado |
+| GET | `/reportes/vehiculos` | `reportes.ver` | REP-02: vehículos con propietario y visitas. `?tipo`, `?propietario=con|sin`, paginado |
+| GET | `/reportes/entradas` · `/reportes/salidas` | `reportes.ver` | REP-03/04: `?desde&hasta`, `?tipo`, `?puerta_id`, `?placa`, paginado. Salidas: duración, valor, `meta.recaudado` |
+| GET | `/reportes/incidencias` | `reportes.ver` | REP-05: `?desde&hasta&tipo` |
+| GET | `/reportes/pico-placa?fecha=` | `reportes.ver` | REP-06: vehículos registrados que no pueden ingresar ese día (reglas activas) + accesos rechazados reales |
+| GET | `/reportes/celdas-ocupadas?fecha=` | `reportes.ver` | REP-07: celdas distintas ocupadas, máximo simultáneo (y a qué hora), ocupación por hora |
+| GET | `/reportes/celdas-mas-usadas` · `/reportes/vehiculos-frecuentes` | `reportes.ver` | REP-08/09: ranking por estadías/visitas y minutos. `?desde&hasta&limite&tipo` |
+| GET | `/reportes/ocupacion` | `reportes.ver` | REP-10: matriz día × hora (promedio de celdas y %), hora pico, día pico y franja pico |
+| GET | `/reportes/financiero` | `reportes.ver` | REP-11: `?agrupar=dia|semana|mes`; por período (incluye los vacíos), método, tipo de vehículo, concepto y descuentos |
+| GET | `/dashboard` | Sesión | Según el rol: admin (ocupación, ingresos hoy vs. ayer, entradas, rechazos, incidencias, membresías por vencer), operador (su turno y pico y placa de hoy), cliente (sus vehículos, mensualidad, reserva, facturas) |
+
+**Reglas de la Fase 6 (reportes y dashboard)**
+- Todos los reportes aceptan `?formato=csv`: UTF-8 **con BOM**, separador `;` (Excel en español), CRLF; los listados en CSV traen todas las filas (sin paginar). Se protege contra fórmulas (`=`, `+`, `-`, `@` al inicio de un texto).
+- Rangos `desde`/`hasta` (AAAA-MM-DD, inclusivos): por defecto los últimos 30 días; máximo **366 días** (422 si se excede o si desde > hasta).
+- Ocupación (REP-07/10): cuenta celdas distintas con estadía en la franja; REP-10 parte cada estadía en sus horas (CTE recursiva) y promedia por cuántas veces ocurre cada (día, hora) en el rango, sin contar horas futuras. Las celdas ocupadas a mano sin estadía no tienen historial.
+- Con la semilla, cada reporte responde en < 1 s (hay prueba automática con 366 días); las consultas usan los índices de fecha (`EXPLAIN`: range scan).
+- Gráficos sin librerías (organisms): `col-chart` (el de la maqueta), `hbar-chart`, `line-chart` (SVG), `heatmap` y `stacked-meter`, con `role="img"` y `aria-label` descriptivo, tooltips y colores solo de tokens.
+- `app/reportes.html`: menú lateral con los 11 reportes (`#id` en la URL), filtros, tabla, gráfico, "Exportar CSV" e "Imprimir" (`@media print` sin navegación ni controles). `app/inicio.html` es el dashboard; la ocupación se actualiza por SSE y cada entrada/salida recarga cifras, gráfico y bitácora.
 
 **Reglas de la Fase 5 (incidencias y notificaciones)**
 - Un único servicio crea notificaciones: `notificar({ usuarios | rol | todos, titulo, mensaje, tipo, enlace?, enviadaPor? }, conexion?)` en `modules/notificaciones/notificaciones.service.js`. Lo usan: edición de mis datos (REQ-USR-4 → administradores), entrada rechazada por pico y placa (→ administradores), mensualidad por vencer (→ cliente), incidencia (→ administradores y propietario) y el envío manual. Solo llega a usuarios **activos**.

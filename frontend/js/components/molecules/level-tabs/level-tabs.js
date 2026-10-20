@@ -9,10 +9,18 @@ import { el } from '../../../utils/dom.js';
  *   idPanel: (id: number) => string,   // id del tabpanel que controla cada pestaña
  *   onChange: (id: number) => void,
  *   label?: string,                    // nombre accesible del tablist
+ *   vertical?: boolean,                // menú lateral (reportes): flechas arriba/abajo
  * }} props
  * @returns {HTMLDivElement}
  */
-export function createLevelTabs({ niveles, activoId, idPanel, onChange, label = 'Niveles' }) {
+export function createLevelTabs({
+  niveles,
+  activoId,
+  idPanel,
+  onChange,
+  label = 'Niveles',
+  vertical = false,
+}) {
   const pestanas = niveles.map((nivel) => {
     const activa = nivel.id === activoId;
     return el('button', {
@@ -32,15 +40,22 @@ export function createLevelTabs({ niveles, activoId, idPanel, onChange, label = 
 
   const lista = el(
     'div',
-    { className: 'level-tabs', attrs: { role: 'tablist', 'aria-label': label } },
+    {
+      className: vertical ? 'level-tabs level-tabs--vertical' : 'level-tabs',
+      attrs: {
+        role: 'tablist',
+        'aria-label': label,
+        'aria-orientation': vertical ? 'vertical' : null,
+      },
+    },
     pestanas
   );
   lista.addEventListener('keydown', (e) => {
     const actual = pestanas.indexOf(document.activeElement);
     if (actual < 0) return;
     const destino = {
-      ArrowRight: (actual + 1) % pestanas.length,
-      ArrowLeft: (actual - 1 + pestanas.length) % pestanas.length,
+      [vertical ? 'ArrowDown' : 'ArrowRight']: (actual + 1) % pestanas.length,
+      [vertical ? 'ArrowUp' : 'ArrowLeft']: (actual - 1 + pestanas.length) % pestanas.length,
       Home: 0,
       End: pestanas.length - 1,
     }[e.key];

@@ -1,0 +1,41 @@
+/* Organism · line-chart (nuevo, SVG): mismo lenguaje del col-chart de la maqueta */
+.line-chart {
+  margin: 0;
+}
+
+.line-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.line-grid {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+}
+
+.line-base {
+  stroke: var(--asphalt);
+  stroke-width: 2;
+}
+
+.line-axis {
+  fill: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.line-path {
+  fill: none;
+  stroke: var(--asphalt);
+  stroke-width: 2.5;
+  stroke-linejoin: miter;
+  vector-effect: non-scaling-stroke;
+}
+
+.line-point {
+  fill: var(--yellow);
+  stroke: var(--asphalt);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}

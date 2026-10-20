@@ -135,3 +135,183 @@
   white-space: pre-line;
   overflow-wrap: anywhere;
 }
+
+/* Reportes: menú lateral (level-tabs vertical) + reporte activo */
+.reports {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.reports-nav {
+  position: sticky;
+  top: 16px;
+}
+
+.report-description {
+  color: var(--ink-2);
+}
+
+.report-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.report-block {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+}
+
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+
+.report-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.report-rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.report-loading {
+  display: grid;
+  place-items: center;
+  min-height: 160px;
+}
+
+@media (max-width: 1180px) {
+  .reports,
+  .report-grid,
+  .report-grid--3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* El menú lateral pasa a una fila de pestañas con scroll horizontal */
+  .reports-nav {
+    position: static;
+    overflow-x: auto;
+  }
+
+  .reports-nav .level-tabs--vertical {
+    flex-direction: row;
+    width: max-content;
+  }
+
+  .reports-nav .level-tab {
+    white-space: nowrap;
+  }
+}
+
+/* Impresión limpia: sin navegación ni controles, fondo blanco, tablas completas */
+@media print {
+  .header,
+  .navbar,
+  .hazard-strip,
+  .footer,
+  .reports-nav,
+  .report-actions,
+  .page-head-actions,
+  .filters,
+  .pagination,
+  .toast-region,
+  .skip-link {
+    display: none !important;
+  }
+
+  body,
+  .page {
+    background: var(--white);
+  }
+
+  .page {
+    max-width: none;
+    padding: 0;
+  }
+
+  .reports,
+  .report-grid,
+  .report-grid--3 {
+    display: block;
+  }
+
+  .report-block,
+  .kpis,
+  .col-chart,
+  .hbar-chart,
+  .heatmap,
+  .line-chart,
+  .stacked-meter {
+    break-inside: avoid;
+    margin-bottom: 16px;
+  }
+
+  .data-table-scroll,
+  .heatmap-scroll {
+    overflow: visible;
+  }
+
+  .data-table-table,
+  .heatmap-grid {
+    min-width: 0;
+  }
+
+  .panel-head {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .heatmap-cell,
+  .bar,
+  .hbar-fill,
+  .stacked-seg,
+  .meter > span {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+/* Dashboard del cliente: mis vehículos (dentro / fuera) */
+.my-vehicles {
+  display: grid;
+}
+
+.my-vehicle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0 12px 12px;
+  border-bottom: 1px solid var(--rule);
+  border-left: 4px solid transparent;
+}
+
+.my-vehicle.is-inside {
+  border-left-color: var(--orange);
+}
+
+.my-vehicle strong {
+  display: block;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .my-vehicle {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .my-vehicle > div {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}

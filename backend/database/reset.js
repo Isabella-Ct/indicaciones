@@ -1,11 +1,13 @@
 /**
- * npm run db:reset — BORRA y recrea la base de datos: ejecuta schema.sql y seed.sql.
+ * npm run db:reset — BORRA y recrea la base de datos: vuelve a generar seed.sql (el historial
+ * depende del día de la semana y de la hora actuales) y ejecuta schema.sql y seed.sql.
  * Usa las credenciales de backend/.env. El nombre de la BD sale de DB_NAME.
  */
 const fs = require('node:fs');
 const path = require('node:path');
 const mysql = require('mysql2/promise');
 const env = require('../src/config/env');
+const { generarSeed } = require('./generar-seed');
 
 const NOMBRE_EN_SCRIPTS = 'parking_lot_abc';
 
@@ -19,6 +21,7 @@ async function main() {
   if (env.NODE_ENV === 'production') {
     throw new Error('db:reset está deshabilitado con NODE_ENV=production.');
   }
+  await generarSeed();
   const conexion = await mysql.createConnection({
     host: env.DB_HOST,
     port: env.DB_PORT,

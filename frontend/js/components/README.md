@@ -63,7 +63,7 @@ Iconos: un solo sprite en `frontend/assets/icons.svg`. Símbolos de la maqueta: 
 | user-picker | `createUserPicker` · `setUserPickerError` | `.user-picker` | Busca por documento con la función `buscar` que le pasa la página; el id viaja en un input oculto; `vacio` = mensaje sin resultados |
 | notification-item | `createNotificationItem` | `.notice`, `.notice.is-unread`, `.notice-list`, `.notice-toolbar` | Fila de la bandeja: tipo, fecha, remitente, "Abrir" y "Marcar leída" |
 | space | `createSpace` | `.space`, `--free/--occupied/--reserved/--out/--accessible/--moto`, `.is-selected` | Celda del mapa (sección 5 de la maqueta); placa solo si la API la envía |
-| level-tabs | `createLevelTabs` | `.level-tabs`, `.level-tab.is-active` | `role="tablist"`, `aria-selected`, flechas/Inicio/Fin; `label` = nombre accesible (pisos, bandeja) |
+| level-tabs | `createLevelTabs` | `.level-tabs`, `.level-tabs--vertical`, `.level-tab.is-active` | `role="tablist"`, `aria-selected`, flechas/Inicio/Fin; `label` = nombre accesible; `vertical` = menú lateral (reportes) con flechas arriba/abajo |
 | map-legend | `createMapLegend` | `.map-legend`, `.lg-*` | Leyenda fija de la maqueta |
 | live-status | `createLiveStatus` · `setLiveStatus` | `.live-status--conectando/--en-vivo/--reconectando` | Estado de la conexión SSE |
 | photo-input | `createPhotoInput` | `.photo-input` | `name="foto"` + `quitar_foto`; vista previa y validación JPG/PNG ≤ 2 MB |
@@ -80,7 +80,12 @@ Iconos: un solo sprite en `frontend/assets/icons.svg`. Símbolos de la maqueta: 
 | footer | `createFooter` | `.footer` | Datos de la sede |
 | parking-map | `createParkingMap` | `.parking-map`, `.level`, `.level-title`, `.lot`, `.row--top/--bottom` (`--cols`), `.lane` | Solo se ve el piso activo; en móvil el lote hace scroll |
 | space-detail | `createSpaceDetail` · `formatearDuracion` | `.space-hero`, `.detail-block`, `.vehicle-line`, `.detail-actions` | Sin celda: empty-state. Mensaje distinto para libre/reservado/fuera de servicio (reto 5) |
-| kpis | `createKpis` | `.kpis`, `.kpis--3` | Fila de `kpi` de la maqueta (5 columnas; con 3 ítems `.kpis--3`; 2 en ≤ 1180 px) |
+| kpis | `createKpis` | `.kpis`, `.kpis--2/3/4` | Fila de `kpi` de la maqueta (5 columnas; con 2–4 ítems, la variante de ese número; 2 en ≤ 1180 px) |
+| col-chart | `createColChart` | `.col-chart`, `.bar`, `.bar--current`, `.bar--future`, `.bar-value` | El de la maqueta (sección 7) con datos reales; valores 0–100; con > 12 columnas rotula una de cada tres |
+| hbar-chart | `createHbarChart` | `.hbar-chart`, `.hbar-fill--top` | Rankings (REP-08/09); el primero en amarillo; en móvil la barra baja a su propia línea |
+| line-chart | `createLineChart` | `.line-chart`, `.line-path`, `.line-point` | SVG propio (REP-11); marcas "redondas" en el eje Y; `<title>` en cada punto |
+| heatmap | `createHeatmap` | `.heatmap`, `.heat-0…5` | Día × hora (REP-10); escala `--concrete-2` → `--yellow` → `--orange` relativa al máximo |
+| stacked-meter | `createStackedMeter` | `.stacked-meter`, `.stacked-seg--*` | `meter` apilado con leyenda, en lugar de donas (métodos de pago, tipo, concepto) |
 | ticket | `createTicket` · `updateTicket` | `.ticket`, `.ticket-head`, `.barcode`, `.ticket-note` | Vista previa en vivo y ticket emitido (sección 8) |
 | entry-modal | `createEntryModal` · `abrirEntryModal` | `.modal-body--split`, `.entry-client`, `.alert--grande` | "Registrar ingreso": recibe las funciones de la página (`previsualizar`, `registrar`, `registrarVisitante`); maneja los errores por código |
 | movement-log | `createMovementLog` | `.bottom`, `.log`, `.move--in/--out` | "Últimos movimientos" (sección 7) |

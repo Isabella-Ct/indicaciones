@@ -48,4 +48,35 @@ function formatearFechaHora(fecha) {
   return `${d}/${m}/${a} ${hora.slice(0, 5)}`;
 }
 
-module.exports = { ZONA, enBogota, nombreDia, minutosEntre, formatearDuracion, formatearFechaHora };
+/** 'AAAA-MM-DD' ± n días (aritmética de calendario, sin zona horaria). */
+function sumarDias(fecha, dias) {
+  const [a, m, d] = fecha.split('-').map(Number);
+  return new Date(Date.UTC(a, m - 1, d + dias)).toISOString().slice(0, 10);
+}
+
+/** Días entre dos fechas 'AAAA-MM-DD' (hasta − desde). */
+function diasEntre(desde, hasta) {
+  const ms = (f) => {
+    const [a, m, d] = f.split('-').map(Number);
+    return Date.UTC(a, m - 1, d);
+  };
+  return Math.round((ms(hasta) - ms(desde)) / 86400000);
+}
+
+/** Día de la semana de una fecha 'AAAA-MM-DD': 1 (lunes) … 7 (domingo). */
+function diaSemanaDe(fecha) {
+  const [a, m, d] = fecha.split('-').map(Number);
+  return ((new Date(Date.UTC(a, m - 1, d)).getUTCDay() + 6) % 7) + 1;
+}
+
+module.exports = {
+  ZONA,
+  enBogota,
+  nombreDia,
+  minutosEntre,
+  formatearDuracion,
+  formatearFechaHora,
+  sumarDias,
+  diasEntre,
+  diaSemanaDe,
+};

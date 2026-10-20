@@ -16,6 +16,8 @@ const OPERADOR = {
 };
 const ANDREA = { tipo_documento: 'CC', numero_documento: '1000000004', contrasena: 'Cliente2026*' };
 const SUR = 2;
+/** Número de factura n posiciones después del último de la semilla. */
+const fac = (n) => `FAC-${String(antes.ultimoFactura + n).padStart(6, '0')}`;
 
 let admin;
 let operador;
@@ -59,6 +61,9 @@ beforeAll(async () => {
     (e) => (ids.estadias[vs.find((v) => v.id === e.vehiculo_id).placa] = e.id)
   );
   [antes.tarifasActivas] = await pool.query('SELECT id FROM tarifas WHERE activa = 1');
+  [[{ ultimo: antes.ultimoFactura }]] = await pool.query(
+    "SELECT ultimo FROM consecutivos WHERE nombre = 'factura'"
+  );
 });
 
 afterAll(async () => {
@@ -197,7 +202,7 @@ describe('Cobro y facturas (REQ-TAR-2, REQ-FAC-1, REQ-FAC-2)', () => {
     expect(res.status).toBe(200);
     factura = res.body.data.factura;
     expect(factura).toMatchObject({
-      numero: 'FAC-000119',
+      numero: fac(1),
       total: 17000,
       subtotal: 18840,
       valor_descuento: 1840,
@@ -225,7 +230,7 @@ describe('Cobro y facturas (REQ-TAR-2, REQ-FAC-1, REQ-FAC-2)', () => {
     expect(a.status).toBe(200);
     expect(b.status).toBe(200);
     const numeros = [a.body.data.factura.numero, b.body.data.factura.numero].sort();
-    expect(numeros).toEqual(['FAC-000120', 'FAC-000121']);
+    expect(numeros).toEqual([fac(2), fac(3)]);
   });
 
   test('dos cobros simultáneos de la misma estadía: uno pasa, el otro 409', async () => {
@@ -260,7 +265,7 @@ describe('Cobro y facturas (REQ-TAR-2, REQ-FAC-1, REQ-FAC-2)', () => {
   test('cambiar una tarifa no altera las facturas anteriores', async () => {
     const [[vieja]] = await pool.query(
       'SELECT total, detalle_calculo FROM facturas WHERE numero = ?',
-      ['FAC-000119']
+      [fac(1)]
     );
     const nueva = await admin.post('/api/v1/tarifas').send({
       tipo_vehiculo: 'carro',
@@ -276,7 +281,7 @@ describe('Cobro y facturas (REQ-TAR-2, REQ-FAC-1, REQ-FAC-2)', () => {
 
     const [[despues]] = await pool.query(
       'SELECT total, detalle_calculo FROM facturas WHERE numero = ?',
-      ['FAC-000119']
+      [fac(1)]
     );
     expect(despues).toEqual(vieja);
     const detalle = await admin.get(`/api/v1/facturas/${factura.id}`);
@@ -307,7 +312,11 @@ describe('Cobro y facturas (REQ-TAR-2, REQ-FAC-1, REQ-FAC-2)', () => {
     expect(
       delAdmin.body.data.every((f) => f.metodo_pago === 'tarjeta' && f.concepto === 'estadia')
     ).toBe(true);
-    expect(delAdmin.body.meta.suma_total).toBe(delAdmin.body.data.reduce((s, f) => s + f.total, 0));
+    // El total es del período completo (todas las páginas), no solo de la página.
+    const [[{ suma }]] = await pool.query(
+      "SELECT COALESCE(SUM(total), 0) AS suma FROM facturas WHERE metodo_pago = 'tarjeta' AND concepto = 'estadia'"
+    );
+    expect(delAdmin.body.meta.suma_total).toBe(Number(suma));
 
     const resumen = await operador.get('/api/v1/facturas/resumen-hoy');
     expect(resumen.body.data.salidas_cobradas).toBeGreaterThanOrEqual(5);

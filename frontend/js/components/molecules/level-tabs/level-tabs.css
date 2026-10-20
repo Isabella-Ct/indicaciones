@@ -20,3 +20,16 @@
   background: var(--yellow);
   color: var(--ink);
 }
+
+/* Variante vertical (menú lateral de reportes): mismas pestañas apiladas */
+.level-tabs--vertical {
+  flex-direction: column;
+  padding: 2px;
+  background: var(--asphalt-2);
+}
+
+.level-tabs--vertical .level-tab {
+  display: block;
+  width: 100%;
+  text-align: left;
+}
