@@ -20,6 +20,10 @@ const publicoRoutes = require('./modules/publico/publico.routes');
 const picoPlacaRoutes = require('./modules/pico-placa/pico-placa.routes');
 const estadiasRoutes = require('./modules/estadias/estadias.routes');
 const accesosDenegadosRoutes = require('./modules/estadias/accesos-denegados.routes');
+const tarifasRoutes = require('./modules/tarifas/tarifas.routes');
+const descuentosRoutes = require('./modules/descuentos/descuentos.routes');
+const membresiasRoutes = require('./modules/membresias/membresias.routes');
+const facturasRoutes = require('./modules/facturas/facturas.routes');
 const { auth } = require('./middlewares/auth');
 const { CARPETA_UPLOADS } = require('./utils/archivos');
 
@@ -66,6 +70,10 @@ function crearApp() {
   api.use('/pico-placa', picoPlacaRoutes);
   api.use('/estadias', estadiasRoutes);
   api.use('/accesos-denegados', accesosDenegadosRoutes);
+  api.use('/tarifas', tarifasRoutes);
+  api.use('/descuentos', descuentosRoutes);
+  api.use('/membresias', membresiasRoutes);
+  api.use('/facturas', facturasRoutes);
   app.use('/api/v1', api);
 
   // ---------- Archivos subidos (fotos): solo con sesión iniciada ----------

@@ -26,7 +26,7 @@ async function vehiculoPorPlaca(placa) {
 /** Mensualidad vigente hoy del vehículo (con o sin celda fija). */
 async function membresiaVigente(vehiculoId) {
   const [filas] = await pool.query(
-    `SELECT m.id, m.celda_asignada_id, m.fecha_fin, ${NOMBRE('u')} AS titular
+    `SELECT m.id, m.usuario_id, m.celda_asignada_id, m.fecha_fin, ${NOMBRE('u')} AS titular
        FROM membresias m JOIN usuarios u ON u.id = m.usuario_id
       WHERE m.vehiculo_id = ? AND m.estado = 'activa' AND CURDATE() BETWEEN m.fecha_inicio AND m.fecha_fin
       ORDER BY m.fecha_fin DESC LIMIT 1`,

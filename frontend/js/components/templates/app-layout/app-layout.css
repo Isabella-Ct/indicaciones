@@ -75,6 +75,7 @@
 /* Pila vertical de bloques dentro de un panel o formulario */
 .stack {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 
@@ -90,6 +91,40 @@
    contenedor en móvil, en lugar de ensanchar la página. */
 @media (max-width: 1180px) {
   .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Tarifas: formulario + simulador lado a lado */
+.tariff-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.tariff-headline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  text-transform: uppercase;
+}
+
+.tariff-headline strong {
+  font-size: 2.75rem;
+  line-height: 1;
+}
+
+.tariff-headline .icon {
+  width: 32px;
+  height: 32px;
+}
+
+@media (max-width: 1180px) {
+  .tariff-editor {
     grid-template-columns: minmax(0, 1fr);
   }
 }

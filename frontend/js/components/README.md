@@ -66,6 +66,7 @@ Iconos: un solo sprite en `frontend/assets/icons.svg`. Símbolos de la maqueta: 
 | map-legend | `createMapLegend` | `.map-legend`, `.lg-*` | Leyenda fija de la maqueta |
 | live-status | `createLiveStatus` · `setLiveStatus` | `.live-status--conectando/--en-vivo/--reconectando` | Estado de la conexión SSE |
 | photo-input | `createPhotoInput` | `.photo-input` | `name="foto"` + `quitar_foto`; vista previa y validación JPG/PNG ≤ 2 MB |
+| charge | `createCharge` | `.charge`, `.charge-value`, `.charge-pct`, `.charge-note`, `.charge-steps`, `.charge-summary` | Valor a pagar + % del tope (`meter--orange`) + nota del cálculo (sección 6) |
 
 ## Organisms (`js/components/organisms/`)
 
@@ -77,10 +78,11 @@ Iconos: un solo sprite en `frontend/assets/icons.svg`. Símbolos de la maqueta: 
 | footer | `createFooter` | `.footer` | Datos de la sede |
 | parking-map | `createParkingMap` | `.parking-map`, `.level`, `.level-title`, `.lot`, `.row--top/--bottom` (`--cols`), `.lane` | Solo se ve el piso activo; en móvil el lote hace scroll |
 | space-detail | `createSpaceDetail` · `formatearDuracion` | `.space-hero`, `.detail-block`, `.vehicle-line`, `.detail-actions` | Sin celda: empty-state. Mensaje distinto para libre/reservado/fuera de servicio (reto 5) |
-| kpis | `createKpis` | `.kpis` | Fila de `kpi` de la maqueta (5 columnas; 2 en ≤ 1180 px) |
+| kpis | `createKpis` | `.kpis`, `.kpis--3` | Fila de `kpi` de la maqueta (5 columnas; con 3 ítems `.kpis--3`; 2 en ≤ 1180 px) |
 | ticket | `createTicket` · `updateTicket` | `.ticket`, `.ticket-head`, `.barcode`, `.ticket-note` | Vista previa en vivo y ticket emitido (sección 8) |
 | entry-modal | `createEntryModal` · `abrirEntryModal` | `.modal-body--split`, `.entry-client`, `.alert--grande` | "Registrar ingreso": recibe las funciones de la página (`previsualizar`, `registrar`, `registrarVisitante`); maneja los errores por código |
 | movement-log | `createMovementLog` | `.bottom`, `.log`, `.move--in/--out` | "Últimos movimientos" (sección 7) |
+| charge-modal | `createChargeModal` · `abrirChargeModal` | `.charge-aside`, `.modal-body--split` | "Registrar salida y cobrar": liquidación del servidor, descuento que recalcula (`recalcular`), método de pago, `pagar`; al terminar, "Imprimir factura" / "Cerrar" |
 | data-table | `createDataTable` | `.data-table`, `.log`, `.row-actions`, `.cell-*` | Estilo bitácora de la maqueta; orden (`aria-sort`), paginación, estado vacío, carga y scroll horizontal (`minWidth`) |
 
 ## Templates (`js/components/templates/`)

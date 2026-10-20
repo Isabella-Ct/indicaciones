@@ -55,3 +55,31 @@ export function formatearFechaHora(fecha) {
   if (!fecha) return '—';
   return fechaHora.format(new Date(fecha)).replace(',', '');
 }
+
+const soloFecha = new Intl.DateTimeFormat('es-CO', {
+  timeZone: ZONA,
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+});
+
+/** Fecha sin hora → "20/10/2026". "AAAA-MM-DD" se toma como fecha de Bogotá (no UTC). */
+export function formatearFecha(fecha) {
+  if (!fecha) return '—';
+  const valor =
+    typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha)
+      ? `${fecha}T12:00:00-05:00`
+      : fecha;
+  return soloFecha.format(new Date(valor));
+}
+
+/** Hoy en Bogotá como "AAAA-MM-DD" (para inputs type=date). */
+export function hoyBogota() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: ZONA }).format(new Date());
+}
+
+export const METODOS_PAGO = {
+  efectivo: 'Efectivo',
+  tarjeta: 'Tarjeta',
+  transferencia: 'Transferencia',
+};

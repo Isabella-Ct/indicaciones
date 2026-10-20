@@ -4,6 +4,8 @@ import { createDataList } from '../../molecules/data-list/data-list.js';
 import { createLabelCaps } from '../../atoms/label-caps/label-caps.js';
 import { createStatusChip, ESTADOS_CELDA } from '../../atoms/status-chip/status-chip.js';
 import { createPlate } from '../../atoms/plate/plate.js';
+import { createCharge } from '../../molecules/charge/charge.js';
+import { formatearCOP } from '../../../utils/formato.js';
 import { formatearHora, formatearFechaHora, formatearFechaCorta } from '../../../utils/formato.js';
 
 /** "2 h 37 min" a partir de los minutos. */
@@ -25,7 +27,7 @@ function horaEntrada(fecha, ahora) {
 }
 
 /** Bloques según el estado (reto 5: mensaje distinto para libre / reservado / fuera de servicio). */
-function bloquesSegunEstado(celda, verOcupantes, ahora) {
+function bloquesSegunEstado(celda, verOcupantes, ahora, liquidacion) {
   if (celda.estado === 'disponible') {
     return [
       bloque([
@@ -106,20 +108,43 @@ function bloquesSegunEstado(celda, verOcupantes, ahora) {
             value: estadia ? horaEntrada(estadia.fecha_hora_entrada, ahora) : '—',
           },
           { term: 'Tiempo dentro', value: minutos === null ? '—' : formatearDuracion(minutos) },
+          ...(liquidacion
+            ? [
+                {
+                  term: 'Tarifa',
+                  value: `${formatearCOP(liquidacion.tarifa.valor_fraccion)} / ${liquidacion.tarifa.unidad}`,
+                },
+                { term: 'Tope del día', value: formatearCOP(liquidacion.tarifa.valor_dia_maximo) },
+              ]
+            : []),
         ],
       }),
     ])
   );
-  bloques.push(
-    bloque([
-      el('p', {
-        className: 'detail-message',
-        text: estadia
-          ? 'El valor a pagar se calcula al registrar la salida.'
-          : 'Ocupación registrada manualmente, sin ticket de ingreso.',
-      }),
-    ])
-  );
+  // Bloque de cobro (reto 4): calculado por el servidor y refrescado cada minuto.
+  if (estadia && liquidacion) {
+    const { cobro } = liquidacion;
+    bloques.push(
+      bloque([
+        createCharge({
+          total: cobro.total,
+          porcentajeTope: cobro.membresia ? null : cobro.porcentajeTope,
+          nota: cobro.nota,
+        }),
+      ])
+    );
+  } else {
+    bloques.push(
+      bloque([
+        el('p', {
+          className: 'detail-message',
+          text: estadia
+            ? 'Calculando el valor a pagar…'
+            : 'Ocupación registrada manualmente, sin ticket de ingreso.',
+        }),
+      ])
+    );
+  }
   return bloques;
 }
 
@@ -130,6 +155,7 @@ function bloquesSegunEstado(celda, verOcupantes, ahora) {
  *   verOcupantes?: boolean,     // placas, titular y ticket (solo personal)
  *   acciones?: HTMLElement[],   // botones según el rol (los arma la página)
  *   ahora?: Date,
+ *   liquidacion?: { tarifa: object, cobro: object } | null,  // POST /estadias/:id/liquidar
  * }} props
  * @returns {HTMLElement}
  */
@@ -138,6 +164,7 @@ export function createSpaceDetail({
   verOcupantes = false,
   acciones = [],
   ahora = new Date(),
+  liquidacion = null,
 }) {
   if (!celda) {
     return createEmptyState({
@@ -162,7 +189,7 @@ export function createSpaceDetail({
         ]),
         createStatusChip(estado),
       ]),
-      ...bloquesSegunEstado(celda, verOcupantes, ahora),
+      ...bloquesSegunEstado(celda, verOcupantes, ahora, liquidacion),
       acciones.length ? el('div', { className: 'detail-actions' }, acciones) : null,
     ]
   );

@@ -53,6 +53,7 @@ beforeAll(async () => {
   cliente = await iniciarSesion(CLIENTE);
   for (const tabla of [
     'estadias',
+    'facturas',
     'lecturas_placa',
     'accesos_denegados',
     'notificaciones',
@@ -73,6 +74,10 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await pool.query('DELETE FROM lecturas_placa WHERE id > ?', [antes.lecturas_placa]);
+  await pool.query('DELETE FROM facturas WHERE id > ?', [antes.facturas]);
+  await pool.query(
+    "UPDATE consecutivos SET ultimo = (SELECT COUNT(*) FROM facturas) WHERE nombre = 'factura'"
+  );
   await pool.query('DELETE FROM estadias WHERE id > ?', [antes.estadias]);
   await pool.query('DELETE FROM reservas WHERE id > ?', [antes.reservas]);
   await pool.query('DELETE FROM accesos_denegados WHERE id > ?', [antes.accesos_denegados]);
@@ -322,30 +327,40 @@ describe('Salidas (REQ-INEX-2, REQ-INEX-3)', () => {
     expect(res.status).toBe(404);
   });
 
-  test('cerrar la estadía: finalizada y la celda fija vuelve a "reservada"', async () => {
+  test('el /cerrar de la Fase 3 se retiró → 410', async () => {
     const res = await operador
       .post(`/api/v1/estadias/${estadias.MNP908.id}/cerrar`)
       .send({ puerta_id: SUR });
+    expect(res.status).toBe(410);
+    expect(res.body.error.codigo).toBe('ENDPOINT_RETIRADO');
+  });
+
+  test('pagar cierra la estadía: finalizada y la celda fija vuelve a "reservada"', async () => {
+    const res = await operador
+      .post(`/api/v1/estadias/${estadias.MNP908.id}/pagar`)
+      .send({ puerta_id: SUR, metodo_pago: 'efectivo' });
     expect(res.status).toBe(200);
-    expect(res.body.data).toMatchObject({
+    expect(res.body.data.estadia).toMatchObject({
       estado: 'finalizada',
       minutos: 95,
       puerta_salida: 'Sur',
     });
+    // MNP908 tiene mensualidad: factura en $0 con motivo "membresía".
+    expect(res.body.data.factura).toMatchObject({ total: 0, observacion: 'membresía' });
     const a04 = await celda('A-04');
     expect(a04.estado).toBe('reservada');
     expect(a04.vehiculo_actual_id).toBeNull();
 
     const otraVez = await operador
-      .post(`/api/v1/estadias/${estadias.MNP908.id}/cerrar`)
-      .send({ puerta_id: SUR });
+      .post(`/api/v1/estadias/${estadias.MNP908.id}/pagar`)
+      .send({ puerta_id: SUR, metodo_pago: 'efectivo' });
     expect(otraVez.status).toBe(409);
   });
 
-  test('cerrar libera una celda normal ("disponible")', async () => {
+  test('pagar libera una celda normal ("disponible")', async () => {
     const res = await operador
-      .post(`/api/v1/estadias/${estadias.PRB902.id}/cerrar`)
-      .send({ puerta_id: NORTE });
+      .post(`/api/v1/estadias/${estadias.PRB902.id}/pagar`)
+      .send({ puerta_id: NORTE, metodo_pago: 'tarjeta' });
     expect(res.status).toBe(200);
     expect((await celda('A-01')).estado).toBe('disponible');
   });

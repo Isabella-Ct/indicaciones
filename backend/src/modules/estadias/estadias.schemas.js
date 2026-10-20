@@ -68,7 +68,21 @@ const salida = z
     path: ['placa'],
   });
 
-const cerrar = z.object({ puerta_id: puertaId });
+const descuentoId = z.preprocess(
+  (v) => (v === '' || v === null ? undefined : v),
+  z.coerce.number().int().positive('Descuento inválido.').optional()
+);
+
+const liquidar = z.object({ descuento_id: descuentoId });
+
+// El cliente nunca manda el total: si llega un "total", zod lo descarta.
+const pagar = z.object({
+  puerta_id: puertaId,
+  metodo_pago: z.enum(['efectivo', 'tarjeta', 'transferencia'], {
+    errorMap: () => ({ message: 'Elige el método de pago: efectivo, tarjeta o transferencia.' }),
+  }),
+  descuento_id: descuentoId,
+});
 
 const historial = z.object({
   ...esquemaPaginacion,
@@ -90,4 +104,14 @@ const denegados = z.object({
 
 const params = z.object({ id: z.coerce.number().int().positive('Identificador inválido.') });
 
-module.exports = { entrada, previsualizar, salida, cerrar, historial, ultimos, denegados, params };
+module.exports = {
+  entrada,
+  previsualizar,
+  salida,
+  liquidar,
+  pagar,
+  historial,
+  ultimos,
+  denegados,
+  params,
+};

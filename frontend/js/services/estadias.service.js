@@ -14,13 +14,19 @@ export async function registrarEntrada(datos) {
   return (await post('/estadias/entrada', datos)).data;
 }
 
-/** Liquidación preliminar (no cierra). */
+/** Liquidación con dinero: tiempo, tarifa, membresía, descuentos y cobro (no cierra). */
 export async function liquidarSalida({ puerta_id, placa, codigo_ticket }) {
   return (await post('/estadias/salida', { puerta_id, placa, codigo_ticket })).data;
 }
 
-export async function cerrarEstadia(id, puertaId) {
-  return (await post(`/estadias/${id}/cerrar`, { puerta_id: puertaId })).data;
+/** Recalcula el cobro de una estadía abierta (descuento opcional). */
+export async function liquidarEstadia(id, descuentoId = null) {
+  return (await post(`/estadias/${id}/liquidar`, { descuento_id: descuentoId ?? undefined })).data;
+}
+
+/** Cobra y cierra (el total lo calcula el servidor): { estadia, factura }. */
+export async function pagarEstadia(id, { puerta_id, metodo_pago, descuento_id }) {
+  return (await post(`/estadias/${id}/pagar`, { puerta_id, metodo_pago, descuento_id })).data;
 }
 
 export async function ultimosMovimientos(limite = 10) {

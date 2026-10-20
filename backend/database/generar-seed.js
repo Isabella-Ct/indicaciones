@@ -12,6 +12,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const bcrypt = require('bcrypt');
+const { calcularCobro } = require('../src/modules/tarifas/tarifas.calculo');
 
 const SALIDA = path.join(__dirname, 'seed.sql');
 const COSTO_BCRYPT = 10;
@@ -455,16 +456,7 @@ const EN_CURSO = [
 // ---------------------------------------------------------------------------
 // Cálculo de cobro (misma regla de CLAUDE.md §7; el servicio real es de la Fase 4)
 // ---------------------------------------------------------------------------
-function calcularCobro(minutos, t) {
-  if (minutos <= t.minutos_gracia) return 0;
-  const dias = Math.floor(minutos / 1440);
-  const resto = minutos % 1440;
-  const parcial = Math.min(
-    Math.ceil(resto / t.minutos_fraccion) * t.valor_fraccion,
-    t.valor_dia_maximo
-  );
-  return dias * t.valor_dia_maximo + parcial;
-}
+// El cobro usa calcularCobro de src/modules/tarifas (el mismo del servidor).
 
 // ---------------------------------------------------------------------------
 // Historial: estadías finalizadas y facturas de los últimos 14 días
@@ -713,13 +705,19 @@ USE parking_lot_abc;
       registrada_salida_por: elegir(operadores),
     });
 
-    const subtotal = h.membresia ? 0 : calcularCobro(h.duracion, tarifa);
     let descuento = null;
-    if (!h.membresia && subtotal > 0 && azar() < 0.15) descuento = elegir(DESCUENTOS);
+    if (!h.membresia && azar() < 0.15) descuento = elegir(DESCUENTOS);
+    const cobro = calcularCobro({
+      minutos: h.duracion,
+      tarifa,
+      membresiaActiva: h.membresia ? { titular: null } : null,
+      descuento: descuento
+        ? { id: descuento[0], nombre: descuento[1], porcentaje: descuento[3] }
+        : null,
+    });
+    if (cobro.subtotal === 0) descuento = null;
+    const { subtotal, total } = cobro;
     const porcentaje = descuento ? descuento[3] : 0;
-    const total = descuento
-      ? Math.round((subtotal * (1 - porcentaje / 100)) / 100) * 100
-      : subtotal;
     eventosFactura.push({
       orden: [-h.dias, h.salida],
       fila: {
@@ -736,6 +734,8 @@ USE parking_lot_abc;
           ? 'efectivo'
           : elegir(['efectivo', 'efectivo', 'tarjeta', 'transferencia']),
         observacion: h.membresia ? 'membresía' : null,
+        tarifa_id: tarifa.id,
+        detalle_calculo: JSON.stringify(cobro),
         fecha_pago: fechaHora(h.dias, h.salida),
         registrada_por: entradaPor,
       },
@@ -758,6 +758,8 @@ USE parking_lot_abc;
         total: VALOR_MENSUAL_CARRO,
         metodo_pago: 'transferencia',
         observacion: 'Mensualidad carro',
+        tarifa_id: null,
+        detalle_calculo: null,
         fecha_pago: sql(`TIMESTAMP(${m.inicio.sql}, '09:00:00')`),
         registrada_por: 1,
       },
@@ -813,6 +815,7 @@ USE parking_lot_abc;
   partes.push(insertar('lecturas_placa', lecturas));
   partes.push(`-- Facturas: ${facturas.length} (estadías + mensualidades)`);
   partes.push(insertar('facturas', facturas));
+  partes.push(insertar('consecutivos', [{ nombre: 'factura', ultimo: facturas.length }]));
 
   // Accesos denegados: se toman las reglas del día de la semana real de cada fecha.
   partes.push('-- Entradas rechazadas por pico y placa (solo días hábiles con regla activa)');
@@ -919,7 +922,7 @@ ORDER BY pp.digito LIMIT 1;
         titulo: 'Tu mensualidad está por vencer',
         mensaje: 'La mensualidad del vehículo CVB275 vence en 2 días.',
         tipo: 'membresia_por_vencer',
-        enlace: null,
+        enlace: '/app/mi-cuenta.html?membresia=2', // misma llave que usa el job: no se duplica
         leida: 0,
         enviada_por: null,
         created_at: haceMinutos(60),

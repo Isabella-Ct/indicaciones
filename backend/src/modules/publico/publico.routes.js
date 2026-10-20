@@ -1,6 +1,7 @@
 // Endpoints públicos (sin sesión) — REQ-WEB-1. Solo totales: nunca celdas, placas ni personas.
 const { Router } = require('express');
 const controller = require('./publico.controller');
+const tarifasController = require('../tarifas/tarifas.controller');
 
 const router = Router();
 
@@ -9,5 +10,8 @@ router.get('/disponibilidad', controller.disponibilidad);
 
 // GET /api/v1/publico/disponibilidad/stream — SSE con los mismos totales
 router.get('/disponibilidad/stream', controller.stream);
+
+// GET /api/v1/publico/tarifas — tarifas vigentes por tipo (REQ-WEB-1)
+router.get('/tarifas', tarifasController.vigentesPublicas);
 
 module.exports = router;

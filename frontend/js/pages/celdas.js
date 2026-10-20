@@ -39,7 +39,8 @@ import {
   previsualizarEntrada,
   registrarEntrada,
   liquidarSalida,
-  cerrarEstadia,
+  liquidarEstadia,
+  pagarEstadia,
   ultimosMovimientos,
   urlTicketPdf,
 } from '../services/estadias.service.js';
@@ -48,10 +49,14 @@ import {
   abrirEntryModal,
 } from '../components/organisms/entry-modal/entry-modal.js';
 import { createMovementLog } from '../components/organisms/movement-log/movement-log.js';
+import {
+  createChargeModal,
+  abrirChargeModal,
+} from '../components/organisms/charge-modal/charge-modal.js';
+import { resumenFacturacionHoy, urlFacturaPdf } from '../services/facturacion.service.js';
 import { createIconButton } from '../components/atoms/icon-button/icon-button.js';
-import { createDataList } from '../components/molecules/data-list/data-list.js';
 import { leerPuertaPreferida, guardarPuertaPreferida } from '../utils/almacen.js';
-import { formatearFechaHora } from '../utils/formato.js';
+import { formatearCOP } from '../utils/formato.js';
 import { formatearPlaca } from '../utils/placa.js';
 import { normalizarPlaca } from '../utils/placa.js';
 import { tienePermiso } from '../utils/sesion.js';
@@ -65,6 +70,8 @@ const estado = {
   resumen: null,
   pisoActivoId: null,
   seleccionadaId: null,
+  facturacion: null, // GET /facturas/resumen-hoy (KPIs del personal)
+  liquidacion: null, // { estadiaId, datos } de la celda seleccionada
 };
 
 const puede = (codigo) => tienePermiso(estado.sesion, codigo);
@@ -109,15 +116,48 @@ function pintarKpis() {
           value: r.por_estado.ocupada,
           note: `${r.por_tipo.moto.ocupada} motos · ${r.por_tipo.carro.ocupada} carros`,
         },
-        { label: 'Reservados', value: r.por_estado.reservada, note: 'Mensualidades y reservas' },
-        {
-          label: 'Fuera de servicio',
-          value: r.por_estado.fuera_servicio,
-          note: `de ${r.total} celdas`,
-        },
+        ...kpisFinales(r),
       ],
     })
   );
+}
+
+function kpisFinales(r) {
+  const f = estado.facturacion;
+  if (!f) {
+    return [
+      { label: 'Reservados', value: r.por_estado.reservada, note: 'Mensualidades y reservas' },
+      {
+        label: 'Fuera de servicio',
+        value: r.por_estado.fuera_servicio,
+        note: `de ${r.total} celdas`,
+      },
+    ];
+  }
+  const prom = f.permanencia_promedio_min;
+  return [
+    {
+      label: 'Recaudo de hoy',
+      value: formatearCOP(f.recaudo),
+      note: `${f.salidas_cobradas} salida${f.salidas_cobradas === 1 ? '' : 's'} cobrada${f.salidas_cobradas === 1 ? '' : 's'}`,
+    },
+    {
+      label: 'Permanencia prom.',
+      value: prom === null || prom === undefined ? '—' : String(Math.round(prom)),
+      unit: prom === null || prom === undefined ? '' : 'min',
+      note: 'Visitantes que salieron hoy',
+    },
+  ];
+}
+
+async function cargarFacturacion() {
+  if (!puede('facturas.ver')) return;
+  try {
+    estado.facturacion = await resumenFacturacionHoy();
+    pintarKpis();
+  } catch {
+    /* los KPI de dinero son secundarios */
+  }
 }
 
 function pintarMapa() {
@@ -147,6 +187,7 @@ function pintarMapa() {
         estado.seleccionadaId = celda.id;
         pintarMapa();
         pintarDetalle();
+        actualizarLiquidacion();
         zonas.mapa.querySelector(`.space[data-id="${celda.id}"]`)?.focus();
       },
     })
@@ -162,9 +203,41 @@ function pintarDetalle() {
     createSpaceDetail({
       celda,
       verOcupantes: verOcupantes(),
+      liquidacion: liquidacionDe(celda),
       acciones: celda ? acciones(celda) : [],
     })
   );
+}
+
+function liquidacionDe(celda) {
+  const l = estado.liquidacion;
+  return celda?.estadia && l && l.estadiaId === celda.estadia.id ? l.datos : null;
+}
+
+/** Pide al servidor el cobro en vivo de la celda seleccionada (si tiene estadía). */
+async function actualizarLiquidacion() {
+  const celda = estado.celdas.get(estado.seleccionadaId);
+  if (!celda?.estadia || !puede('movimientos.registrar')) {
+    estado.liquidacion = null;
+    return;
+  }
+  const estadiaId = celda.estadia.id;
+  try {
+    const datos = await liquidarEstadia(estadiaId);
+    if (estado.celdas.get(estado.seleccionadaId)?.estadia?.id !== estadiaId) return;
+    estado.liquidacion = { estadiaId, datos };
+    if (!zonas.detalle.contains(document.activeElement)) pintarDetalle();
+    else actualizarSoloCobro();
+  } catch {
+    /* sin tarifa vigente u otro error: el detalle se muestra sin dinero */
+  }
+}
+
+/** Repinta el detalle conservando el foco en el botón que lo tenía. */
+function actualizarSoloCobro() {
+  const etiqueta = document.activeElement?.textContent;
+  pintarDetalle();
+  [...zonas.detalle.querySelectorAll('button')].find((b) => b.textContent === etiqueta)?.focus();
 }
 
 function pintarTodo() {
@@ -216,9 +289,8 @@ function acciones(celda) {
       );
     }
     if (celda.estado === 'ocupada' && celda.estadia && puede('movimientos.registrar')) {
-      // Fase 4: se convierte en "Registrar salida y cobrar".
       const salida = boton({
-        label: 'Registrar salida',
+        label: 'Registrar salida y cobrar',
         icon: 'i-out',
         onClick: (e) => abrirSalida(celda, e.currentTarget),
       });
@@ -687,17 +759,14 @@ function abrirIngreso(origen) {
   abrirEntryModal(modal, origen);
 }
 
-/** REQ-INEX-2/3: liquidación preliminar (tiempo) y cierre de la estadía. */
+/** REQ-INEX-2/3, REQ-TAR-2, REQ-FAC-1: liquidación oficial del servidor, cobro y factura. */
 async function abrirSalida(celda, origen) {
-  const puertas = (estado.sede?.puertas ?? []).filter((p) => p.tipo !== 'entrada');
-  const puerta = createSelect({
-    options: puertas.map((p) => ({ value: String(p.id), label: p.nombre })),
-    value: String(puertas.find((p) => p.id === puertaActual())?.id ?? puertas[0]?.id ?? ''),
-  });
+  const puertaId = puertaActual();
+  const salidas = (estado.sede?.puertas ?? []).filter((p) => p.tipo !== 'entrada');
   let liquidacion;
   try {
     liquidacion = await liquidarSalida({
-      puerta_id: Number(puerta.value),
+      puerta_id: salidas.find((p) => p.id === puertaId)?.id ?? salidas[0]?.id,
       placa: celda.ocupante.placa,
     });
   } catch (error) {
@@ -705,52 +774,28 @@ async function abrirSalida(celda, origen) {
     return;
   }
   const { estadia } = liquidacion;
-  const { modal } = modalFormulario({
-    titulo: `Salida de ${formatearPlaca(estadia.vehiculo.placa)}`,
-    subtitulo: `ticket ${estadia.codigo_ticket} · celda ${estadia.celda.codigo}`,
-    textoGuardar: 'Confirmar salida',
-    contenido: [
-      el('div', { className: 'vehicle-line' }, [
-        createPlate({ placa: estadia.vehiculo.placa, large: true }),
-        el('p', {
-          text: [
-            `${estadia.vehiculo.marca ?? ''} ${estadia.vehiculo.modelo ?? ''}`.trim(),
-            estadia.vehiculo.color,
-          ]
-            .filter(Boolean)
-            .join(' · '),
-        }),
-      ]),
-      createDataList({
-        items: [
-          { term: 'Entrada', value: formatearFechaHora(liquidacion.fecha_hora_entrada) },
-          { term: 'Salida', value: formatearFechaHora(liquidacion.fecha_hora_salida) },
-          { term: 'Tiempo dentro', value: liquidacion.tiempo },
-          { term: 'Minutos', value: String(liquidacion.minutos) },
-          {
-            term: 'Cliente',
-            value: estadia.tipo_cliente === 'mensualidad' ? 'Mensualidad' : 'Visitante',
-          },
-          { term: 'Llaves', value: estadia.deja_llaves ? 'En la caseta' : 'Con el conductor' },
-        ],
-      }),
-      createField({ label: 'Puerta de salida', control: puerta, required: true }),
-      el('p', {
-        className: 'field-hint',
-        text: 'La hora de salida definitiva la registra el servidor al confirmar.',
-      }),
-    ],
-    onGuardar: async () => {
-      const cerrada = await cerrarEstadia(estadia.id, Number(puerta.value));
-      guardarPuertaPreferida(Number(puerta.value));
+  const modal = createChargeModal({
+    liquidacion,
+    puertas: estado.sede?.puertas ?? [],
+    puertaId,
+    recalcular: (descuentoId) => liquidarEstadia(estadia.id, descuentoId),
+    pagar: async (datos) => {
+      const resultado = await pagarEstadia(estadia.id, datos);
+      guardarPuertaPreferida(datos.puerta_id);
+      return resultado;
+    },
+    onImprimir: (factura) => window.open(urlFacturaPdf(factura.id), '_blank', 'noopener'),
+    onPagado: ({ factura, estadia: cerrada }) => {
       showToast(
-        `Salida registrada: ${formatearPlaca(cerrada.vehiculo.placa)} · ${cerrada.tiempo}.`,
+        `Salida cobrada: ${formatearPlaca(cerrada.vehiculo.placa)} · ${formatearCOP(factura.total)} · ${factura.numero}.`,
         'success'
       );
-      return true;
+      estado.liquidacion = null;
+      // El mapa y la bitácora llegan por SSE; el recaudo se recarga aquí.
+      cargarFacturacion();
     },
   });
-  openModal(modal, origen);
+  abrirChargeModal(modal, origen);
 }
 
 /** Atajo del page-head: busca por placa o ticket entre los vehículos dentro. */
@@ -769,6 +814,7 @@ function buscarVehiculo(texto) {
   estado.pisoActivoId = celda.piso.id;
   pintarMapa();
   pintarDetalle();
+  actualizarLiquidacion();
   zonas.detalle.querySelector('.detail-actions .btn')?.focus();
 }
 
@@ -835,13 +881,19 @@ function conectar() {
         estado.celdas.set(celda.id, celda);
       }
       pintarMapa();
-      if (!estado.seleccionadaId || estado.seleccionadaId === celda.id) pintarDetalle();
+      if (!estado.seleccionadaId || estado.seleccionadaId === celda.id) {
+        pintarDetalle();
+        if (estado.seleccionadaId === celda.id) actualizarLiquidacion();
+      }
     },
     onResumen: (resumen) => {
       estado.resumen = resumen;
       pintarKpis();
     },
-    onMovimiento: () => cargarBitacora(),
+    onMovimiento: () => {
+      cargarBitacora();
+      cargarFacturacion();
+    },
     onEstado: async (nuevo, reconectado) => {
       setLiveStatus(indicador, nuevo);
       // Tras una caída pudo haber cambios perdidos: se vuelve a cargar todo.
@@ -903,11 +955,14 @@ async function iniciar() {
   pintarTodo();
   conectar();
   cargarBitacora();
+  cargarFacturacion();
 
-  // El "tiempo dentro" del detalle avanza solo.
+  // El "tiempo dentro" y el valor a pagar del detalle avanzan solos (cobro por minuto).
   setInterval(() => {
-    if (estado.seleccionadaId && !zonas.detalle.contains(document.activeElement)) pintarDetalle();
-  }, 30 * 1000);
+    if (!estado.seleccionadaId) return;
+    if (!zonas.detalle.contains(document.activeElement)) pintarDetalle();
+    actualizarLiquidacion();
+  }, 60 * 1000);
 }
 
 iniciar();

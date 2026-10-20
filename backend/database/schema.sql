@@ -389,6 +389,8 @@ CREATE TABLE facturas (
   total DECIMAL(12,2) NOT NULL,
   metodo_pago ENUM('efectivo','tarjeta','transferencia') NOT NULL,
   observacion VARCHAR(255) NULL,            -- ej. "membresía"
+  tarifa_id INT NULL,                       -- tarifa con la que se calculó (estadías)
+  detalle_calculo JSON NULL,                -- copia del cálculo: el PDF no cambia si la tarifa cambia
   fecha_pago DATETIME NOT NULL,
   registrada_por INT NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -403,7 +405,17 @@ CREATE TABLE facturas (
   CONSTRAINT fk_facturas_membresia FOREIGN KEY (membresia_id) REFERENCES membresias (id) ON DELETE RESTRICT,
   CONSTRAINT fk_facturas_cliente FOREIGN KEY (cliente_id) REFERENCES usuarios (id) ON DELETE RESTRICT,
   CONSTRAINT fk_facturas_descuento FOREIGN KEY (descuento_id) REFERENCES descuentos (id) ON DELETE RESTRICT,
+  CONSTRAINT fk_facturas_tarifa FOREIGN KEY (tarifa_id) REFERENCES tarifas (id) ON DELETE RESTRICT,
   CONSTRAINT fk_facturas_registrada_por FOREIGN KEY (registrada_por) REFERENCES usuarios (id) ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+-- Consecutivos sin huecos (número de factura): se leen con SELECT … FOR UPDATE
+-- dentro de la misma transacción del pago, así dos cobros simultáneos nunca
+-- obtienen el mismo número y un pago fallido no consume número.
+CREATE TABLE consecutivos (
+  nombre VARCHAR(30) PRIMARY KEY,           -- ej. factura
+  ultimo INT NOT NULL DEFAULT 0,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
@@ -517,6 +529,7 @@ CREATE TABLE configuracion (
 --     descuento aplicado y total; UNIQUE por estadía.
 --   · membresias: vehículo, valor, estado y celda fija opcional.
 --   · reservas: vehículo, expiración y estados cumplida/expirada.
+--   · Fase 4: facturas guarda tarifa_id y detalle_calculo (JSON); tabla consecutivos.
 --   · Nuevas: pisos (texto del carril del mapa), puertas, accesos_denegados,
 --     vehiculos_historial_propietario y configuracion.
 --   · Reglas "un vehículo / una celda con una sola estadía abierta" y "una

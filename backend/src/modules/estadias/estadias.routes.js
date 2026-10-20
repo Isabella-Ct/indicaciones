@@ -30,16 +30,27 @@ router.post(
   controller.entrada
 );
 
-// POST /api/v1/estadias/salida — REQ-INEX-2/3: liquidación preliminar (no cierra)
+// POST /api/v1/estadias/salida — REQ-INEX-2/3 + REQ-TAR-2: liquidación con dinero (no cierra)
 router.post('/salida', registrar, validate({ body: esquemas.salida }), controller.salida);
 
-// POST /api/v1/estadias/:id/cerrar — cierra la estadía y libera la celda (en la Fase 4, con la factura)
+// POST /api/v1/estadias/:id/liquidar — recalcula el cobro (descuento_id opcional), sin cerrar
 router.post(
-  '/:id/cerrar',
+  '/:id/liquidar',
   registrar,
-  validate({ params: esquemas.params, body: esquemas.cerrar }),
-  controller.cerrar
+  validate({ params: esquemas.params, body: esquemas.liquidar }),
+  controller.liquidar
 );
+
+// POST /api/v1/estadias/:id/pagar — REQ-FAC-1/2: cobra, factura, cierra y libera la celda (transacción)
+router.post(
+  '/:id/pagar',
+  requirePermiso('facturas.cobrar'),
+  validate({ params: esquemas.params, body: esquemas.pagar }),
+  controller.pagar
+);
+
+// POST /api/v1/estadias/:id/cerrar — retirado en la Fase 4 (410): usa /pagar
+router.post('/:id/cerrar', controller.cerrarRetirado);
 
 // GET /api/v1/estadias/en-curso — vehículos dentro ahora
 router.get('/en-curso', ver, controller.enCurso);

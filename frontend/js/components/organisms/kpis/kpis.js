@@ -7,5 +7,7 @@ import { createKpi } from '../../molecules/kpi/kpi.js';
  * @returns {HTMLElement}
  */
 export function createKpis({ items, label = 'Indicadores' }) {
-  return el('section', { className: 'kpis', attrs: { 'aria-label': label } }, items.map(createKpi));
+  // La maqueta tiene 5 indicadores; con 3 se usa la variante de 3 columnas.
+  const clase = items.length === 3 ? 'kpis kpis--3' : 'kpis';
+  return el('section', { className: clase, attrs: { 'aria-label': label } }, items.map(createKpi));
 }

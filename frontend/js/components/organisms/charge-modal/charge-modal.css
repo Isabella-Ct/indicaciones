@@ -1,0 +1,9 @@
+/* Organism · charge-modal: liquidación + descuento + método de pago (sección 6/8 de la maqueta) */
+.charge-aside {
+  align-self: start;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 2px solid var(--asphalt);
+  background: var(--white);
+}

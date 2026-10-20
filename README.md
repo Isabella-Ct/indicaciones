@@ -17,7 +17,8 @@ Contexto completo del proyecto: [`CLAUDE.md`](CLAUDE.md). Requerimientos: [`docs
 | 1 | Usuarios y vehículos (REQ-USR-2..6, REQ-CAR-1..3), Mi cuenta, fotos | ✅ |
 | 2 | Celdas y mapa en tiempo real (REQ-CLD-01..03), puertas, disponibilidad pública | ✅ |
 | 3 | Pico y placa, entradas, salidas, tickets PDF e historial (REQ-CAR-4, REQ-INEX-1..4, REQ-PLA-1, REQ-TCK-1) | ✅ |
-| 4–8 | Cobro y facturas, incidencias, reportes, portal, entrega | Pendiente |
+| 4 | Tarifas, descuentos, membresías, cobro y facturas PDF (REQ-TAR-1/2, REQ-FAC-1/2, REQ-MEM-1, REQ-DES-1) | ✅ |
+| 5–8 | Reservas, incidencias, notificaciones, reportes, portal, entrega | Pendiente |
 
 ## Requisitos
 
@@ -68,6 +69,8 @@ npm run db:reset     # BORRA y recrea la BD: ejecuta database/schema.sql + datab
   - `001_permiso_usuarios_buscar.sql` (Fase 1): `usuarios.ver` queda solo para el administrador y se
     crea `usuarios.buscar` (administrador y operador).
   - `002_permiso_puertas.sql` (Fase 2): permiso `puertas.gestionar` (administrador).
+  - `003_facturas_consecutivos.sql` (Fase 4): `facturas.tarifa_id` y `facturas.detalle_calculo` (JSON con
+    el cálculo aplicado) y la tabla `consecutivos` (numeración FAC-000001 sin huecos ni duplicados).
 
 La semilla incluye: 3 roles y 34 permisos, 9 usuarios, la sede con 2 puertas (Norte y Sur), 2 sótanos con
 **44 celdas** (la distribución de la maqueta: A-01…A-12 y B-01…B-12 en Sótano 1; C-01…C-08 y M-01…M-12 en
@@ -169,13 +172,38 @@ Respuestas: éxito `{ "data": … }`; error `{ "error": { "codigo", "mensaje", "
 | POST · PUT · PATCH | `/pico-placa` · `/pico-placa/:id` · `/pico-placa/:id/activa` | `pico_placa.gestionar` (admin, operador) | `{ tipo_vehiculo, dia_semana 1–7, digito 0–9, hora_inicio, hora_fin }`. 409 si se cruza con otra regla |
 | GET | `/estadias/previsualizar?placa=` | `movimientos.registrar` | Para el modal: vehículo, tipo de cliente, celda sugerida, pico y placa de hoy |
 | POST | `/estadias/entrada` | `movimientos.registrar` | Multipart: `puerta_id`, `placa`, `celda_id?`, `requiere_accesible`, `confirmar_accesible`, `observaciones_entrada`, `deja_llaves`, `foto?`. Respuesta: ticket. Errores: 404 `VEHICULO_NO_REGISTRADO`, 403 `PICO_Y_PLACA`, 409 `ESTADIA_ABIERTA` / `SIN_CUPO` / `CELDA_ACCESIBLE` / `CONFIRMAR_ACCESIBLE` |
-| POST | `/estadias/salida` | `movimientos.registrar` | `{ puerta_id, placa \| codigo_ticket }` → liquidación preliminar (minutos, "2 h 37 min"); **no** cierra |
-| POST | `/estadias/:id/cerrar` | `movimientos.registrar` | `{ puerta_id }`: cierra la estadía y libera la celda (en la Fase 4 se integra con la factura) |
+| POST | `/estadias/salida` | `movimientos.registrar` | `{ puerta_id, placa \| codigo_ticket }` → liquidación con dinero: `{ estadia, minutos, tiempo, tarifa, membresia, descuentos, cobro }`; **no** cierra |
+| POST | `/estadias/:id/liquidar` | `movimientos.registrar` | `{ descuento_id? }` → recalcula el cobro de una estadía abierta (detalle en vivo y selector de descuento) |
+| POST | `/estadias/:id/pagar` | `facturas.cobrar` | `{ puerta_id, metodo_pago, descuento_id? }` → `{ estadia, factura }`. El total lo calcula el servidor (se ignora cualquier total enviado). 409 si ya se cobró |
+| POST | `/estadias/:id/cerrar` | — | **Retirado en la Fase 4**: responde 410 `ENDPOINT_RETIRADO` (usar `/pagar`) |
 | GET | `/estadias/en-curso` · `/estadias/ultimos-movimientos?limite=10` | `movimientos.ver` | Vehículos dentro · bitácora de entradas y salidas |
 | GET | `/estadias` | `movimientos.ver` | Historial: `placa`, `desde`, `hasta` (AAAA-MM-DD), `puerta_id`, `estado`, paginado |
 | GET | `/estadias/:id/ticket` · `/estadias/:id/ticket.pdf` | `movimientos.ver` | Ticket (JSON) · PDF de 80 mm con código de barras Code 39 |
 | GET | `/accesos-denegados` | `reportes.ver` (admin) | Entradas rechazadas (`placa`, `desde`, `hasta`, paginado) |
 | GET | `/usuarios/me/estadias` | Sesión | Historial de los vehículos del usuario en sesión |
+
+| GET | `/tarifas` | Sesión | `{ vigentes: { carro, moto } }`; admin: `?historial=1` agrega el historial |
+| POST | `/tarifas` | `tarifas.gestionar` (admin) | `{ tipo_vehiculo, valor_fraccion, minutos_fraccion, minutos_gracia, valor_dia_maximo }`: nueva vigente; desactiva la anterior del tipo |
+| POST | `/tarifas/simular` | `tarifas.ver` | `{ tipo_vehiculo, minutos, tarifa? }` → `{ tarifa, cobro }` (con la vigente o con valores propuestos) |
+| GET | `/publico/tarifas` | Público | Tarifas vigentes sin datos internos |
+| GET | `/descuentos` | `descuentos.ver` | Admin: todos (`?activos=1`); operador: solo activos |
+| POST · PUT · PATCH | `/descuentos` · `/descuentos/:id` · `/descuentos/:id/activo` | `descuentos.gestionar` (admin) | `{ nombre, descripcion?, porcentaje 0–100 }` · `{ activo }`. 409 `NOMBRE_DUPLICADO` |
+| GET | `/membresias` · `/membresias/:id` | `membresias.ver` | Filtros `estado`, `usuario_id`, `placa`, `q` (documento o nombre), paginado |
+| GET | `/membresias/cotizar?vehiculo_id=&tipo=&fecha_inicio=` | `membresias.ver` | `{ fecha_fin, valor }` calculados (valor desde `configuracion`) |
+| POST | `/membresias` | `membresias.gestionar` (admin) | `{ usuario_id, vehiculo_id, tipo, fecha_inicio, celda_asignada_id?, metodo_pago }`: crea la membresía y su factura. 409 `MEMBRESIA_TRASLAPADA` / `CELDA_CON_MENSUALIDAD` |
+| PATCH | `/membresias/:id/cancelar` | `membresias.gestionar` | Cancela y libera la celda fija |
+| GET | `/facturas` | `facturas.ver` | Admin: `desde`, `hasta`, `metodo_pago`, `concepto`, `placa`; operador: solo las de hoy. `meta.suma_total` = total del período |
+| GET | `/facturas/resumen-hoy` | `facturas.ver` | KPIs: `recaudo`, `salidas_cobradas`, `permanencia_promedio_min` (visitantes) |
+| GET | `/facturas/:id` · `/facturas/:id/pdf` | Sesión | Personal: cualquiera; cliente: solo las suyas (403 las ajenas) |
+| GET | `/usuarios/me/facturas` · `/usuarios/me/membresias` | Sesión | Facturas y membresías del usuario en sesión |
+
+**Reglas de la Fase 4 (cobro, facturas y membresías)**
+- Cobro (`calcularCobro`, función pura en `modules/tarifas/tarifas.calculo.js`): gracia → `ceil(min / minutos_fraccion) × valor_fraccion` → tope `valor_dia_maximo` por cada bloque de 24 h → membresía activa = $0 → descuento (uno por factura) redondeado a la centena. Devuelve `detalle[]` con cada paso.
+- `/pagar` hace todo en **una transacción**: bloquea la estadía, recalcula con la hora del servidor, toma el siguiente número de `consecutivos` (`FOR UPDATE`), crea la factura, cierra la estadía y libera la celda (o la deja `reservada` si es celda fija).
+- Cada factura guarda `tarifa_id` y `detalle_calculo`: **cambiar una tarifa no altera las facturas anteriores**.
+- Membresía: fecha fin = inicio + 1 mes / 1 año (MySQL); valor en `configuracion` (`membresia_valor_{mensual|anual}_{carro|moto}`); no se traslapan para el mismo vehículo ni para la misma celda fija. Se cobra con factura propia (`concepto = membresia`).
+- Job horario (`src/jobs/membresias.job.js`): vence membresías, libera o reserva celdas fijas y avisa al cliente 3 días antes de vencer (una sola vez).
+- Pantallas: Control de espacios (valor a pagar en vivo cada minuto, modal "Registrar salida y cobrar", KPIs de recaudo y permanencia), Tarifas (con simulador), Descuentos, Membresías, Facturación y Mi cuenta (Mis membresías, Mis facturas).
 
 **Reglas de la Fase 3 (entradas y salidas)**
 - Ninguna fecha u hora de movimiento viene del cliente: entrada, salida, lectura de placa y acceso denegado usan la hora del servidor.

@@ -23,8 +23,14 @@ export const ITEMS_NAVEGACION = [
     href: '/app/pico-placa.html',
     permiso: 'pico_placa.ver',
   },
-  { id: 'facturas', etiqueta: 'Facturas', href: '/app/facturas.html', permiso: 'facturas.ver' },
+  { id: 'facturas', etiqueta: 'Facturas', href: '/app/facturacion.html', permiso: 'facturas.ver' },
   { id: 'tarifas', etiqueta: 'Tarifas', href: '/app/tarifas.html', permiso: 'tarifas.ver' },
+  {
+    id: 'descuentos',
+    etiqueta: 'Descuentos',
+    href: '/app/descuentos.html',
+    permiso: 'descuentos.gestionar',
+  },
   {
     id: 'membresias',
     etiqueta: 'Membresías',
@@ -55,7 +61,7 @@ export const ITEMS_NAVEGACION = [
   {
     id: 'mis-facturas',
     etiqueta: 'Mis facturas',
-    href: '/app/mis-facturas.html',
+    href: '/app/mi-cuenta.html#mis-facturas',
     permiso: 'portal.ver',
   },
 ];

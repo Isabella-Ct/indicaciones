@@ -8,6 +8,9 @@ const esquemas = require('./usuarios.schemas');
 const controller = require('./usuarios.controller');
 const estadiasController = require('../estadias/estadias.controller');
 const esquemasEstadias = require('../estadias/estadias.schemas');
+const facturasController = require('../facturas/facturas.controller');
+const esquemasFacturas = require('../facturas/facturas.schemas');
+const membresiasController = require('../membresias/membresias.controller');
 
 const router = Router();
 router.use(auth());
@@ -47,6 +50,16 @@ router.get(
   validate({ query: esquemasEstadias.historial }),
   estadiasController.misEstadias
 );
+
+// GET /api/v1/usuarios/me/facturas — mis facturas (REQ-FAC-2)
+router.get(
+  '/me/facturas',
+  validate({ query: esquemasFacturas.listar }),
+  facturasController.misFacturas
+);
+
+// GET /api/v1/usuarios/me/membresias — mis mensualidades
+router.get('/me/membresias', membresiasController.misMembresias);
 
 // GET /api/v1/usuarios/:id — administrador, o el propio usuario
 router.get('/:id', validate({ params: esquemas.params }), controller.obtener);

@@ -12,6 +12,11 @@ const picoPlacaService = require('../pico-placa/pico-placa.service');
 const notificaciones = require('../notificaciones/notificaciones.service');
 const repo = require('./estadias.repository');
 const { elegirCelda } = require('./estadias.asignacion');
+const tarifasService = require('../tarifas/tarifas.service');
+const descuentosService = require('../descuentos/descuentos.service');
+const facturasRepo = require('../facturas/facturas.repository');
+const facturasService = require('../facturas/facturas.service');
+const { calcularCobro } = require('../tarifas/tarifas.calculo');
 
 // ---------------------------------------------------------------- formas públicas
 function aPublico(e, ahora = new Date()) {
@@ -300,31 +305,117 @@ async function buscarAbiertaOFallar({ placa, codigo_ticket }) {
   return e;
 }
 
-/** REQ-INEX-2/3: liquidación preliminar (tiempo). No cierra: eso es POST /:id/cerrar. */
+/**
+ * Calcula el cobro de una estadía abierta con la hora del servidor (REQ-TAR-2):
+ * tarifa vigente del tipo, membresía activa del vehículo y descuento opcional.
+ */
+async function cotizarCobro(e, { descuentoId = null, ahora = new Date(), conexion } = {}) {
+  const minutos = minutosEntre(e.fecha_hora_entrada, ahora);
+  const tarifa = await tarifasService.vigente(e.tipo, conexion);
+  const membresia = await repo.membresiaVigente(e.vehiculo_id);
+  const descuento =
+    descuentoId && !membresia ? await descuentosService.obtenerActivo(descuentoId, conexion) : null;
+  const cobro = calcularCobro({
+    minutos,
+    tarifa,
+    membresiaActiva: membresia ? { titular: membresia.titular } : null,
+    descuento,
+  });
+  return { minutos, tarifa, membresia, descuento, cobro };
+}
+
+const resumenMembresia = (m) => (m ? { id: m.id, titular: m.titular, vence: m.fecha_fin } : null);
+
+/**
+ * REQ-INEX-2/3 + REQ-TAR-2: liquidación con dinero (sin descuento). No cierra la estadía:
+ * eso ocurre al pagar (POST /:id/pagar).
+ */
 async function liquidarSalida({ puerta_id, placa, codigo_ticket }) {
   const ahora = new Date();
   await validarPuerta(puerta_id, 'salida');
   const e = await buscarAbiertaOFallar({ placa, codigo_ticket });
-  const minutos = minutosEntre(e.fecha_hora_entrada, ahora);
+  const { minutos, tarifa, membresia, cobro } = await cotizarCobro(e, { ahora });
   return {
     estadia: aPublico(e, ahora),
     fecha_hora_entrada: e.fecha_hora_entrada,
     fecha_hora_salida: ahora,
     minutos,
     tiempo: formatearDuracion(minutos),
+    tarifa,
+    membresia: resumenMembresia(membresia),
+    descuentos: membresia ? [] : await descuentosService.listar({ soloActivos: true }),
+    cobro,
   };
 }
 
-/** Cierra la estadía y libera la celda (vuelve a "reservada" si es celda fija o reservada). */
-async function cerrar(id, { puerta_id }, solicitante) {
+/** Recalcula el cobro de una estadía abierta (vista previa con descuento). */
+async function liquidar(id, { descuento_id }) {
+  const ahora = new Date();
+  const e = await repo.buscarDetalle(id);
+  if (!e) throw errores.noEncontrado('La estadía no existe.');
+  if (e.estado !== 'en_curso')
+    throw conflicto('ESTADIA_CERRADA', `La estadía ${e.codigo_ticket} ya fue cerrada.`);
+  const { minutos, tarifa, membresia, descuento, cobro } = await cotizarCobro(e, {
+    descuentoId: descuento_id,
+    ahora,
+  });
+  return {
+    estadia_id: e.id,
+    fecha_hora_salida: ahora,
+    minutos,
+    tiempo: formatearDuracion(minutos),
+    tarifa,
+    membresia: resumenMembresia(membresia),
+    descuento,
+    cobro,
+  };
+}
+
+/**
+ * REQ-FAC-1/2: cobra y cierra en UNA transacción. El total se recalcula aquí (nunca
+ * se confía en lo que manda el cliente); la factura toma el siguiente consecutivo
+ * bloqueado; la estadía se cierra, la celda se libera y se emite el SSE.
+ */
+async function pagar(id, { puerta_id, metodo_pago, descuento_id }, solicitante) {
   const ahora = new Date();
   const puerta = await validarPuerta(puerta_id, 'salida');
-  const cerrada = await enTransaccion(async (conexion) => {
-    const e = await repo.bloquearEstadia(id, conexion);
-    if (!e) throw errores.noEncontrado('La estadía no existe.');
-    if (e.estado !== 'en_curso')
-      throw conflicto('ESTADIA_CERRADA', `La estadía ${e.codigo_ticket} ya fue cerrada.`);
-    const minutos = minutosEntre(e.fecha_hora_entrada, ahora);
+
+  const { facturaId, celdaId } = await enTransaccion(async (conexion) => {
+    const bloqueada = await repo.bloquearEstadia(id, conexion);
+    if (!bloqueada) throw errores.noEncontrado('La estadía no existe.');
+    if (bloqueada.estado !== 'en_curso') {
+      throw conflicto(
+        'ESTADIA_CERRADA',
+        `La estadía ${bloqueada.codigo_ticket} ya fue cobrada y cerrada.`
+      );
+    }
+    const e = await repo.buscarDetalle(id);
+    const { minutos, tarifa, membresia, descuento, cobro } = await cotizarCobro(e, {
+      descuentoId: descuento_id,
+      ahora,
+      conexion,
+    });
+
+    const nuevaFactura = await facturasRepo.insertar(
+      {
+        numero: await facturasRepo.siguienteNumero(conexion),
+        concepto: 'estadia',
+        estadia_id: id,
+        cliente_id: membresia?.usuario_id ?? e.usuario_id ?? null,
+        subtotal: cobro.subtotal,
+        descuento_id: descuento?.id ?? null,
+        porcentaje_descuento: cobro.porcentajeDescuento,
+        valor_descuento: cobro.valorDescuento,
+        total: cobro.total,
+        metodo_pago,
+        observacion: membresia ? 'membresía' : null,
+        tarifa_id: tarifa.id,
+        detalle_calculo: { ...cobro, tarifa },
+        fecha_pago: ahora,
+        registrada_por: solicitante.id,
+      },
+      conexion
+    );
     await repo.cerrarEstadia(
       id,
       {
@@ -339,11 +430,12 @@ async function cerrar(id, { puerta_id }, solicitante) {
       (await celdasRepo.membresiaFija(e.celda_id, conexion)) ||
       (await celdasRepo.reservaActiva(e.celda_id, conexion));
     await repo.liberarCelda(e.celda_id, fija ? 'reservada' : 'disponible', conexion);
-    return e;
+    return { facturaId: nuevaFactura, celdaId: e.celda_id };
   });
 
-  await publicarCambioCelda(cerrada.celda_id);
+  await publicarCambioCelda(celdaId);
   const detalle = await repo.buscarDetalle(id);
+  const factura = facturasService.aPublico(await facturasRepo.buscarDetalle(facturaId));
   publicar('movimiento-registrado', {
     movimiento: 'salida',
     estadia_id: id,
@@ -352,9 +444,9 @@ async function cerrar(id, { puerta_id }, solicitante) {
     tipo: detalle.tipo,
     celda: detalle.celda_codigo,
     puerta: puerta.nombre,
-    valor: detalle.valor_pagado ?? null,
+    valor: factura.total,
   });
-  return aPublico(detalle);
+  return { estadia: aPublico(detalle), factura };
 }
 
 // ---------------------------------------------------------------- consultas
@@ -386,7 +478,8 @@ module.exports = {
   registrarEntrada,
   obtenerTicket,
   liquidarSalida,
-  cerrar,
+  liquidar,
+  pagar,
   enCurso,
   historial,
   historialDeUsuario,

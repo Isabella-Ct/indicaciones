@@ -165,4 +165,161 @@ function generarTicketPdf(t, sede, formatearFecha) {
   });
 }
 
-module.exports = { generarTicketPdf };
+const METODOS = { efectivo: 'Efectivo', tarjeta: 'Tarjeta', transferencia: 'Transferencia' };
+const pesos = (v) => `$ ${Math.round(Number(v) || 0).toLocaleString('es-CO')}`;
+
+/**
+ * Factura / recibo interno (REQ-FAC-2) en papel de 80 mm. Usa el detalle del cálculo
+ * guardado en la factura (no recalcula), así no cambia si después cambia la tarifa.
+ * @param {object} f factura (facturas.service.obtener)
+ * @param {{ nombre: string, direccion: string, ciudad: string, telefono?: string }} sede
+ * @param {(fecha: Date) => string} formatearFecha
+ * @returns {Promise<Buffer>}
+ */
+function generarFacturaPdf(f, sede, formatearFecha) {
+  const lineasDetalle = f.detalle_calculo?.detalle?.length ?? 2;
+  const alto = 430 + lineasDetalle * 22 + (f.estadia ? 70 : 30);
+  return new Promise((resolver, rechazar) => {
+    const doc = new PDFDocument({
+      size: [ANCHO, alto],
+      margins: { top: MARGEN, bottom: MARGEN, left: MARGEN, right: MARGEN },
+      info: { Title: `PARKO · Factura ${f.numero}`, Author: 'PARKO' },
+    });
+    const partes = [];
+    doc.on('data', (p) => partes.push(p));
+    doc.on('end', () => resolver(Buffer.concat(partes)));
+    doc.on('error', rechazar);
+
+    const ancho = ANCHO - MARGEN * 2;
+    let y = MARGEN;
+
+    dibujarFranja(doc, MARGEN, y, ancho, 30);
+    doc.font('Helvetica-Bold').fontSize(10);
+    const etiqueta = f.concepto === 'membresia' ? 'RECIBO DE MENSUALIDAD' : 'FACTURA DE PARQUEO';
+    const anchoEtiqueta = doc.widthOfString(etiqueta, { characterSpacing: 0.8 }) + 14;
+    doc.rect(MARGEN + 8, y + 7, anchoEtiqueta, 16).fill(COLOR.asfalto);
+    doc
+      .fillColor(COLOR.amarillo)
+      .text(etiqueta, MARGEN + 14, y + 11, { lineBreak: false, characterSpacing: 0.8 });
+    y += 40;
+
+    doc
+      .fillColor(COLOR.tinta)
+      .font('Helvetica-Bold')
+      .fontSize(16)
+      .text('PARKO', MARGEN, y, { characterSpacing: 1 });
+    y += 18;
+    doc.font('Courier').fontSize(7.5).fillColor(COLOR.tinta2);
+    doc.text(
+      [
+        sede.nombre,
+        `${sede.direccion}, ${sede.ciudad}`,
+        sede.telefono ? `Tel. ${sede.telefono}` : null,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      MARGEN,
+      y,
+      { width: ancho }
+    );
+    y = doc.y + 8;
+
+    const fila = (termino, valor, { destacado = false, grande = false } = {}) => {
+      doc
+        .font('Courier')
+        .fontSize(8.5)
+        .fillColor(COLOR.tinta2)
+        .text(termino, MARGEN, y, { lineBreak: false });
+      doc
+        .font('Courier-Bold')
+        .fontSize(grande ? 14 : destacado ? 10.5 : 8.5)
+        .fillColor(COLOR.tinta)
+        .text(valor, MARGEN, y - (grande ? 3 : destacado ? 1 : 0), {
+          width: ancho,
+          align: 'right',
+        });
+      y = Math.max(doc.y, y + 12) + 3;
+    };
+    const linea = () => {
+      doc
+        .moveTo(MARGEN, y)
+        .lineTo(MARGEN + ancho, y)
+        .lineWidth(0.6)
+        .dash(2, { space: 2 })
+        .stroke(COLOR.tinta2);
+      doc.undash();
+      y += 6;
+    };
+
+    fila('N.º', f.numero, { destacado: true });
+    fila('Fecha', formatearFecha(f.fecha_pago));
+    if (f.cliente) {
+      fila('Cliente', f.cliente.nombre_completo);
+      fila('Documento', `${f.cliente.tipo_documento} ${f.cliente.numero_documento}`);
+    } else {
+      fila('Cliente', 'Visitante');
+    }
+    if (f.placa) fila('Placa', f.placa, { destacado: true });
+    if (f.estadia) {
+      fila('Ticket', f.estadia.codigo_ticket);
+      fila('Celda', f.estadia.celda);
+      fila('Entrada', formatearFecha(f.estadia.fecha_hora_entrada));
+      fila('Salida', formatearFecha(f.estadia.fecha_hora_salida));
+      fila('Tiempo', f.estadia.tiempo);
+    }
+    if (f.membresia) {
+      fila('Mensualidad', f.membresia.tipo === 'anual' ? 'Anual' : 'Mensual');
+      fila(
+        'Vigencia',
+        `${formatearFecha(f.membresia.fecha_inicio).slice(0, 10)} – ${formatearFecha(f.membresia.fecha_fin).slice(0, 10)}`
+      );
+    }
+    linea();
+
+    // Detalle del cálculo (copia guardada en la factura)
+    if (f.detalle_calculo?.detalle?.length) {
+      doc
+        .font('Courier')
+        .fontSize(7.5)
+        .fillColor(COLOR.tinta2)
+        .text('Detalle del cálculo', MARGEN, y);
+      y = doc.y + 2;
+      for (const paso of f.detalle_calculo.detalle.filter((d) => d.paso !== 'total')) {
+        doc
+          .font('Courier')
+          .fontSize(7.5)
+          .fillColor(COLOR.tinta)
+          .text(paso.texto, MARGEN, y, { width: ancho });
+        y = doc.y + 3;
+      }
+      linea();
+    } else if (f.observacion) {
+      doc
+        .font('Courier')
+        .fontSize(7.5)
+        .fillColor(COLOR.tinta)
+        .text(f.observacion, MARGEN, y, { width: ancho });
+      y = doc.y + 4;
+      linea();
+    }
+
+    fila('Subtotal', pesos(f.subtotal));
+    if (f.descuento) fila(`Descuento ${f.descuento.porcentaje} %`, `− ${pesos(f.valor_descuento)}`);
+    fila('TOTAL', pesos(f.total), { grande: true });
+    fila('Método de pago', METODOS[f.metodo_pago] ?? f.metodo_pago);
+    fila('Atendió', f.registrada_por);
+    y += 6;
+
+    doc
+      .font('Courier-Bold')
+      .fontSize(7)
+      .fillColor(COLOR.tinta2)
+      .text('Documento interno, no válido como factura electrónica.', MARGEN, y, {
+        width: ancho,
+        align: 'center',
+      });
+    doc.end();
+  });
+}
+
+module.exports = { generarTicketPdf, generarFacturaPdf };

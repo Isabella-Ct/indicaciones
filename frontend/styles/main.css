@@ -26,6 +26,7 @@
 /* molecules */
 @import url('../js/components/molecules/alert/alert.css');
 @import url('../js/components/molecules/brand/brand.css');
+@import url('../js/components/molecules/charge/charge.css');
 @import url('../js/components/molecules/check/check.css');
 @import url('../js/components/molecules/data-list/data-list.css');
 @import url('../js/components/molecules/empty-state/empty-state.css');
@@ -47,6 +48,7 @@
 @import url('../js/components/molecules/user-picker/user-picker.css');
 
 /* organisms */
+@import url('../js/components/organisms/charge-modal/charge-modal.css');
 @import url('../js/components/organisms/data-table/data-table.css');
 @import url('../js/components/organisms/entry-modal/entry-modal.css');
 @import url('../js/components/organisms/footer/footer.css');
