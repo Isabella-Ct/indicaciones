@@ -129,7 +129,7 @@ async function crear({ tipo_incidencia_id, placa, celda_id, descripcion }, solic
           titulo: 'Incidencia con tu vehículo',
           mensaje: `Se registró una incidencia (${tipo.nombre}) con tu vehículo ${vehiculo.placa}. Código ${codigo}. Acércate a la caseta si necesitas más información.`,
           tipo: 'incidencia',
-          enlace: '/app/mi-cuenta.html#mis-incidencias',
+          enlace: '/app/mis-movimientos.html#incidencias',
         },
         conexion
       );

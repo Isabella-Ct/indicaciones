@@ -1100,7 +1100,7 @@ USE parking_lot_abc;
         mensaje:
           'Se registró un rayón a tu vehículo BNM350. Acércate a la caseta para más información.',
         tipo: 'incidencia',
-        enlace: '/app/mi-cuenta.html#mis-incidencias',
+        enlace: '/app/mis-movimientos.html#incidencias',
         leida: 0,
         enviada_por: null,
         created_at: fechaHora(3, 10 * 60 + 21),
@@ -1120,7 +1120,7 @@ USE parking_lot_abc;
         titulo: 'Tu mensualidad está por vencer',
         mensaje: 'La mensualidad del vehículo CVB275 vence en 2 días.',
         tipo: 'membresia_por_vencer',
-        enlace: '/app/mi-cuenta.html?membresia=2', // misma llave que usa el job: no se duplica
+        enlace: '/app/mis-movimientos.html?membresia=2', // misma llave que usa el job: no se duplica
         leida: 0,
         enviada_por: null,
         created_at: haceMinutos(60),

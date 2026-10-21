@@ -14,7 +14,8 @@ async function listar(filtros, solicitante) {
     filtros.incluir_inactivas === '1' && solicitante.permisos.includes('celdas.gestionar');
   const filas = await repo.listar({ ...filtros, incluirInactivas: verInactivas });
   const verOcupantes = puedeVerOcupantes(solicitante);
-  return filas.map((f) => aPublico(f, verOcupantes));
+  const propios = verOcupantes ? null : await repo.vehiculosDeUsuario(solicitante.id);
+  return filas.map((f) => aPublico(f, verOcupantes, propios));
 }
 
 async function obtener(id, solicitante) {
@@ -22,7 +23,9 @@ async function obtener(id, solicitante) {
   if (!fila || (!fila.activa && !solicitante.permisos.includes('celdas.gestionar'))) {
     throw errores.noEncontrado('La celda no existe.');
   }
-  return aPublico(fila, puedeVerOcupantes(solicitante));
+  const verOcupantes = puedeVerOcupantes(solicitante);
+  const propios = verOcupantes ? null : await repo.vehiculosDeUsuario(solicitante.id);
+  return aPublico(fila, verOcupantes, propios);
 }
 
 async function resumen() {
@@ -216,4 +219,16 @@ async function cambiarActiva(id, activa, solicitante) {
   return obtener(id, solicitante);
 }
 
-module.exports = { listar, obtener, resumen, cambiarEstado, crear, actualizar, cambiarActiva };
+/** Vehículos de un cliente (para el SSE del mapa). */
+const vehiculosDeUsuario = (usuarioId) => repo.vehiculosDeUsuario(usuarioId);
+
+module.exports = {
+  vehiculosDeUsuario,
+  listar,
+  obtener,
+  resumen,
+  cambiarEstado,
+  crear,
+  actualizar,
+  cambiarActiva,
+};

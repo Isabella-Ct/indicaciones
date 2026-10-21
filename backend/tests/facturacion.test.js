@@ -444,13 +444,13 @@ describe('Membresías (REQ-MEM-1)', () => {
     expect((await celda('M-07')).estado).toBe('disponible');
     const [avisos] = await pool.query(
       "SELECT * FROM notificaciones WHERE tipo = 'membresia_por_vencer' AND enlace = ?",
-      [`/app/mi-cuenta.html?membresia=${porVencer.insertId}`]
+      [`/app/mis-movimientos.html?membresia=${porVencer.insertId}`]
     );
     expect(avisos).toHaveLength(1);
     expect(avisos[0].usuario_id).toBe(4);
     // La mensualidad de la semilla que vence en 2 días ya tenía su aviso: no se duplica.
     const [[{ n }]] = await pool.query(
-      "SELECT COUNT(*) AS n FROM notificaciones WHERE tipo = 'membresia_por_vencer' AND enlace = '/app/mi-cuenta.html?membresia=2'"
+      "SELECT COUNT(*) AS n FROM notificaciones WHERE tipo = 'membresia_por_vencer' AND enlace = '/app/mis-movimientos.html?membresia=2'"
     );
     expect(n).toBe(1);
   });

@@ -15,4 +15,8 @@ async function stream(req, res) {
   });
 }
 
-module.exports = { disponibilidad, stream };
+async function picoPlacaHoy(_req, res) {
+  res.json({ data: await publicoService.picoPlacaHoy() });
+}
+
+module.exports = { disponibilidad, stream, picoPlacaHoy };

@@ -28,6 +28,7 @@ const notificacionesRoutes = require('./modules/notificaciones/notificaciones.ro
 const incidenciasRoutes = require('./modules/incidencias/incidencias.routes');
 const tiposIncidenciaRoutes = require('./modules/incidencias/tipos-incidencia.routes');
 const reportesRoutes = require('./modules/reportes/reportes.routes');
+const reservasRoutes = require('./modules/reservas/reservas.routes');
 const dashboardRoutes = require('./modules/dashboard/dashboard.routes');
 const { auth } = require('./middlewares/auth');
 const { CARPETA_UPLOADS } = require('./utils/archivos');
@@ -49,6 +50,8 @@ function crearApp() {
           imgSrc: ["'self'", 'data:', 'blob:'],
           connectSrc: ["'self'"],
           objectSrc: ["'none'"],
+          // Mapa embebido de la página pública (OpenStreetMap, sin API key).
+          frameSrc: ['https://www.openstreetmap.org'],
           frameAncestors: ["'none'"],
           // En local se sirve por http: no forzar https.
           upgradeInsecureRequests: env.NODE_ENV === 'production' ? [] : null,
@@ -83,6 +86,7 @@ function crearApp() {
   api.use('/incidencias', incidenciasRoutes);
   api.use('/tipos-incidencia', tiposIncidenciaRoutes);
   api.use('/reportes', reportesRoutes);
+  api.use('/reservas', reservasRoutes);
   api.use('/dashboard', dashboardRoutes);
   app.use('/api/v1', api);
 

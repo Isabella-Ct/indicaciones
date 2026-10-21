@@ -163,7 +163,7 @@ async function porVencerSinAviso(dias) {
       WHERE m.estado = 'activa' AND m.fecha_fin BETWEEN CURDATE() AND CURDATE() + INTERVAL ? DAY
         AND NOT EXISTS (
           SELECT 1 FROM notificaciones n
-           WHERE n.tipo = 'membresia_por_vencer' AND n.enlace = CONCAT('/app/mi-cuenta.html?membresia=', m.id)
+           WHERE n.tipo = 'membresia_por_vencer' AND n.enlace = CONCAT('/app/mis-movimientos.html?membresia=', m.id)
         )`,
     [dias]
   );

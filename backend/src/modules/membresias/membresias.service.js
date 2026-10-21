@@ -11,7 +11,7 @@ const usuariosService = require('../usuarios/usuarios.service');
 const notificaciones = require('../notificaciones/notificaciones.service');
 const repo = require('./membresias.repository');
 
-const ENLACE = (id) => `/app/mi-cuenta.html?membresia=${id}`;
+const ENLACE = (id) => `/app/mis-movimientos.html?membresia=${id}`;
 const dia = (fecha) => formatearFechaHora(fecha).slice(0, 10);
 
 function aPublico(m) {

@@ -13,6 +13,8 @@ const esquemasFacturas = require('../facturas/facturas.schemas');
 const membresiasController = require('../membresias/membresias.controller');
 const incidenciasController = require('../incidencias/incidencias.controller');
 const esquemasIncidencias = require('../incidencias/incidencias.schemas');
+const reservasController = require('../reservas/reservas.controller');
+const esquemasReservas = require('../reservas/reservas.schemas');
 
 const router = Router();
 router.use(auth());
@@ -62,6 +64,9 @@ router.get(
 
 // GET /api/v1/usuarios/me/membresias — mis mensualidades
 router.get('/me/membresias', membresiasController.misMembresias);
+
+// GET /api/v1/usuarios/me/reservas — mis reservas (REQ-RES-1)
+router.get('/me/reservas', validate({ query: esquemasReservas.listar }), reservasController.mias);
 
 // GET /api/v1/usuarios/me/incidencias — incidencias de mis vehículos (REQ-INCD-1)
 router.get(

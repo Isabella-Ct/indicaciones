@@ -315,3 +315,35 @@
     grid-row: 2;
   }
 }
+
+/* Portal: reserva activa (cuenta regresiva + datos + cancelar) */
+.reservation-list {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.reservation {
+  display: grid;
+  grid-template-columns: minmax(180px, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+}
+
+.reservation .plate {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 760px) {
+  .reservation {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Mensajes dentro de las acciones del detalle de celda (portal) */
+.detail-note {
+  padding: 10px 12px;
+  border-left: 4px solid var(--yellow);
+  background: var(--white);
+  font-size: 0.9375rem;
+}

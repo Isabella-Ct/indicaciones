@@ -192,7 +192,14 @@ async function actualizarActiva(id, activa) {
   await pool.query('UPDATE celdas SET activa = ? WHERE id = ?', [activa ? 1 : 0, id]);
 }
 
+/** Ids de los vehículos activos de un usuario (para marcar sus celdas en el mapa). */
+async function vehiculosDeUsuario(usuarioId) {
+  const [filas] = await pool.query('SELECT id FROM vehiculos WHERE usuario_id = ?', [usuarioId]);
+  return new Set(filas.map((f) => f.id));
+}
+
 module.exports = {
+  vehiculosDeUsuario,
   listar,
   buscarDetalle,
   bloquear,

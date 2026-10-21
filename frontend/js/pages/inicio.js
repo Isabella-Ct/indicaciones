@@ -359,7 +359,7 @@ function cuerpoCliente(d) {
             createButton({
               label: 'Ver todas',
               size: 'sm',
-              href: '/app/mi-cuenta.html#mis-facturas',
+              href: '/app/mis-movimientos.html#facturas',
             }),
           ],
           children: [

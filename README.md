@@ -20,7 +20,8 @@ Contexto completo del proyecto: [`CLAUDE.md`](CLAUDE.md). Requerimientos: [`docs
 | 4 | Tarifas, descuentos, membresías, cobro y facturas PDF (REQ-TAR-1/2, REQ-FAC-1/2, REQ-MEM-1, REQ-DES-1) | ✅ |
 | 5 | Incidencias y notificaciones: campana en vivo, bandeja y envío manual (REQ-INCD-1, REQ-NOT-1) | ✅ |
 | 6 | Reportes del administrador (REQ-REP-01…11) con CSV e impresión, dashboard por rol y gráficos propios | ✅ |
-| 7–8 | Reservas, portal, entrega | Pendiente |
+| 7 | Reservas con vencimiento automático, portal del cliente y página web pública (REQ-RES-1, REQ-CLD-02, REQ-WEB-1) | ✅ |
+| 8 | Pruebas, pulido y entrega | Pendiente |
 
 ## Requisitos
 
@@ -95,7 +96,7 @@ npm start            # sin recarga automática
 
 | URL | Pantalla |
 |---|---|
-| `/` | Página pública (provisional) |
+| `/` | Página pública: portada, cupos libres en vivo, tarifas y mensualidades, servicios, pico y placa de hoy, ubicación (OpenStreetMap) |
 | `/login.html` | Inicio de sesión |
 | `/app/inicio.html` | Inicio del panel interno |
 | `/app/cambiar-contrasena.html` | Cambio de contraseña (obligatorio en el primer acceso) |
@@ -104,7 +105,10 @@ npm start            # sin recarga automática
 | `/app/historial.html` | Historial de movimientos con filtros, PDF del ticket y exportación CSV |
 | `/app/usuarios.html` | Usuarios: listado, edición y estado (administrador); solo registro (operador) |
 | `/app/vehiculos.html` | Vehículos: registro, edición, propietario e historial |
-| `/app/mi-cuenta.html` | Mis datos, cambio de contraseña y (clientes) mis vehículos |
+| `/app/mi-cuenta.html` | Mis datos, cambio de contraseña, (clientes) mis vehículos y últimas notificaciones |
+| `/app/disponibilidad.html` | Portal del cliente: mapa en solo lectura (sin placas ajenas) y **Reservar** con cuenta regresiva; sus reservas y su celda fija resaltadas |
+| `/app/mis-movimientos.html` | Portal del cliente: estadías, facturas (PDF), membresías, reservas e incidencias en pestañas (`#facturas`, `?membresia=ID`) |
+| `/app/reservas.html` | Reservas (admin/operador): listado con filtros, tiempo restante y cancelación |
 | `/app/_catalogo.html` | Catálogo de componentes (**solo desarrollo**; en producción responde 404) |
 
 ## Usuarios de prueba
@@ -192,7 +196,8 @@ Respuestas: éxito `{ "data": … }`; error `{ "error": { "codigo", "mensaje", "
 | GET | `/tarifas` | Sesión | `{ vigentes: { carro, moto } }`; admin: `?historial=1` agrega el historial |
 | POST | `/tarifas` | `tarifas.gestionar` (admin) | `{ tipo_vehiculo, valor_fraccion, minutos_fraccion, minutos_gracia, valor_dia_maximo }`: nueva vigente; desactiva la anterior del tipo |
 | POST | `/tarifas/simular` | `tarifas.ver` | `{ tipo_vehiculo, minutos, tarifa? }` → `{ tarifa, cobro }` (con la vigente o con valores propuestos) |
-| GET | `/publico/tarifas` | Público | Tarifas vigentes sin datos internos |
+| GET | `/publico/tarifas` | Público | Tarifas vigentes sin datos internos + `mensualidades: { carro: { mensual, anual }, moto: {…} }` |
+| GET | `/publico/pico-placa-hoy` | Público | `{ fecha, dia_nombre, carro: { criterio, digitos, horarios }, moto: {…} }` — solo los dígitos de hoy |
 | GET | `/descuentos` | `descuentos.ver` | Admin: todos (`?activos=1`); operador: solo activos |
 | POST · PUT · PATCH | `/descuentos` · `/descuentos/:id` · `/descuentos/:id/activo` | `descuentos.gestionar` (admin) | `{ nombre, descripcion?, porcentaje 0–100 }` · `{ activo }`. 409 `NOMBRE_DUPLICADO` |
 | GET | `/membresias` · `/membresias/:id` | `membresias.ver` | Filtros `estado`, `usuario_id`, `placa`, `q` (documento o nombre), paginado |
@@ -224,7 +229,19 @@ Respuestas: éxito `{ "data": … }`; error `{ "error": { "codigo", "mensaje", "
 | GET | `/reportes/celdas-mas-usadas` · `/reportes/vehiculos-frecuentes` | `reportes.ver` | REP-08/09: ranking por estadías/visitas y minutos. `?desde&hasta&limite&tipo` |
 | GET | `/reportes/ocupacion` | `reportes.ver` | REP-10: matriz día × hora (promedio de celdas y %), hora pico, día pico y franja pico |
 | GET | `/reportes/financiero` | `reportes.ver` | REP-11: `?agrupar=dia|semana|mes`; por período (incluye los vacíos), método, tipo de vehículo, concepto y descuentos |
+| POST | `/reservas` | `reservas.crear` (todos los roles) | `{ vehiculo_id, celda_id, requiere_accesible? }`: celda → `reservada`, reserva `confirmada` que vence en `configuracion.reserva_minutos_expiracion` (30). Cliente: solo sus vehículos (403). 409 `RESERVA_ACTIVA` / `VEHICULO_DENTRO` / `TIENE_CELDA_FIJA` / `CELDA_NO_DISPONIBLE` / `CELDA_ACCESIBLE`; 403 `PICO_Y_PLACA`; 422 celda de otro tipo |
+| PATCH | `/reservas/:id/cancelar` | `reservas.crear` | El titular o admin/operador; libera la celda. 409 `RESERVA_NO_ACTIVA` |
+| GET | `/reservas` | `reservas.ver` (admin, operador) | Filtros `estado`, `activas=1`, `placa`, `desde`, `hasta`, paginado |
+| GET | `/reservas/:id` · `/usuarios/me/reservas` | Sesión | Personal: cualquiera; cliente: solo las suyas (sin datos del titular) |
 | GET | `/dashboard` | Sesión | Según el rol: admin (ocupación, ingresos hoy vs. ayer, entradas, rechazos, incidencias, membresías por vencer), operador (su turno y pico y placa de hoy), cliente (sus vehículos, mensualidad, reserva, facturas) |
+
+**Reglas de la Fase 7 (reservas, portal y página pública)**
+- Máximo una reserva activa por vehículo; no se reserva si el vehículo ya está dentro, si tiene mensualidad con celda fija o si tiene pico y placa **en ese momento** (hora del servidor).
+- Solo celdas `disponible` del mismo tipo; las accesibles solo si se marca que se necesita.
+- Tarea programada (`backend/src/jobs/reservas.job.js`, cada minuto): las reservas vencidas pasan a `expirada`, la celda se libera (o vuelve a la mensualidad que la tenga), se emite el cambio por SSE y se notifica al cliente (`reserva_expirada`).
+- La entrada (Fase 3) usa la celda de la reserva vigente y la marca `cumplida`.
+- Los endpoints `/publico/*` solo devuelven totales y reglas: nunca celdas, placas, nombres ni documentos.
+- El aviso de membresía por vencer enlaza a `/app/mis-movimientos.html?membresia=ID`.
 
 **Reglas de la Fase 6 (reportes y dashboard)**
 - Todos los reportes aceptan `?formato=csv`: UTF-8 **con BOM**, separador `;` (Excel en español), CRLF; los listados en CSV traen todas las filas (sin paginar). Se protege contra fórmulas (`=`, `+`, `-`, `@` al inicio de un texto).
@@ -288,7 +305,8 @@ distinta de `/auth/me`, `/auth/logout` y `/auth/cambiar-contrasena` responde `40
 │   │   ├── config/           env (validado con zod), pool MySQL, constantes
 │   │   ├── middlewares/      auth, require-permiso, validate, rate-limit, error-handler
 │   │   ├── modules/          auth, salud, parqueadero, roles, usuarios, vehiculos, notificaciones,
-│   │   │                     pisos, celdas, puertas, publico, pico-placa, estadias
+│   │   │                     pisos, celdas, puertas, publico, pico-placa, estadias, tarifas, descuentos,
+│   │   │                     membresias, facturas, incidencias, reportes, dashboard, reservas
 │   │   │                     (routes → controller → service → repository)
 │   │   ├── utils/            errores, paginación, placas, archivos, fechas (Bogotá), pdf (ticket)
 │   │   └── realtime/         emisor (pub/sub), helper SSE y publicación de cambios de celdas

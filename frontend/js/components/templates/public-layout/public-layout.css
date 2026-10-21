@@ -1,59 +1,98 @@
-/* Template · public-layout (nuevo) */
+/* Template · public-layout (nuevo): misma piel PARKO que el panel interno */
 .public-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-left: auto;
 }
 
-/* Bloque principal de la portada */
-.hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-  gap: 24px;
-  align-items: stretch;
-  margin-bottom: 24px;
+/* La cabecera pública solo tiene marca y accesos: en móvil van en la misma fila */
+.public-layout .header-inner .public-actions {
+  order: 1;
 }
 
-.hero-copy {
+.public-page {
   display: grid;
-  align-content: center;
-  gap: 16px;
-  padding: 28px;
-  background: var(--yellow);
-  border: 2px solid var(--asphalt);
+  gap: 48px;
+  padding-top: 40px;
 }
 
-.hero-copy h1 {
+.public-section {
+  display: grid;
+  gap: 18px;
+  scroll-margin-top: 16px;
+}
+
+.public-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--asphalt);
+}
+
+.public-section-head h2 {
   font-family: var(--font-display);
-  font-size: 3.5rem;
+  font-size: 2.25rem;
   font-weight: 700;
-  line-height: 0.95;
+  line-height: 1;
   text-transform: uppercase;
 }
 
-.hero-copy p {
-  font-size: 1.0625rem;
-  font-weight: 500;
+.public-section-head p {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-2);
 }
 
-.hero-actions {
+/* Pico y placa de hoy: dígitos grandes por tipo */
+.plate-rule {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  border: 2px solid var(--asphalt);
+  background: var(--asphalt);
+}
+
+.plate-rule > div {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  background: var(--panel);
+}
+
+.plate-digits {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-@media (max-width: 1180px) {
-  .hero {
-    grid-template-columns: 1fr;
-  }
+.plate-digit {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 2px solid var(--asphalt);
+  background: var(--yellow);
+  font-family: var(--font-mono);
+  font-size: 1.75rem;
+  font-weight: 600;
 }
 
 @media (max-width: 760px) {
-  .hero-copy {
-    padding: 20px 16px;
+  .public-page {
+    gap: 36px;
+    padding-top: 28px;
   }
 
-  .hero-copy h1 {
-    font-size: 2.5rem;
+  .public-section-head h2 {
+    font-size: 1.75rem;
+  }
+
+  .plate-rule {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

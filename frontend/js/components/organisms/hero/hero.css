@@ -1,0 +1,98 @@
+/* Organism · hero (nuevo): portada pública sobre asfalto con franja de peligro */
+.hero {
+  background: var(--asphalt);
+  color: var(--line);
+}
+
+.hero-inner {
+  display: grid;
+  gap: 18px;
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 56px 28px 48px;
+}
+
+.hero-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+}
+
+.hero-brand .brand-mark {
+  width: 52px;
+  height: 52px;
+  font-size: 2.25rem;
+  font-weight: 700;
+}
+
+.hero-brand strong {
+  display: block;
+  font-size: 1.75rem;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.hero-brand small {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-on-dark-2);
+}
+
+.hero-title {
+  max-width: 14ch;
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 7vw, 5.25rem);
+  font-weight: 700;
+  line-height: 0.92;
+  text-transform: uppercase;
+}
+
+.hero-text {
+  max-width: 58ch;
+  font-size: 1.125rem;
+  color: var(--ink-on-dark-2);
+}
+
+.hero-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hero-facts li {
+  padding: 6px 10px;
+  border: 1px solid var(--asphalt-3);
+  background: var(--asphalt-2);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--line);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+/* btn--ghost claro sobre el asfalto */
+.hero .btn--ghost {
+  border-color: var(--line);
+  color: var(--line);
+}
+
+.hero .btn--ghost:hover {
+  background: var(--line);
+  color: var(--ink);
+}
+
+@media (max-width: 760px) {
+  .hero-inner {
+    padding: 36px 16px 32px;
+  }
+
+  .hero-text {
+    font-size: 1rem;
+  }
+}

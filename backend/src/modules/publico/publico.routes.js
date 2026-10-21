@@ -14,4 +14,7 @@ router.get('/disponibilidad/stream', controller.stream);
 // GET /api/v1/publico/tarifas — tarifas vigentes por tipo (REQ-WEB-1)
 router.get('/tarifas', tarifasController.vigentesPublicas);
 
+// GET /api/v1/publico/pico-placa-hoy — dígitos restringidos hoy por tipo (sin nada más)
+router.get('/pico-placa-hoy', controller.picoPlacaHoy);
+
 module.exports = router;

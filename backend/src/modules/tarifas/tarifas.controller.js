@@ -1,4 +1,5 @@
 const tarifasService = require('./tarifas.service');
+const publicoService = require('../publico/publico.service');
 
 async function listar(req, res) {
   const { historial, tipo_vehiculo } = req.validado.query;
@@ -31,7 +32,13 @@ async function vigentesPublicas(_req, res) {
       valor_dia_maximo: t.valor_dia_maximo,
       descripcion: t.descripcion,
     };
-  res.json({ data: { carro: limpiar(carro), moto: limpiar(moto) } });
+  res.json({
+    data: {
+      carro: limpiar(carro),
+      moto: limpiar(moto),
+      mensualidades: await publicoService.mensualidades(),
+    },
+  });
 }
 
 module.exports = { listar, crear, simular, vigentesPublicas };

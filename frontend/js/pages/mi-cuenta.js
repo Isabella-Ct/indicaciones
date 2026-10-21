@@ -1,8 +1,8 @@
 /**
  * Mi cuenta (todos los roles) — REQ-USR-4: editar mis nombres, correo, celular y
  * foto (notifica a los administradores) y cambiar mi contraseña. Los clientes
- * ven además "Mis vehículos", "Mis membresías", "Mis facturas" e "Incidencias de mis
- * vehículos" (REQ-MEM-1, REQ-FAC-2, REQ-INCD-1).
+ * ven además "Mis vehículos"; todos, sus últimas notificaciones. Estadías, facturas, membresías,
+ * reservas e incidencias del cliente están en Mis movimientos (Fase 7).
  */
 import { el } from '../utils/dom.js';
 import { montarApp } from './comun/montar-app.js';
@@ -29,11 +29,9 @@ import {
   listarMisVehiculos,
 } from '../services/usuarios.service.js';
 import { cambiarContrasena } from '../services/auth.service.js';
-import { misMembresias, misFacturas } from '../services/facturacion.service.js';
-import { misIncidencias } from '../services/incidencias.service.js';
-import { columnasFacturas } from './comun/tabla-facturas.js';
-import { createStatusChip } from '../components/atoms/status-chip/status-chip.js';
-import { formatearCOP, formatearFecha, formatearFechaHora } from '../utils/formato.js';
+import { misNotificaciones } from '../services/notificaciones.service.js';
+import { createNotificationItem } from '../components/molecules/notification-item/notification-item.js';
+import { createEmptyState } from '../components/molecules/empty-state/empty-state.js';
 import { guardarAviso } from '../utils/almacen.js';
 import { etiquetaRol, tienePermiso } from '../utils/sesion.js';
 
@@ -279,150 +277,33 @@ async function panelMisVehiculos() {
   ]);
 }
 
-async function panelMisMembresias() {
-  let membresias = [];
+/** Últimas notificaciones (la bandeja completa está en Notificaciones). */
+async function panelNotificaciones() {
+  let datos = { data: [], meta: { no_leidas: 0 } };
   try {
-    membresias = await misMembresias();
+    datos = await misNotificaciones({ limite: 5 });
   } catch (error) {
     showToast(error.message, 'error');
   }
-  const chip = (m) => {
-    if (m.estado === 'cancelada') return createStatusChip({ text: 'Cancelada', variant: 'out' });
-    if (m.estado === 'vencida') return createStatusChip({ text: 'Vencida' });
-    if (!m.vigente) return createStatusChip({ text: 'Programada', variant: 'reserved' });
-    return createStatusChip({
-      text: m.dias_restantes <= 3 ? `Vence en ${m.dias_restantes} d` : 'Vigente',
-      variant: m.dias_restantes <= 3 ? 'occupied' : 'free',
-    });
-  };
-  const panel = createPanel({
-    title: 'Mis membresías',
+  return createPanel({
+    title: 'Mis notificaciones',
+    actions: [createButton({ label: 'Ver todas', size: 'sm', href: '/app/notificaciones.html' })],
     children: [
-      createDataTable({
-        caption: 'Mis membresías',
-        minWidth: 640,
-        rows: membresias,
-        rowClass: (m) =>
-          new URLSearchParams(location.search).get('membresia') === String(m.id)
-            ? 'is-highlighted'
-            : '',
-        empty: {
-          title: 'Sin membresías',
-          text: 'No tienes mensualidades. Pregunta en la caseta por los planes mensual y anual.',
-        },
-        columns: [
-          {
-            key: 'placa',
-            label: 'Vehículo',
-            render: (m) => createPlate({ placa: m.vehiculo.placa }),
-          },
-          { key: 'tipo', label: 'Tipo', render: (m) => (m.tipo === 'anual' ? 'Anual' : 'Mensual') },
-          {
-            key: 'vigencia',
-            label: 'Vigencia',
-            render: (m) =>
-              el('span', {
-                className: 'cell-nowrap',
-                text: `${formatearFecha(m.fecha_inicio)} → ${formatearFecha(m.fecha_fin)}`,
-              }),
-          },
-          { key: 'celda', label: 'Celda fija', render: (m) => m.celda?.codigo ?? '—' },
-          { key: 'valor', label: 'Valor', align: 'right', render: (m) => formatearCOP(m.valor) },
-          { key: 'estado', label: 'Estado', render: chip },
-        ],
+      datos.data.length
+        ? el(
+            'ul',
+            { className: 'notice-list' },
+            datos.data.map((n) => createNotificationItem({ notificacion: n }))
+          )
+        : createEmptyState({ title: 'Sin notificaciones', text: 'Aquí verás los avisos del parqueadero.' }),
+      el('p', {
+        className: 'field-hint',
+        text: datos.meta.no_leidas
+          ? `Tienes ${datos.meta.no_leidas} sin leer.`
+          : 'Estás al día.',
       }),
     ],
   });
-  panel.id = 'mis-membresias';
-  return el('div', { className: 'page-grid-full' }, [panel]);
-}
-
-function panelMisFacturas() {
-  const contenedor = el('div');
-  const filtros = { pagina: 1, limite: 10 };
-  async function cargar() {
-    try {
-      const { data, meta } = await misFacturas(filtros);
-      contenedor.replaceChildren(
-        createDataTable({
-          caption: 'Mis facturas',
-          minWidth: 760,
-          rows: data,
-          empty: {
-            title: 'Sin facturas',
-            text: 'Aquí aparecerán tus pagos de parqueo y mensualidades.',
-          },
-          columns: columnasFacturas({ conCliente: false }),
-          pagination: {
-            pagina: meta.pagina,
-            totalPaginas: meta.total_paginas,
-            total: meta.total,
-            onChange: (pagina) => {
-              filtros.pagina = pagina;
-              cargar();
-            },
-          },
-        })
-      );
-    } catch (error) {
-      showToast(error.message, 'error');
-    }
-  }
-  cargar();
-  const panel = createPanel({ title: 'Mis facturas', children: [contenedor] });
-  panel.id = 'mis-facturas';
-  return el('div', { className: 'page-grid-full' }, [panel]);
-}
-
-async function panelMisIncidencias() {
-  let incidencias = [];
-  try {
-    incidencias = (await misIncidencias({ limite: 50 })).data;
-  } catch (error) {
-    showToast(error.message, 'error');
-  }
-  const panel = createPanel({
-    title: 'Incidencias de mis vehículos',
-    children: [
-      createDataTable({
-        caption: 'Incidencias de mis vehículos',
-        minWidth: 640,
-        rows: incidencias,
-        empty: {
-          title: 'Sin incidencias',
-          text: 'No hay incidencias registradas con tus vehículos.',
-        },
-        columns: [
-          {
-            key: 'codigo',
-            label: 'Código',
-            render: (i) =>
-              el('span', {}, [
-                el('strong', { className: 'cell-nowrap', text: i.codigo }),
-                el('span', {
-                  className: 'cell-sub cell-nowrap',
-                  text: formatearFechaHora(i.fecha_hora),
-                }),
-              ]),
-          },
-          {
-            key: 'placa',
-            label: 'Vehículo',
-            render: (i) => createPlate({ placa: i.vehiculo.placa }),
-          },
-          { key: 'tipo', label: 'Tipo', render: (i) => i.tipo.nombre },
-          { key: 'celda', label: 'Celda', render: (i) => i.celda?.codigo ?? '—' },
-          {
-            key: 'descripcion',
-            label: 'Descripción',
-            render: (i) => el('span', { className: 'text-long', text: i.descripcion }),
-          },
-        ],
-      }),
-    ],
-  });
-  panel.id = 'mis-incidencias';
-  return el('div', { className: 'page-grid-full' }, [panel]);
 }
 
 async function iniciar() {
@@ -436,22 +317,9 @@ async function iniciar() {
   if (!app) return;
   const perfil = await obtenerMiPerfil();
   const paneles = [panelMisDatos(perfil, app.sesion), panelContrasena()];
-  if (tienePermiso(app.sesion, 'portal.ver')) {
-    paneles.push(
-      await panelMisVehiculos(),
-      await panelMisMembresias(),
-      panelMisFacturas(),
-      await panelMisIncidencias()
-    );
-  }
+  if (tienePermiso(app.sesion, 'portal.ver')) paneles.push(await panelMisVehiculos());
+  paneles.push(await panelNotificaciones());
   app.main.append(el('div', { className: 'page-grid' }, paneles));
-  // Enlaces del navbar y de las notificaciones (#mis-facturas, ?membresia=ID).
-  const destino = location.hash
-    ? document.getElementById(location.hash.slice(1))
-    : new URLSearchParams(location.search).has('membresia')
-      ? document.getElementById('mis-membresias')
-      : null;
-  destino?.scrollIntoView();
 }
 
 iniciar();

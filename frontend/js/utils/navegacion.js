@@ -1,13 +1,21 @@
 /**
  * Ítems del navbar. Cada uno exige un permiso (tabla permisos); el navbar solo
  * muestra los que el rol en sesión tiene (CLAUDE.md §5.1).
- * Las pantallas se crean en las fases siguientes.
+ * "excluir": el ítem se oculta si la sesión tiene ese permiso (p. ej. el mapa del personal
+ * para el cliente, que lo ve en Disponibilidad).
  */
 import { tienePermiso } from './sesion.js';
 
 export const ITEMS_NAVEGACION = [
   { id: 'inicio', etiqueta: 'Inicio', href: '/app/inicio.html', permiso: null },
-  { id: 'celdas', etiqueta: 'Celdas', href: '/app/celdas.html', permiso: 'celdas.ver' },
+  // El cliente ve el mapa en Disponibilidad (portal), con reservas.
+  {
+    id: 'celdas',
+    etiqueta: 'Celdas',
+    href: '/app/celdas.html',
+    permiso: 'celdas.ver',
+    excluir: 'portal.ver',
+  },
   // La operación (ingreso/salida) se hace en Celdas; aquí, el historial de movimientos.
   {
     id: 'historial',
@@ -51,28 +59,27 @@ export const ITEMS_NAVEGACION = [
     permiso: 'notificaciones.enviar',
   },
   { id: 'reportes', etiqueta: 'Reportes', href: '/app/reportes.html', permiso: 'reportes.ver' },
-  // Portal del cliente
+  // Portal del cliente (Fase 7): inicio, disponibilidad con reservas, movimientos y cuenta
   {
-    id: 'mis-vehiculos',
-    etiqueta: 'Mis vehículos',
-    href: '/app/mis-vehiculos.html',
+    id: 'disponibilidad',
+    etiqueta: 'Disponibilidad',
+    href: '/app/disponibilidad.html',
     permiso: 'portal.ver',
   },
   {
-    id: 'mis-reservas',
-    etiqueta: 'Mis reservas',
-    href: '/app/mis-reservas.html',
+    id: 'mis-movimientos',
+    etiqueta: 'Mis movimientos',
+    href: '/app/mis-movimientos.html',
     permiso: 'portal.ver',
   },
-  {
-    id: 'mis-facturas',
-    etiqueta: 'Mis facturas',
-    href: '/app/mi-cuenta.html#mis-facturas',
-    permiso: 'portal.ver',
-  },
+  { id: 'mi-cuenta', etiqueta: 'Mi cuenta', href: '/app/mi-cuenta.html', permiso: 'portal.ver' },
 ];
 
 /** Ítems visibles para la sesión. */
 export function itemsPermitidos(sesion) {
-  return ITEMS_NAVEGACION.filter((item) => !item.permiso || tienePermiso(sesion, item.permiso));
+  return ITEMS_NAVEGACION.filter(
+    (item) =>
+      (!item.permiso || tienePermiso(sesion, item.permiso)) &&
+      !(item.excluir && tienePermiso(sesion, item.excluir))
+  );
 }

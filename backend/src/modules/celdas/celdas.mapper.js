@@ -16,8 +16,10 @@ function origenReserva(fila) {
 /**
  * @param {object} fila resultado de celdas.repository (SELECT_DETALLE)
  * @param {boolean} verOcupantes
+ * @param {Set<number>} [propios] vehículos del cliente en sesión: marca SUS celdas (su reserva,
+ *   su celda de mensualidad o donde está parqueado) sin exponer nada de otras personas.
  */
-function aPublico(fila, verOcupantes) {
+function aPublico(fila, verOcupantes, propios) {
   const celda = {
     id: fila.id,
     codigo: fila.codigo,
@@ -32,7 +34,23 @@ function aPublico(fila, verOcupantes) {
     activa: Boolean(fila.activa),
     reserva_origen: origenReserva(fila),
   };
-  if (!verOcupantes) return celda;
+  if (!verOcupantes) {
+    const motivo = !propios
+      ? null
+      : propios.has(fila.reserva_vehiculo_id)
+        ? 'reserva'
+        : propios.has(fila.membresia_vehiculo_id)
+          ? 'mensualidad'
+          : fila.estado === 'ocupada' && propios.has(fila.vehiculo_actual_id)
+            ? 'vehiculo'
+            : null;
+    if (!motivo) return celda;
+    return {
+      ...celda,
+      propia: motivo,
+      reserva: motivo === 'reserva' ? { id: fila.reserva_id, expira: fila.reserva_expira } : null,
+    };
+  }
 
   return {
     ...celda,

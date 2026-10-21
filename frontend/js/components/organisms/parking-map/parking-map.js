@@ -19,7 +19,7 @@ function fila(celdas, clase, props) {
     celdas.map((celda) =>
       createSpace({
         celda,
-        seleccionada: celda.id === props.seleccionadaId,
+        seleccionada: celda.id === props.seleccionadaId || Boolean(props.resaltadas?.has(celda.id)),
         onSelect: props.onSelectCelda,
       })
     )
@@ -75,6 +75,7 @@ function nivel(piso, celdas, props) {
  *   celdas: Array<object>,
  *   pisoActivoId: number,
  *   seleccionadaId?: number|null,
+ *   resaltadas?: Set<number>,         // también con is-selected (portal: sus reservas y su celda fija)
  *   onSelectPiso: (id: number, opciones?: { enfocar?: boolean }) => void,
  *   onSelectCelda?: (celda: object) => void,
  * }} props

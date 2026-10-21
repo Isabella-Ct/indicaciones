@@ -17,12 +17,16 @@ async function resumen(_req, res) {
 /** SSE: cada conexión recibe las celdas filtradas según su rol. */
 async function stream(req, res) {
   const verOcupantes = puedeVerOcupantes(req.usuario);
+  // El cliente recibe marcadas sus propias celdas (reserva, mensualidad, su vehículo).
+  const propios = verOcupantes ? null : await celdasService.vehiculosDeUsuario(req.usuario.id);
   const verInactivas = req.usuario.permisos.includes('celdas.gestionar');
   abrirStream(req, res, {
     inicial: [['resumen-actualizado', await celdasService.resumen()]],
     eventos: {
       'celda-actualizada': (fila) =>
-        fila.activa || verInactivas ? aPublico(fila, verOcupantes) : { id: fila.id, activa: false },
+        fila.activa || verInactivas
+          ? aPublico(fila, verOcupantes, propios)
+          : { id: fila.id, activa: false },
       'resumen-actualizado': (datos) => datos,
       // Bitácora de entradas/salidas: lleva placas, solo para el personal.
       'movimiento-registrado': (mov) => (verOcupantes ? mov : null),
