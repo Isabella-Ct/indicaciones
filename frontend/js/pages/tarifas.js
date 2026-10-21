@@ -1,6 +1,7 @@
 /**
  * Tarifas — REQ-TAR-1/2: tarifa vigente por tipo, nueva tarifa (admin) y simulador
  * "si un carro dura X minutos, paga $Y". El cálculo lo hace siempre el servidor.
+ * El administrador edita además los parámetros del negocio (tabla configuracion).
  */
 import { el } from '../utils/dom.js';
 import { montarApp } from './comun/montar-app.js';
@@ -19,12 +20,17 @@ import { createInput } from '../components/atoms/input/input.js';
 import { createIcon } from '../components/atoms/icon/icon.js';
 import { createLabelCaps } from '../components/atoms/label-caps/label-caps.js';
 import { obtenerTarifas, crearTarifa, simularCobro } from '../services/facturacion.service.js';
+import { listarParametros, actualizarParametro } from '../services/configuracion.service.js';
 import { formatearCOP, formatearFechaHora } from '../utils/formato.js';
 import { tienePermiso } from '../utils/sesion.js';
 
 const TIPOS = { carro: 'Carros', moto: 'Motos' };
 const estado = { sesion: null, vigentes: { carro: null, moto: null }, historial: [] };
-const zonas = { vigentes: el('div', { className: 'page-grid' }), historial: el('div') };
+const zonas = {
+  vigentes: el('div', { className: 'page-grid' }),
+  historial: el('div'),
+  parametros: el('div'),
+};
 const puede = (codigo) => tienePermiso(estado.sesion, codigo);
 
 function panelVigente(tipo) {
@@ -308,6 +314,91 @@ async function recargar() {
   }
 }
 
+// ---------------------------------------------------------------- parámetros (admin)
+/** Valores del negocio de la tabla configuracion (minutos de reserva, membresías, etc.). */
+function pintarParametros(parametros) {
+  const fila = (p) => {
+    const numerico = p.tipo === 'entero' || p.tipo === 'decimal';
+    const input = createInput({
+      name: p.clave,
+      type: numerico ? 'number' : 'text',
+      value: String(p.valor),
+      inputMode: p.tipo === 'entero' ? 'numeric' : p.tipo === 'decimal' ? 'decimal' : undefined,
+      maxLength: 255,
+    });
+    input.setAttribute('aria-label', p.descripcion);
+    if (numerico) input.setAttribute('min', p.tipo === 'entero' ? '1' : '0');
+    if (p.tipo === 'decimal') input.setAttribute('step', '0.01');
+    const guardar = createButton({
+      label: 'Guardar',
+      size: 'sm',
+      variant: 'dark',
+      icon: 'i-check',
+    });
+    guardar.addEventListener('click', async () => {
+      setButtonLoading(guardar, true);
+      try {
+        const actualizado = await actualizarParametro(p.clave, input.value);
+        Object.assign(p, actualizado);
+        input.value = String(actualizado.valor);
+        showToast(`Parámetro actualizado: ${p.descripcion}.`, 'success');
+      } catch (error) {
+        showToast(error.message, 'error');
+      } finally {
+        setButtonLoading(guardar, false);
+      }
+    });
+    return { ...p, input, guardar };
+  };
+  const filas = parametros.map(fila);
+  zonas.parametros.replaceChildren(
+    createPanel({
+      title: 'Parámetros del negocio',
+      children: [
+        el('p', {
+          className: 'field-hint',
+          text: 'Valores que usa el sistema al reservar, vender membresías, avisar vencimientos y cobrar con descuento. Los cambios aplican de inmediato.',
+        }),
+        createDataTable({
+          caption: 'Parámetros del negocio',
+          minWidth: 640,
+          rows: filas,
+          rowKey: (f) => f.clave,
+          columns: [
+            {
+              key: 'descripcion',
+              label: 'Parámetro',
+              render: (f) =>
+                el('div', {}, [
+                  el('strong', { text: f.descripcion }),
+                  el('small', { className: 'cell-muted', text: ` ${f.clave}` }),
+                ]),
+            },
+            { key: 'valor', label: 'Valor', render: (f) => f.input },
+            {
+              key: 'actualizado',
+              label: 'Último cambio',
+              render: (f) =>
+                f.actualizado_por
+                  ? `${formatearFechaHora(f.actualizado_en)} · ${f.actualizado_por.nombre_completo}`
+                  : 'Valor inicial',
+            },
+            { key: 'accion', label: 'Acción', render: (f) => f.guardar },
+          ],
+        }),
+      ],
+    })
+  );
+}
+
+async function cargarParametros() {
+  try {
+    pintarParametros(await listarParametros());
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
 async function iniciar() {
   const app = await montarApp({
     paginaId: 'tarifas',
@@ -322,8 +413,14 @@ async function iniciar() {
   estado.sesion = app.sesion;
   await recargar();
   app.main.append(
-    el('div', { className: 'stack' }, [zonas.vigentes, panelEditor(), zonas.historial])
+    el('div', { className: 'stack' }, [
+      zonas.vigentes,
+      panelEditor(),
+      zonas.historial,
+      puede('configuracion.gestionar') ? zonas.parametros : null,
+    ])
   );
+  if (puede('configuracion.gestionar')) await cargarParametros();
 }
 
 iniciar();

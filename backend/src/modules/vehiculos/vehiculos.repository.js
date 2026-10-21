@@ -1,5 +1,6 @@
 // Acceso a datos de vehículos y de su historial de propietarios.
 const { pool } = require('../../config/db');
+const { escaparLike, nombreCompleto: NOMBRE } = require('../../utils/sql');
 
 const COLUMNAS = `
   v.id, v.placa, v.tipo, v.color, v.marca, v.modelo, v.usuario_id, v.activo,
@@ -17,7 +18,6 @@ const ORDEN = {
   propietario: 'u.primer_apellido',
 };
 
-const escaparLike = (texto) => texto.replace(/[\\%_]/g, (c) => `\\${c}`);
 
 function filtros({ placa, tipo, propietario, usuario_id, q, activo }) {
   const condiciones = [];
@@ -136,8 +136,6 @@ async function insertarHistorial(
   );
 }
 
-const NOMBRE = (alias) =>
-  `CONCAT_WS(' ', ${alias}.primer_nombre, ${alias}.segundo_nombre, ${alias}.primer_apellido, ${alias}.segundo_apellido)`;
 
 async function listarHistorial(vehiculoId) {
   const [filas] = await pool.query(

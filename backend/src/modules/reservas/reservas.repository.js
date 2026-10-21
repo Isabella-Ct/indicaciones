@@ -1,7 +1,7 @@
 const { pool } = require('../../config/db');
+const { escaparLike } = require('../../utils/sql');
 
 const ACTIVAS = "('pendiente', 'confirmada')";
-const escaparLike = (texto) => texto.replace(/[\\%_]/g, (c) => `\\${c}`);
 
 const SELECT = `
   SELECT r.id, r.usuario_id, r.vehiculo_id, r.celda_id, r.estado, r.fecha_hora_reserva,

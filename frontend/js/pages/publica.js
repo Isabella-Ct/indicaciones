@@ -30,9 +30,6 @@ import {
 } from '../services/publico.service.js';
 import { RUTA_LOGIN } from '../utils/sesion.js';
 
-/** Carrera 43 # 47-53, Medellín (centro del mapa embebido de OpenStreetMap). */
-const UBICACION = { lat: 6.2507, lon: -75.5638, zoom: 17 };
-
 const SERVICIOS = [
   {
     icono: 'i-clock',
@@ -193,7 +190,7 @@ async function iniciar() {
           children: [
             createContactSection({
               sede,
-              mapa: UBICACION,
+              mapa: sede?.ubicacion ?? null,
               acciones: [createButton({ label: 'Ingresar', href: RUTA_LOGIN, size: 'sm' })],
             }),
           ],

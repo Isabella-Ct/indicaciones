@@ -43,11 +43,6 @@ export function agregarHijos(nodo, hijos) {
   }
 }
 
-/** Vacía un nodo. */
-export function vaciar(nodo) {
-  while (nodo.firstChild) nodo.removeChild(nodo.firstChild);
-}
-
 let contadorIds = 0;
 /** id único para asociar label/control o aria-*. */
 export function idUnico(prefijo = 'pk') {

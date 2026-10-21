@@ -241,6 +241,7 @@ function panelEnvio() {
 async function iniciar() {
   const app = await montarApp({
     paginaId: 'notificaciones',
+    abiertaATodos: true,
     cabecera: () => ({
       titulo: 'Notificaciones',
       subtitulo: 'avisos del sistema y mensajes del administrador',

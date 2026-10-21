@@ -1,9 +1,7 @@
 // Acceso a datos de membresías (mensualidades/anualidades) — REQ-MEM-1.
 const { pool } = require('../../config/db');
+const { escaparLike, nombreCompleto: NOMBRE } = require('../../utils/sql');
 
-const escaparLike = (texto) => texto.replace(/[\\%_]/g, (c) => `\\${c}`);
-const NOMBRE = (a) =>
-  `CONCAT_WS(' ', ${a}.primer_nombre, ${a}.segundo_nombre, ${a}.primer_apellido, ${a}.segundo_apellido)`;
 
 const SELECT_DETALLE = `
   SELECT m.id, m.usuario_id, m.vehiculo_id, m.celda_asignada_id, m.tipo, m.valor, m.fecha_inicio, m.fecha_fin,

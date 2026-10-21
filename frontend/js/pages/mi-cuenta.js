@@ -309,6 +309,7 @@ async function panelNotificaciones() {
 async function iniciar() {
   const app = await montarApp({
     paginaId: 'mi-cuenta',
+    abiertaATodos: true,
     cabecera: (sesion) => ({
       titulo: 'Mi cuenta',
       subtitulo: `${etiquetaRol(sesion.rol)} · ${sesion.tipo_documento} ${sesion.numero_documento}`,

@@ -78,6 +78,15 @@ describe('calcularCobro', () => {
     });
   });
 
+  test('el redondeo es configurable (facturacion_redondeo = 1.000: 16.956 → 17.000; 50 → 16.950)', () => {
+    const mil = calcularCobro({ minutos: 157, tarifa: CARRO, descuento: DIEZ, redondeo: 1000 });
+    expect(mil.total).toBe(17000);
+    expect(mil.detalle.find((d) => d.paso === 'descuento').texto).toMatch(/múltiplos de \$ 1\.000/);
+    expect(
+      calcularCobro({ minutos: 157, tarifa: CARRO, descuento: DIEZ, redondeo: 50 }).total
+    ).toBe(16950);
+  });
+
   test('descuento del 100 % = $0', () => {
     const r = calcularCobro({
       minutos: 157,

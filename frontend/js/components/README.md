@@ -49,7 +49,7 @@ Iconos: un solo sprite en `frontend/assets/icons.svg`. Símbolos de la maqueta: 
 | tiles | `createTiles` | `.tiles` / `.tile` | Radios en mosaico; columnas en `--cols` |
 | check | `createCheck` | `.check` | `onChange(marcado)` |
 | kpi | `createKpi` | `.kpi`, `.kpi--main` | `meter` opcional |
-| empty-state | `createEmptyState` | `.empty-state` | `title`, `text`, `action` |
+| empty-state | `createEmptyState` | `.empty-state` | `title`, `text`, `action` (un elemento o una lista de botones) |
 | brand | `createBrand` | `.brand` | `sede` = "Parqueadero ABC · Medellín" (desde la BD) |
 | shift | `createShift` | `.shift` | Fecha y hora reales (America/Bogota), se actualizan cada minuto |
 | toast | `createToast` · `showToast` | `.toast`, `--success/--error/--info` | Región `aria-live` fija abajo a la derecha |

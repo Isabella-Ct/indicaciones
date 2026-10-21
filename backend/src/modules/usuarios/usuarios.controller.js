@@ -28,6 +28,15 @@ async function actualizar(req, res) {
   res.json({ data: usuario });
 }
 
+async function restablecerContrasena(req, res) {
+  const usuario = await usuariosService.restablecerContrasena(
+    req.validado.params.id,
+    req.body.contrasena_temporal,
+    req.usuario
+  );
+  res.json({ data: usuario });
+}
+
 async function cambiarEstado(req, res) {
   const usuario = await usuariosService.cambiarEstado(
     req.validado.params.id,
@@ -61,6 +70,7 @@ module.exports = {
   crear,
   actualizar,
   cambiarEstado,
+  restablecerContrasena,
   miPerfil,
   actualizarMiPerfil,
   misVehiculos,

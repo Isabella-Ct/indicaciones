@@ -24,16 +24,6 @@ async function pagar(req, res) {
   res.json({ data: await estadiasService.pagar(req.validado.params.id, req.body, req.usuario) });
 }
 
-/** Fase 3 → Fase 4: cerrar sin cobrar ya no existe; el cierre ocurre al pagar. */
-function cerrarRetirado(req, res) {
-  res.status(410).json({
-    error: {
-      codigo: 'ENDPOINT_RETIRADO',
-      mensaje: `Este endpoint se retiró: usa POST /api/v1/estadias/${req.params.id}/pagar para cobrar y cerrar.`,
-    },
-  });
-}
-
 async function enCurso(_req, res) {
   res.json({ data: await estadiasService.enCurso() });
 }
@@ -80,7 +70,6 @@ module.exports = {
   salida,
   liquidar,
   pagar,
-  cerrarRetirado,
   enCurso,
   historial,
   ultimosMovimientos,

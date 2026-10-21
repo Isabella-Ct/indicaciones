@@ -19,6 +19,9 @@ const esquema = z.object({
     .default('parking_lot_abc'),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET debe tener al menos 32 caracteres'),
   JWT_EXPIRES_IN: z.string().default('8h'),
+  // Proxies inversos de confianza delante de Express (0 = ninguno). Detrás de un proxy HTTPS
+  // (Nginx, IIS, Caddy) vale 1: así el rate limit usa la IP real del cliente.
+  TRUST_PROXY: z.coerce.number().int().min(0).default(0),
 });
 
 const resultado = esquema.safeParse(process.env);

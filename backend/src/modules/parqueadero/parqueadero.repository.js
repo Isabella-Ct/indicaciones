@@ -2,7 +2,7 @@ const { pool } = require('../../config/db');
 
 async function obtenerPrincipal() {
   const [filas] = await pool.query(
-    `SELECT id, nombre, direccion, ciudad, telefono, horario
+    `SELECT id, nombre, direccion, ciudad, telefono, horario, latitud, longitud
        FROM parqueaderos
       WHERE activo = 1
       ORDER BY id

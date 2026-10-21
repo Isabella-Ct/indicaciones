@@ -108,4 +108,21 @@ const buscar = z.object({
 
 const params = z.object({ id: z.coerce.number().int().positive('Identificador inválido.') });
 
-module.exports = { crear, editar, editarMiPerfil, cambiarEstado, listar, buscar, params };
+/** REQ-USR-5: el administrador asigna una contraseña temporal (el usuario debe cambiarla). */
+const restablecerContrasena = z.object({
+  contrasena_temporal: z
+    .string({ required_error: 'La contraseña temporal es obligatoria.' })
+    .min(8, 'La contraseña temporal debe tener al menos 8 caracteres.')
+    .max(72, 'La contraseña temporal admite máximo 72 caracteres.'),
+});
+
+module.exports = {
+  crear,
+  editar,
+  editarMiPerfil,
+  cambiarEstado,
+  restablecerContrasena,
+  listar,
+  buscar,
+  params,
+};

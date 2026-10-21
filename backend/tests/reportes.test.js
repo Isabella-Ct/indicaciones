@@ -4,6 +4,7 @@
 const request = require('supertest');
 const { crearApp } = require('../src/app');
 const { pool } = require('../src/config/db');
+const { enBogota } = require('../src/utils/fechas');
 
 const app = crearApp();
 
@@ -374,6 +375,25 @@ describe('CSV', () => {
     );
     expect(r.text).toMatch(/Por método de pago;Efectivo;2;18000;0;18000/);
     expect(r.text).toMatch(/Total;2024-03-04 a 2024-03-10;3;23000;500;22500/);
+  });
+});
+
+describe('Exportación CSV de todos los reportes', () => {
+  test('cada reporte se descarga en CSV con BOM, cabecera y al menos una fila', async () => {
+    const hoy = enBogota().fecha;
+    const hace = enBogota(new Date(Date.now() - 59 * 86400000)).fecha;
+    for (const reporte of REPORTES) {
+      const r = await admin.get(
+        `/api/v1/reportes/${reporte}?desde=${hace}&hasta=${hoy}&fecha=${hoy}&formato=csv`
+      );
+      expect(r.status).toBe(200);
+      expect(r.headers['content-type']).toMatch(/text\/csv/);
+      expect(r.headers['content-disposition']).toMatch(/attachment; filename=/);
+      expect(r.text.startsWith('﻿')).toBe(true);
+      const lineas = r.text.slice(1).trim().split('\r\n');
+      expect([reporte, lineas.length > 1]).toEqual([reporte, true]);
+      expect(lineas[0].split(';').length).toBeGreaterThan(1);
+    }
   });
 });
 

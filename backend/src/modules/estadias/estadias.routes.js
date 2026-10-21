@@ -49,9 +49,6 @@ router.post(
   controller.pagar
 );
 
-// POST /api/v1/estadias/:id/cerrar — retirado en la Fase 4 (410): usa /pagar
-router.post('/:id/cerrar', controller.cerrarRetirado);
-
 // GET /api/v1/estadias/en-curso — vehículos dentro ahora
 router.get('/en-curso', ver, controller.enCurso);
 

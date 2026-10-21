@@ -34,6 +34,11 @@ export async function actualizarUsuario(id, formulario) {
   return (await put(`/usuarios/${id}`, formulario)).data;
 }
 
+/** REQ-USR-5: contraseña temporal asignada por el administrador. */
+export async function restablecerContrasenaUsuario(id, contrasena_temporal) {
+  return (await patch(`/usuarios/${id}/contrasena`, { contrasena_temporal })).data;
+}
+
 export async function cambiarEstadoUsuario(id, estado) {
   return (await patch(`/usuarios/${id}/estado`, { estado })).data;
 }

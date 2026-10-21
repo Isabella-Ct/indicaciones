@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PARKO · Exposición del proyecto</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    /* Tokens del sistema de diseño PARKO (docs/diseno-parko/styles.css) */
+    :root {
+      --concrete: #d6d6d1;
+      --concrete-2: #e8e8e4;
+      --panel: #f3f3f0;
+      --asphalt: #1e2023;
+      --asphalt-2: #2d3035;
+      --asphalt-3: #3a3e44;
+      --line: #f1f1ec;
+      --yellow: #ffc400;
+      --orange: #ff6b00;
+      --green: #2fbf71;
+      --blue: #2f6fdc;
+      --red: #d93a2b;
+      --steel: #6b7078;
+      --ink: #16181a;
+      --ink-2: #44484e;
+      --hazard: repeating-linear-gradient(-45deg, var(--yellow) 0 14px, var(--asphalt) 14px 28px);
+      --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+      --font: "Barlow", system-ui, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: var(--asphalt); font-family: var(--font); color: var(--ink); }
+    h1, h2, h3, p, ul, ol, dl, dd { margin: 0; }
+    ul, ol { padding: 0; list-style: none; }
+
+    /* ---------- Escenario 16:9 que se escala a la pantalla ---------- */
+    .viewport { position: fixed; inset: 0; display: grid; place-items: center; }
+    .stage {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      width: 1280px;
+      height: 720px;
+      overflow: hidden;
+      background: var(--concrete);
+      background-image: radial-gradient(rgba(0, 0, 0, 0.07) 1px, transparent 1.2px);
+      background-size: 6px 6px;
+      transform-origin: center center;
+    }
+
+    .topbar { display: flex; align-items: center; gap: 14px; padding: 12px 44px; background: var(--asphalt); color: var(--line); }
+    .brand { display: flex; align-items: center; gap: 12px; font-family: var(--font-display); font-size: 26px; font-weight: 700; letter-spacing: 0.06em; }
+    .brand-mark { display: grid; place-items: center; width: 38px; height: 38px; background: var(--yellow); color: var(--asphalt); font-size: 26px; }
+    .brand small { display: block; font-family: var(--font-mono); font-size: 11px; font-weight: 400; letter-spacing: 0.06em; color: #a9adb3; }
+    .section-label { margin-left: auto; font-family: var(--font-mono); font-size: 13px; color: var(--yellow); letter-spacing: 0.08em; text-transform: uppercase; }
+    .hazard-strip { height: 10px; background: var(--hazard); flex: none; }
+
+    .slides { position: relative; flex: 1; }
+    .slide { position: absolute; inset: 0; display: none; flex-direction: column; gap: 22px; padding: 34px 56px 28px; }
+    .slide.is-active { display: flex; animation: slide-in 0.25s ease; }
+    @keyframes slide-in { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+
+    .bottombar { display: flex; align-items: center; gap: 18px; padding: 10px 44px; background: var(--asphalt); color: #c9ccd0; font-family: var(--font-mono); font-size: 13px; }
+    .progress { flex: 1; height: 8px; background: var(--asphalt-3); }
+    .progress span { display: block; height: 100%; width: 0; background: var(--yellow); transition: width 0.25s ease; }
+    .nav-btn { width: 36px; height: 32px; border: 0; background: var(--asphalt-3); color: var(--line); font-size: 18px; cursor: pointer; }
+    .nav-btn:hover { background: var(--orange); }
+    .hint { color: #8b9097; }
+
+    /* ---------- Tipografía ---------- */
+    .eyebrow { font-family: var(--font-display); font-size: 16px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+    .title { font-family: var(--font-display); font-size: 54px; font-weight: 700; line-height: 0.95; text-transform: uppercase; }
+    .lead { max-width: 980px; font-size: 21px; line-height: 1.45; color: var(--ink-2); }
+    .mono { font-family: var(--font-mono); }
+    .head { display: grid; gap: 8px; }
+
+    /* ---------- Bloques ---------- */
+    .grid { display: grid; gap: 16px; }
+    .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .g5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
+    .card { display: flex; flex-direction: column; background: var(--panel); border: 2px solid var(--asphalt); }
+    .card-head { padding: 8px 14px; background: var(--asphalt); color: var(--line); font-family: var(--font-display); font-size: 19px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+    .card-head--yellow { background: var(--yellow); color: var(--ink); }
+    .card-body { flex: 1; padding: 12px 16px; font-size: 17px; line-height: 1.4; }
+    .card-body .mono { font-size: 14px; color: var(--ink-2); }
+
+    .list { display: grid; gap: 9px; }
+    .list li { position: relative; padding-left: 22px; font-size: 18px; line-height: 1.35; }
+    .list li::before { content: ""; position: absolute; left: 0; top: 7px; width: 10px; height: 10px; background: var(--yellow); box-shadow: 0 0 0 2px var(--asphalt); }
+    .list--small li { font-size: 16px; }
+
+    .plate { display: inline-block; padding: 2px 10px; border: 2px solid var(--ink); background: var(--yellow); font-family: var(--font-mono); font-weight: 600; letter-spacing: 0.08em; }
+    .tag { display: inline-block; padding: 2px 8px; background: var(--asphalt); color: var(--yellow); font-family: var(--font-display); font-size: 14px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+
+    .kpi-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; background: var(--asphalt); border: 2px solid var(--asphalt); }
+    .kpi { padding: 14px 18px; background: var(--panel); }
+    .kpi--main { background: var(--yellow); }
+    .kpi-value { margin-top: 4px; font-family: var(--font-display); font-size: 46px; font-weight: 700; line-height: 1; }
+    .kpi-note { margin-top: 6px; font-family: var(--font-mono); font-size: 13px; color: var(--ink-2); }
+
+    /* Flujo con flechas */
+    .flow { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0; align-items: stretch; }
+    .step { position: relative; display: flex; flex-direction: column; gap: 8px; margin-right: 26px; padding: 14px 16px; background: var(--panel); border: 2px solid var(--asphalt); }
+    .step:last-child { margin-right: 0; }
+    .step:not(:last-child)::after { content: "→"; position: absolute; right: -24px; top: 50%; transform: translateY(-50%); font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--asphalt); }
+    .step-num { font-family: var(--font-display); font-size: 40px; font-weight: 700; line-height: 1; color: var(--orange); }
+    .step-title { font-family: var(--font-display); font-size: 21px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .step p { font-size: 15px; line-height: 1.35; color: var(--ink-2); }
+
+    /* Arquitectura */
+    .arch { display: grid; grid-template-columns: 1fr 60px 1.2fr 60px 1fr; align-items: center; }
+    .arch-arrow { text-align: center; font-family: var(--font-display); font-size: 34px; font-weight: 700; }
+    .layers { display: grid; gap: 6px; margin-top: 4px; }
+    .layers span { display: block; padding: 6px 10px; background: var(--asphalt-2); color: var(--line); font-family: var(--font-mono); font-size: 14px; }
+
+    /* Fórmula de cobro */
+    .formula { display: flex; align-items: center; gap: 18px; padding: 18px 22px; background: var(--asphalt); color: var(--line); font-family: var(--font-display); font-size: 40px; font-weight: 700; letter-spacing: 0.04em; }
+    .formula em { font-style: normal; color: var(--yellow); }
+    .charge-value { font-family: var(--font-display); font-size: 64px; font-weight: 700; line-height: 1; }
+    .meter { height: 14px; margin-top: 10px; background: rgba(30, 32, 35, 0.18); }
+    .meter span { display: block; height: 100%; background: var(--orange); }
+
+    /* Mini mapa de celdas */
+    .lot { padding: 12px; background: var(--asphalt-2); }
+    .row { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); }
+    .space { display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 4px; min-height: 92px; padding: 8px 4px; border-left: 2px solid var(--line); color: var(--line); font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+    .row .space:last-child { border-right: 2px solid var(--line); }
+    .row--top .space { border-top: 2px solid var(--line); }
+    .row--bottom .space { border-bottom: 2px solid var(--line); }
+    .space--free { box-shadow: inset 0 0 0 3px rgba(47, 191, 113, 0.55); }
+    .space--free .space-tag { color: var(--green); font-family: var(--font-display); font-size: 14px; letter-spacing: 0.1em; }
+    .space--reserved { background: repeating-linear-gradient(-45deg, rgba(255, 196, 0, 0.35) 0 6px, transparent 6px 14px); }
+    .space--reserved .space-tag { padding: 1px 4px; background: var(--yellow); color: var(--ink); font-family: var(--font-display); font-size: 12px; }
+    .space--out { background: repeating-linear-gradient(-45deg, var(--orange) 0 8px, var(--asphalt) 8px 16px); }
+    .space--out .space-tag { padding: 2px 4px; background: var(--asphalt); color: var(--orange); font-family: var(--font-display); font-size: 11px; text-align: center; line-height: 1.1; }
+    .space-plate { padding: 1px 4px; background: var(--yellow); color: var(--ink); font-size: 10px; white-space: nowrap; }
+    .space svg { width: 22px; height: 40px; color: #d8dade; }
+    .lane { position: relative; display: flex; justify-content: space-between; align-items: center; height: 36px; padding: 0 12px; color: var(--yellow); font-family: var(--font-display); font-size: 13px; font-weight: 600; letter-spacing: 0.2em; }
+    .lane::before { content: ""; position: absolute; top: 50%; left: 0; right: 0; height: 3px; background: repeating-linear-gradient(90deg, var(--yellow) 0 22px, transparent 22px 40px); opacity: 0.6; transform: translateY(-50%); }
+    .lane span { position: relative; padding: 0 8px; background: var(--asphalt-2); }
+
+    /* Tabla */
+    .table { width: 100%; border-collapse: collapse; background: var(--panel); border: 2px solid var(--asphalt); }
+    .table th { padding: 8px 12px; background: var(--asphalt); color: var(--line); font-family: var(--font-display); font-size: 15px; font-weight: 600; letter-spacing: 0.1em; text-align: left; text-transform: uppercase; }
+    .table td { padding: 7px 12px; border-bottom: 1px solid rgba(30, 32, 35, 0.18); font-size: 16px; }
+    .table td.c { text-align: center; font-family: var(--font-mono); font-weight: 600; }
+    .yes { color: #1d7f49; }
+    .no { color: var(--red); }
+
+    /* Línea de fases */
+    .phases { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 2px; background: var(--asphalt); border: 2px solid var(--asphalt); }
+    .phase { display: flex; flex-direction: column; gap: 6px; min-height: 200px; padding: 12px 10px; background: var(--panel); }
+    .phase:nth-child(odd) { background: var(--concrete-2); }
+    .phase b { font-family: var(--font-display); font-size: 34px; line-height: 1; color: var(--orange); }
+    .phase span { font-family: var(--font-display); font-size: 17px; font-weight: 700; line-height: 1.1; text-transform: uppercase; }
+    .phase small { font-size: 13px; line-height: 1.3; color: var(--ink-2); }
+
+    /* Portada y cierre */
+    .slide--dark { background: var(--asphalt); color: var(--line); justify-content: center; }
+    .slide--dark .eyebrow { color: #a9adb3; }
+    .cover-brand { display: flex; align-items: center; gap: 24px; }
+    .cover-brand .brand-mark { width: 110px; height: 110px; font-family: var(--font-display); font-size: 86px; font-weight: 700; }
+    .cover-title { font-family: var(--font-display); font-size: 132px; font-weight: 700; line-height: 0.85; letter-spacing: 0.04em; }
+    .cover-sub { font-family: var(--font-display); font-size: 34px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--yellow); }
+    .cover-meta { display: flex; flex-wrap: wrap; gap: 10px 32px; font-family: var(--font-mono); font-size: 16px; color: #c9ccd0; }
+    .cover-meta strong { display: block; font-size: 12px; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; color: #8b9097; }
+    .placeholder { outline: 2px dashed var(--orange); outline-offset: 3px; }
+
+    @media print {
+      html, body { overflow: visible; background: #fff; }
+      .viewport { position: static; display: block; }
+      .stage { transform: none !important; height: auto; }
+      .topbar, .bottombar { display: none; }
+      .slides { flex: none; }
+      .slide { position: relative; display: flex !important; height: 720px; break-after: page; animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="car-top" viewBox="0 0 26 46"><rect x="2" y="2" width="22" height="42" rx="7" fill="currentColor"/><rect x="5" y="11" width="16" height="8" rx="2" fill="#2d3035" opacity=".75"/><rect x="5" y="30" width="16" height="6" rx="2" fill="#2d3035" opacity=".75"/></symbol>
+  </svg>
+
+  <div class="viewport">
+    <div class="stage" id="stage">
+
+      <header class="topbar">
+        <div class="brand"><span class="brand-mark">P</span><div>PARKO<small>Parqueadero ABC · Medellín</small></div></div>
+        <p class="section-label" id="section-label">Portada</p>
+      </header>
+      <div class="hazard-strip"></div>
+
+      <main class="slides" id="slides">
+
+        <!-- 1 · PORTADA -->
+        <section class="slide slide--dark" data-label="Portada">
+          <div class="cover-brand">
+            <span class="brand-mark">P</span>
+            <div>
+              <p class="cover-title">PARKO</p>
+              <p class="cover-sub">Sistema de gestión de parqueadero</p>
+            </div>
+          </div>
+          <div class="hazard-strip" style="margin:6px 0"></div>
+          <div class="cover-meta">
+            <div><strong>Cliente</strong>Parqueadero ABC · Carrera 43 # 47-53 · Medellín</div>
+            <div><strong>Presenta</strong><span class="placeholder">[Tu nombre]</span></div>
+            <div><strong>Programa / ficha</strong><span class="placeholder">[Programa · Ficha]</span></div>
+            <div><strong>Fecha</strong>Octubre 2026</div>
+          </div>
+        </section>
+
+        <!-- 2 · PROBLEMA -->
+        <section class="slide" data-label="01 · El problema">
+          <div class="head">
+            <p class="eyebrow">El problema</p>
+            <h1 class="title">Un parqueadero 24 h manejado a mano</h1>
+            <p class="lead">Parqueadero ABC lleva 15 años atendiendo carros y motos en Medellín, pero toda la operación depende de papel y memoria.</p>
+          </div>
+          <div class="grid g4">
+            <article class="card"><h3 class="card-head">Congestión</h3><p class="card-body">Filas en la entrada porque el registro es manual.</p></article>
+            <article class="card"><h3 class="card-head">Registros imprecisos</h3><p class="card-body">Horas de entrada y salida anotadas a mano, con errores.</p></article>
+            <article class="card"><h3 class="card-head">Cobros con errores</h3><p class="card-body">Facturación manual sin cálculo automático del tiempo.</p></article>
+            <article class="card"><h3 class="card-head">Sin disponibilidad</h3><p class="card-body">Nadie sabe cuántos cupos libres hay en tiempo real.</p></article>
+            <article class="card"><h3 class="card-head">Sin reportes</h3><p class="card-body">No hay cifras de ingresos ni de ocupación para decidir.</p></article>
+            <article class="card"><h3 class="card-head">Riesgo de fraude</h3><p class="card-body">No hay control de placas ni de pico y placa.</p></article>
+            <article class="card"><h3 class="card-head">Sin fidelización</h3><p class="card-body">No existen tarifas diferenciadas, mensualidades ni descuentos.</p></article>
+            <article class="card"><h3 class="card-head card-head--yellow">Incidentes</h3><p class="card-body">Rayones y choques sin registro ni responsable.</p></article>
+          </div>
+        </section>
+
+        <!-- 3 · OBJETIVOS -->
+        <section class="slide" data-label="02 · Objetivos">
+          <div class="head">
+            <p class="eyebrow">Objetivo general</p>
+            <h1 class="title">Digitalizar toda la operación del parqueadero</h1>
+            <p class="lead">Desarrollar una aplicación web que gestione el ingreso y la salida de vehículos, las celdas, las tarifas y los pagos, las mensualidades y reservas, y la seguridad del parqueadero.</p>
+          </div>
+          <div class="grid g4">
+            <article class="card"><h3 class="card-head card-head--yellow">01 · Controlar</h3><p class="card-body">Registrar entradas y salidas por puerta, con pico y placa y ticket.</p></article>
+            <article class="card"><h3 class="card-head card-head--yellow">02 · Visualizar</h3><p class="card-body">Mostrar el mapa de celdas y la disponibilidad en tiempo real.</p></article>
+            <article class="card"><h3 class="card-head card-head--yellow">03 · Cobrar</h3><p class="card-body">Calcular el valor automáticamente y generar facturas en PDF.</p></article>
+            <article class="card"><h3 class="card-head card-head--yellow">04 · Decidir</h3><p class="card-body">Entregar 11 reportes y un dashboard al administrador.</p></article>
+          </div>
+        </section>
+
+        <!-- 4 · ALCANCE -->
+        <section class="slide" data-label="03 · Alcance">
+          <div class="head">
+            <p class="eyebrow">Alcance</p>
+            <h1 class="title">10 módulos · 42 requerimientos</h1>
+            <p class="lead">30 requerimientos originales (REQ-USR, CAR, INEX, INCD, CLD, REP) más 12 derivados de la ficha del proyecto: tarifas, facturas, membresías, reservas y página pública.</p>
+          </div>
+          <div class="grid g5">
+            <article class="card"><h3 class="card-head">Usuarios</h3><p class="card-body">Roles, permisos, login por documento.</p></article>
+            <article class="card"><h3 class="card-head">Vehículos</h3><p class="card-body">Registro, propietario e historial.</p></article>
+            <article class="card"><h3 class="card-head">Pico y placa</h3><p class="card-body">Reglas por día, hora y dígito.</p></article>
+            <article class="card"><h3 class="card-head">Movimientos</h3><p class="card-body">Entradas, salidas y tickets.</p></article>
+            <article class="card"><h3 class="card-head">Celdas</h3><p class="card-body">Mapa por sótano en tiempo real.</p></article>
+            <article class="card"><h3 class="card-head">Cobro</h3><p class="card-body">Tarifas, facturas PDF y descuentos.</p></article>
+            <article class="card"><h3 class="card-head">Mensualidades</h3><p class="card-body">Planes con celda fija.</p></article>
+            <article class="card"><h3 class="card-head">Reservas</h3><p class="card-body">El cliente aparta su celda.</p></article>
+            <article class="card"><h3 class="card-head">Incidencias</h3><p class="card-body">Registro y notificaciones.</p></article>
+            <article class="card"><h3 class="card-head card-head--yellow">Reportes</h3><p class="card-body">11 reportes y dashboard.</p></article>
+          </div>
+        </section>
+
+        <!-- 5 · ROLES -->
+        <section class="slide" data-label="04 · Roles">
+          <div class="head">
+            <p class="eyebrow">Roles y permisos</p>
+            <h1 class="title">Cada rol ve solo lo que le toca</h1>
+          </div>
+          <table class="table">
+            <thead><tr><th>Acción</th><th style="text-align:center">Administrador</th><th style="text-align:center">Operador</th><th style="text-align:center">Cliente</th></tr></thead>
+            <tbody>
+              <tr><td>Crear usuarios</td><td class="c yes">Sí</td><td class="c yes">Sí*</td><td class="c no">No</td></tr>
+              <tr><td>Activar / inactivar usuarios, editar vehículos</td><td class="c yes">Sí</td><td class="c no">No</td><td class="c no">No</td></tr>
+              <tr><td>Registrar entradas, salidas y cobros</td><td class="c yes">Sí</td><td class="c yes">Sí</td><td class="c no">No</td></tr>
+              <tr><td>Configurar pico y placa</td><td class="c yes">Sí</td><td class="c yes">Sí</td><td class="c no">No</td></tr>
+              <tr><td>Tarifas, descuentos y mensualidades</td><td class="c yes">Sí</td><td class="c">Consulta</td><td class="c no">No</td></tr>
+              <tr><td>Ver el mapa de celdas</td><td class="c yes">Sí</td><td class="c yes">Sí</td><td class="c">Sin placas</td></tr>
+              <tr><td>Reservar celda, ver mis facturas</td><td class="c yes">Sí</td><td class="c yes">Sí</td><td class="c yes">Sí</td></tr>
+              <tr><td>Reportes</td><td class="c yes">Sí</td><td class="c no">No</td><td class="c no">No</td></tr>
+            </tbody>
+          </table>
+          <p class="mono" style="font-size:13px;color:var(--ink-2)">* El operador no puede crear administradores. Los permisos se validan en el servidor, no solo en la interfaz.</p>
+        </section>
+
+        <!-- 6 · ARQUITECTURA -->
+        <section class="slide" data-label="05 · Arquitectura">
+          <div class="head">
+            <p class="eyebrow">Arquitectura</p>
+            <h1 class="title">Node.js + Express + MySQL</h1>
+            <p class="lead">Una sola aplicación: Express expone la API REST y también sirve el frontend.</p>
+          </div>
+          <div class="arch">
+            <article class="card"><h3 class="card-head">Navegador</h3><div class="card-body"><ul class="list list--small"><li>HTML, CSS y JavaScript vanilla</li><li>Atomic Design</li><li>Sistema de diseño PARKO</li></ul></div></article>
+            <p class="arch-arrow">⇄</p>
+            <article class="card"><h3 class="card-head card-head--yellow">API REST · /api/v1</h3><div class="card-body"><div class="layers"><span>routes → permisos y validación (zod)</span><span>controller → recibe y responde</span><span>service → reglas de negocio</span><span>repository → SQL parametrizado</span></div></div></article>
+            <p class="arch-arrow">⇄</p>
+            <article class="card"><h3 class="card-head">MySQL 8</h3><div class="card-body"><ul class="list list--small"><li>Base consolidada</li><li>Transacciones en entrada, pago y reserva</li><li>Datos semilla</li></ul></div></article>
+          </div>
+          <div class="grid g3">
+            <article class="card"><h3 class="card-head">Tiempo real</h3><p class="card-body">Server-Sent Events para el mapa, la campana y la página pública.</p></article>
+            <article class="card"><h3 class="card-head">Documentos</h3><p class="card-body">Tickets y facturas en PDF con PDFKit.</p></article>
+            <article class="card"><h3 class="card-head">Calidad</h3><p class="card-body">Pruebas con Jest y Supertest, ESLint y Prettier.</p></article>
+          </div>
+        </section>
+
+        <!-- 7 · ATOMIC DESIGN -->
+        <section class="slide" data-label="06 · Atomic Design">
+          <div class="head">
+            <p class="eyebrow">Frontend</p>
+            <h1 class="title">Atomic Design sin frameworks</h1>
+            <p class="lead">Cada componente es una función JavaScript que recibe datos y devuelve un elemento HTML. Un nivel solo usa los niveles inferiores.</p>
+          </div>
+          <div class="flow">
+            <div class="step"><span class="step-num">A</span><span class="step-title">Atoms</span><p>Botón, input de placa, placa amarilla, chip de estado, barra de progreso.</p></div>
+            <div class="step"><span class="step-num">M</span><span class="step-title">Molecules</span><p>Campo de formulario, KPI, mosaicos de selección, leyenda del mapa.</p></div>
+            <div class="step"><span class="step-num">O</span><span class="step-title">Organisms</span><p>Encabezado, mapa de celdas, panel de detalle, modal de ingreso, ticket.</p></div>
+            <div class="step"><span class="step-num">T</span><span class="step-title">Templates</span><p>Layout de la app, del login y de la página pública.</p></div>
+            <div class="step"><span class="step-num">P</span><span class="step-title">Pages</span><p>Control de espacios, usuarios, reportes, mi cuenta…</p></div>
+          </div>
+          <p class="mono" style="font-size:14px;color:var(--ink-2)">// Estilo "plano industrial": asfalto, amarillo de seguridad, franjas de peligro, esquinas rectas y cero sombras.</p>
+        </section>
+
+        <!-- 8 · BASE DE DATOS -->
+        <section class="slide" data-label="07 · Base de datos">
+          <div class="head">
+            <p class="eyebrow">Base de datos</p>
+            <h1 class="title">Dos borradores → una base consolidada</h1>
+          </div>
+          <div class="grid" style="grid-template-columns:1fr 1fr 1.6fr;align-items:start">
+            <article class="card"><h3 class="card-head">Versión 1 · 9 tablas</h3><div class="card-body"><ul class="list list--small"><li>Alineada a los requerimientos</li><li>Documento, pico y placa, puertas</li><li><span class="no">Sin</span> tarifas, facturas ni reservas</li></ul></div></article>
+            <article class="card"><h3 class="card-head">Versión 2 · 16 tablas</h3><div class="card-body"><ul class="list list--small"><li>Tarifas, facturas, reservas, membresías</li><li><span class="no">Sin</span> datos de documento ni pico y placa</li><li>Claves y campos incompletos</li></ul></div></article>
+            <article class="card"><h3 class="card-head card-head--yellow">Consolidada · 24 tablas</h3><div class="card-body"><ul class="list list--small"><li><b>Acceso:</b> roles, permisos, roles_permisos, usuarios</li><li><b>Sede:</b> parqueaderos, pisos, puertas, celdas</li><li><b>Vehículos:</b> vehiculos, historial de propietario, pico_placa</li><li><b>Operación:</b> estadias, accesos_denegados, lecturas_placa</li><li><b>Dinero:</b> tarifas, descuentos, membresias, facturas, consecutivos</li><li><b>Clientes y seguridad:</b> reservas, tipos_incidencia, incidencias, notificaciones, configuracion</li></ul></div></article>
+          </div>
+        </section>
+
+        <!-- 9 · COBRO -->
+        <section class="slide" data-label="08 · Regla de cobro">
+          <div class="head">
+            <p class="eyebrow">Regla de negocio</p>
+            <h1 class="title">Cobro por minuto con tope diario</h1>
+          </div>
+          <div class="formula">Valor = <em>minutos</em> × <em>tarifa</em> <span style="font-size:24px;color:#a9adb3">(sin pasar el tope del día)</span></div>
+          <div class="grid" style="grid-template-columns:1.3fr 1fr;align-items:start">
+            <article class="card">
+              <h3 class="card-head">Ejemplo · celda A-03</h3>
+              <div class="card-body">
+                <p style="display:flex;align-items:center;gap:12px;font-weight:600"><span class="plate">JKL 482</span>Chevrolet Spark · 2 h 37 min dentro</p>
+                <p class="eyebrow" style="margin-top:14px">Valor a pagar</p>
+                <p class="charge-value">$18.840</p>
+                <div class="meter"><span style="width:67%"></span></div>
+                <p class="mono" style="margin-top:8px">157 min × $120 = $18.840 · 67 % del tope</p>
+              </div>
+            </article>
+            <div class="kpi-row" style="grid-template-columns:1fr 1fr">
+              <div class="kpi kpi--main"><p class="eyebrow" style="color:var(--ink)">Carro</p><p class="kpi-value">$120</p><p class="kpi-note">por minuto · tope $28.000</p></div>
+              <div class="kpi"><p class="eyebrow">Moto</p><p class="kpi-value">$60</p><p class="kpi-note">por minuto · tope $12.000</p></div>
+              <div class="kpi"><p class="eyebrow">Mensualidad</p><p class="kpi-value">$0</p><p class="kpi-note">por estadía</p></div>
+              <div class="kpi"><p class="eyebrow">Descuento</p><p class="kpi-value">%</p><p class="kpi-note">uno por factura</p></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 10 · PICO Y PLACA -->
+        <section class="slide" data-label="09 · Pico y placa">
+          <div class="head">
+            <p class="eyebrow">Regla de negocio</p>
+            <h1 class="title">Pico y placa al registrar la entrada</h1>
+            <p class="lead">El sistema evalúa la placa con la hora del servidor. Las reglas se configuran desde la aplicación, sin tocar código.</p>
+          </div>
+          <div class="grid g2">
+            <article class="card"><h3 class="card-head">Carros</h3><div class="card-body"><p>Se evalúa el <b>último dígito</b>: <span class="plate">ABC 12<span style="color:var(--red)">3</span></span></p></div></article>
+            <article class="card"><h3 class="card-head">Motos</h3><div class="card-body"><p>Se evalúa el <b>primer dígito</b>: <span class="plate">XKP <span style="color:var(--red)">4</span>5F</span></p></div></article>
+          </div>
+          <div class="flow">
+            <div class="step"><span class="step-num">1</span><span class="step-title">Llega la placa</span><p>Puerta, placa y hora del servidor.</p></div>
+            <div class="step"><span class="step-num">2</span><span class="step-title">Se evalúa</span><p>Día de la semana, rango horario y dígito.</p></div>
+            <div class="step"><span class="step-num">3</span><span class="step-title">Se rechaza</span><p>Mensaje con la regla aplicada.</p></div>
+            <div class="step"><span class="step-num">4</span><span class="step-title">Queda registro</span><p>Acceso denegado y aviso al administrador.</p></div>
+          </div>
+        </section>
+
+        <!-- 11 · FLUJO -->
+        <section class="slide" data-label="10 · Operación">
+          <div class="head">
+            <p class="eyebrow">Flujo de operación</p>
+            <h1 class="title">De la entrada a la factura</h1>
+          </div>
+          <div class="flow" style="flex:1">
+            <div class="step"><span class="step-num">01</span><span class="step-title">Ingreso</span><p>El operador escribe la placa. El sistema valida pico y placa y sugiere una celda libre del tipo correcto.</p></div>
+            <div class="step"><span class="step-num">02</span><span class="step-title">Ticket</span><p>Se genera el ticket <span class="mono">T-000123</span> con vista previa en vivo y PDF para imprimir.</p></div>
+            <div class="step"><span class="step-num">03</span><span class="step-title">Estadía</span><p>La celda pasa a ocupada en el mapa de todos los usuarios y el tiempo empieza a contar.</p></div>
+            <div class="step"><span class="step-num">04</span><span class="step-title">Salida</span><p>El servidor calcula el valor, aplica mensualidad o descuento y registra el método de pago.</p></div>
+            <div class="step"><span class="step-num">05</span><span class="step-title">Factura</span><p>Factura <span class="mono">FAC-000001</span> en PDF; la celda vuelve a quedar libre. Todo en una transacción.</p></div>
+          </div>
+        </section>
+
+        <!-- 12 · TIEMPO REAL -->
+        <section class="slide" data-label="11 · Tiempo real">
+          <div class="head">
+            <p class="eyebrow">Control de espacios</p>
+            <h1 class="title">El mapa se actualiza solo</h1>
+            <p class="lead">Cada entrada, salida o reserva cambia la celda en todas las pantallas abiertas en menos de 2 segundos, sin recargar.</p>
+          </div>
+          <div class="lot">
+            <div class="row row--top">
+              <div class="space space--free"><span>A-01</span><span class="space-tag">LIBRE</span></div>
+              <div class="space"><span>A-02</span><svg viewBox="0 0 26 46"><use href="#car-top"/></svg><span class="space-plate">GHT 215</span></div>
+              <div class="space"><span>A-03</span><svg viewBox="0 0 26 46"><use href="#car-top"/></svg><span class="space-plate">JKL 482</span></div>
+              <div class="space space--reserved"><span>A-04</span><span class="space-tag">MENSUAL</span><span class="space-plate">MNP 908</span></div>
+              <div class="space"><span>A-05</span><svg viewBox="0 0 26 46"><use href="#car-top"/></svg><span class="space-plate">QWE 731</span></div>
+              <div class="space space--free"><span>A-06</span><span class="space-tag">LIBRE</span></div>
+              <div class="space"><span>A-07</span><svg viewBox="0 0 26 46"><use href="#car-top"/></svg><span class="space-plate">ZXC 664</span></div>
+              <div class="space space--out"><span>A-08</span><span class="space-tag">FUERA DE<br>SERVICIO</span></div>
+            </div>
+            <div class="lane"><span>ENTRADA →</span><span>→ CIRCULACIÓN →</span><span>→ RAMPA S2</span></div>
+          </div>
+          <div class="grid g3">
+            <article class="card"><h3 class="card-head">Operador</h3><p class="card-body">Toca una celda y ve vehículo, tiempo y valor a pagar.</p></article>
+            <article class="card"><h3 class="card-head">Cliente</h3><p class="card-body">Ve el mapa sin placas ajenas y puede reservar.</p></article>
+            <article class="card"><h3 class="card-head">Página pública</h3><p class="card-body">Muestra solo los cupos libres por tipo.</p></article>
+          </div>
+        </section>
+
+        <!-- 13 · REPORTES -->
+        <section class="slide" data-label="12 · Reportes">
+          <div class="head">
+            <p class="eyebrow">Para el administrador</p>
+            <h1 class="title">11 reportes exportables a CSV</h1>
+          </div>
+          <div class="grid g2" style="gap:24px">
+            <ol class="list">
+              <li>Usuarios con todos sus datos</li>
+              <li>Vehículos con su propietario</li>
+              <li>Entradas por rango de fechas</li>
+              <li>Salidas con duración y valor</li>
+              <li>Incidencias por tipo</li>
+              <li>Vehículos restringidos por pico y placa en un día</li>
+            </ol>
+            <ol class="list">
+              <li>Celdas ocupadas en un día</li>
+              <li>Celdas más usadas</li>
+              <li>Vehículos más frecuentes</li>
+              <li>Horas y días de mayor ocupación (mapa de calor)</li>
+              <li>Financiero: ingresos por período, método de pago y tipo</li>
+              <li style="list-style:none"><span class="tag">+ Dashboard distinto por rol</span></li>
+            </ol>
+          </div>
+        </section>
+
+        <!-- 14 · SEGURIDAD -->
+        <section class="slide" data-label="13 · Seguridad">
+          <div class="head">
+            <p class="eyebrow">Seguridad</p>
+            <h1 class="title">Protegido desde el servidor</h1>
+          </div>
+          <div class="grid g4">
+            <article class="card"><h3 class="card-head">Contraseñas</h3><p class="card-body">Cifradas con bcrypt. Todos los roles entran con documento + contraseña.</p></article>
+            <article class="card"><h3 class="card-head">Sesión</h3><p class="card-body">JWT en cookie httpOnly, vence a las 8 h. Bloqueo tras 5 intentos fallidos.</p></article>
+            <article class="card"><h3 class="card-head">Permisos</h3><p class="card-body">Cada ruta verifica el permiso del rol: el usuario no puede saltárselo.</p></article>
+            <article class="card"><h3 class="card-head">Datos</h3><p class="card-body">Validación con zod y SQL parametrizado contra inyección.</p></article>
+            <article class="card"><h3 class="card-head">Archivos</h3><p class="card-body">Solo JPG o PNG de máximo 2 MB.</p></article>
+            <article class="card"><h3 class="card-head">Privacidad</h3><p class="card-body">La página pública no expone placas ni datos personales.</p></article>
+            <article class="card"><h3 class="card-head">Horas</h3><p class="card-body">Entradas, salidas y pagos con la hora del servidor, nunca del navegador.</p></article>
+            <article class="card"><h3 class="card-head card-head--yellow">Cobros</h3><p class="card-body">El total siempre se recalcula en el servidor.</p></article>
+          </div>
+        </section>
+
+        <!-- 15 · METODOLOGÍA -->
+        <section class="slide" data-label="14 · Metodología">
+          <div class="head">
+            <p class="eyebrow">Cómo se construyó</p>
+            <h1 class="title">9 fases con criterios de aceptación</h1>
+            <p class="lead">Cada fase se probó antes de pasar a la siguiente: pruebas automáticas, lint y revisión en el navegador.</p>
+          </div>
+          <div class="phases">
+            <div class="phase"><b>0</b><span>Base</span><small>Estructura, BD, login, diseño</small></div>
+            <div class="phase"><b>1</b><span>Usuarios</span><small>Usuarios y vehículos</small></div>
+            <div class="phase"><b>2</b><span>Celdas</span><small>Mapa en tiempo real</small></div>
+            <div class="phase"><b>3</b><span>Movimientos</span><small>Pico y placa, tickets</small></div>
+            <div class="phase"><b>4</b><span>Cobro</span><small>Tarifas, facturas, mensualidades</small></div>
+            <div class="phase"><b>5</b><span>Incidencias</span><small>Y notificaciones</small></div>
+            <div class="phase"><b>6</b><span>Reportes</span><small>11 reportes y dashboard</small></div>
+            <div class="phase"><b>7</b><span>Clientes</span><small>Reservas y página pública</small></div>
+            <div class="phase"><b>8</b><span>Entrega</span><small>Pruebas, seguridad, docs</small></div>
+          </div>
+        </section>
+
+        <!-- 16 · DEMO -->
+        <section class="slide" data-label="15 · Demostración">
+          <div class="head">
+            <p class="eyebrow">Demostración en vivo</p>
+            <h1 class="title">Guion de la demo</h1>
+          </div>
+          <div class="grid g2" style="gap:24px">
+            <ol class="list">
+              <li><b>Página pública:</b> cupos libres en vivo y tarifas.</li>
+              <li><b>Login como operador</b> con documento y contraseña.</li>
+              <li><b>Registrar ingreso:</b> placa, celda sugerida y ticket.</li>
+              <li><b>Pico y placa:</b> una placa restringida es rechazada.</li>
+            </ol>
+            <ol class="list">
+              <li><b>Salida y cobro:</b> valor calculado, descuento y factura PDF.</li>
+              <li><b>Mapa en dos pestañas:</b> la celda cambia sola.</li>
+              <li><b>Login como cliente:</b> reservar una celda.</li>
+              <li><b>Login como administrador:</b> reportes y dashboard.</li>
+            </ol>
+          </div>
+          <p class="mono" style="font-size:14px;color:var(--ink-2)">// Antes de exponer: MySQL encendido, <b>npm run dev</b> en backend y abrir http://localhost:3000</p>
+        </section>
+
+        <!-- 17 · LIMITACIONES -->
+        <section class="slide" data-label="16 · Trabajo futuro">
+          <div class="head">
+            <p class="eyebrow">Alcance y trabajo futuro</p>
+            <h1 class="title">Lo que se simuló y lo que sigue</h1>
+          </div>
+          <div class="grid g2">
+            <article class="card"><h3 class="card-head">Simulado en esta versión</h3><div class="card-body"><ul class="list"><li>Reconocimiento de placa: se digita y se guarda una foto opcional</li><li>Pagos: se registra el método, sin pasarela real</li><li>Factura: PDF interno, no facturación electrónica DIAN</li><li>Notificaciones: dentro de la app, sin correo ni SMS</li></ul></div></article>
+            <article class="card"><h3 class="card-head card-head--yellow">Siguiente versión</h3><div class="card-body"><ul class="list"><li>Cámaras con OCR para leer placas</li><li>Pasarela de pagos en línea</li><li>Facturación electrónica ante la DIAN</li><li>Correos, SMS y app móvil para clientes</li><li>Varias sedes (la base ya lo soporta)</li></ul></div></article>
+          </div>
+        </section>
+
+        <!-- 18 · CIERRE -->
+        <section class="slide slide--dark" data-label="Cierre">
+          <div class="cover-brand">
+            <span class="brand-mark">P</span>
+            <div>
+              <p class="cover-title">Gracias</p>
+              <p class="cover-sub">¿Preguntas?</p>
+            </div>
+          </div>
+          <div class="hazard-strip" style="margin:6px 0"></div>
+          <div class="cover-meta">
+            <div><strong>Proyecto</strong>PARKO · Parqueadero ABC · Medellín</div>
+            <div><strong>Presenta</strong><span class="placeholder">[Tu nombre]</span></div>
+          </div>
+        </section>
+
+      </main>
+
+      <footer class="bottombar">
+        <button type="button" class="nav-btn" id="prev" aria-label="Diapositiva anterior">‹</button>
+        <span id="counter">1 / 18</span>
+        <div class="progress" aria-hidden="true"><span id="progress"></span></div>
+        <span class="hint">← → navegar · F pantalla completa</span>
+        <button type="button" class="nav-btn" id="next" aria-label="Diapositiva siguiente">›</button>
+      </footer>
+
+    </div>
+  </div>
+
+  <script>
+    const stage = document.getElementById('stage');
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const counter = document.getElementById('counter');
+    const progress = document.getElementById('progress');
+    const sectionLabel = document.getElementById('section-label');
+    let current = 0;
+
+    function fit() {
+      const scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+      stage.style.transform = `scale(${scale})`;
+    }
+
+    function show(index) {
+      current = Math.max(0, Math.min(slides.length - 1, index));
+      slides.forEach((slide, i) => slide.classList.toggle('is-active', i === current));
+      counter.textContent = `${current + 1} / ${slides.length}`;
+      progress.style.width = `${((current + 1) / slides.length) * 100}%`;
+      sectionLabel.textContent = slides[current].dataset.label || '';
+      history.replaceState(null, '', `#${current + 1}`);
+    }
+
+    document.getElementById('prev').addEventListener('click', () => show(current - 1));
+    document.getElementById('next').addEventListener('click', () => show(current + 1));
+
+    document.addEventListener('keydown', (event) => {
+      if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(event.key)) { event.preventDefault(); show(current + 1); }
+      if (['ArrowLeft', 'PageUp', 'Backspace'].includes(event.key)) { event.preventDefault(); show(current - 1); }
+      if (event.key === 'Home') show(0);
+      if (event.key === 'End') show(slides.length - 1);
+      if (event.key.toLowerCase() === 'f') {
+        if (document.fullscreenElement) document.exitFullscreen();
+        else document.documentElement.requestFullscreen().catch(() => {});
+      }
+    });
+
+    let touchX = null;
+    document.addEventListener('touchstart', (event) => { touchX = event.touches[0].clientX; });
+    document.addEventListener('touchend', (event) => {
+      if (touchX === null) return;
+      const dx = event.changedTouches[0].clientX - touchX;
+      if (Math.abs(dx) > 50) show(current + (dx < 0 ? 1 : -1));
+      touchX = null;
+    });
+
+    window.addEventListener('resize', fit);
+    fit();
+    show((parseInt(location.hash.slice(1), 10) || 1) - 1);
+  </script>
+</body>
+</html>

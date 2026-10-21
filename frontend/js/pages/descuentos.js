@@ -1,6 +1,7 @@
 /**
  * Descuentos (wireframe 09 con estilo PARKO) — REQ-DES-1: descripción + porcentaje 0–100.
- * Solo administradores; se aplica uno por factura al cobrar. Borrado lógico (activo).
+ * El administrador los gestiona; el operador los consulta (solo activos, los que ofrece al
+ * cobrar). Se aplica uno por factura. Borrado lógico (activo).
  */
 import { el } from '../utils/dom.js';
 import { montarApp } from './comun/montar-app.js';
@@ -16,6 +17,7 @@ import { createButton, setButtonLoading } from '../components/atoms/button/butto
 import { createInput } from '../components/atoms/input/input.js';
 import { createTextarea } from '../components/atoms/textarea/textarea.js';
 import { createStatusChip } from '../components/atoms/status-chip/status-chip.js';
+import { tienePermiso } from '../utils/sesion.js';
 import {
   listarDescuentos,
   crearDescuento,
@@ -23,7 +25,8 @@ import {
   cambiarActivoDescuento,
 } from '../services/facturacion.service.js';
 
-const estado = { descuentos: [] };
+const estado = { sesion: null, descuentos: [] };
+const gestiona = () => tienePermiso(estado.sesion, 'descuentos.gestionar');
 const contenedorTabla = el('div');
 
 function abrirFormulario(descuento, origen) {
@@ -141,7 +144,10 @@ function pintar() {
       caption: 'Descuentos',
       minWidth: 640,
       rows: estado.descuentos,
-      empty: { title: 'Sin descuentos', text: 'Crea el primero con "Nuevo descuento".' },
+      empty: {
+        title: 'Sin descuentos',
+        text: gestiona() ? 'Crea el primero con "Nuevo descuento".' : 'No hay descuentos activos.',
+      },
       columns: [
         { key: 'nombre', label: 'Nombre', render: (d) => el('strong', { text: d.nombre }) },
         { key: 'descripcion', label: 'Descripción', render: (d) => d.descripcion || '—' },
@@ -160,7 +166,7 @@ function pintar() {
               variant: d.activo ? 'free' : 'neutral',
             }),
         },
-        {
+        gestiona() && {
           key: 'acciones',
           label: 'Acciones',
           align: 'right',
@@ -180,7 +186,7 @@ function pintar() {
               }),
             ]),
         },
-      ],
+      ].filter(Boolean),
     })
   );
 }
@@ -197,19 +203,24 @@ async function recargar() {
 async function iniciar() {
   const app = await montarApp({
     paginaId: 'descuentos',
-    cabecera: () => ({
+    cabecera: (sesion) => ({
       titulo: 'Descuentos',
-      subtitulo: 'porcentaje sobre el valor del parqueo · uno por factura',
-      acciones: [
-        createButton({
-          label: 'Nuevo descuento',
-          icon: 'i-check',
-          onClick: (e) => abrirFormulario(null, e.currentTarget),
-        }),
-      ],
+      subtitulo: tienePermiso(sesion, 'descuentos.gestionar')
+        ? 'porcentaje sobre el valor del parqueo · uno por factura'
+        : 'descuentos activos que puedes aplicar al cobrar · solo consulta',
+      acciones: tienePermiso(sesion, 'descuentos.gestionar')
+        ? [
+            createButton({
+              label: 'Nuevo descuento',
+              icon: 'i-check',
+              onClick: (e) => abrirFormulario(null, e.currentTarget),
+            }),
+          ]
+        : [],
     }),
   });
   if (!app) return;
+  estado.sesion = app.sesion;
   app.main.append(createPanel({ title: 'Descuentos', children: [contenedorTabla] }));
   await recargar();
 }

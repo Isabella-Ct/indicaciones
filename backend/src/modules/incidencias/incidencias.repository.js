@@ -1,8 +1,6 @@
 const { pool } = require('../../config/db');
+const { escaparLike, nombreCompleto: nombre } = require('../../utils/sql');
 
-const escaparLike = (texto) => texto.replace(/[\\%_]/g, (c) => `\\${c}`);
-const nombre = (a) =>
-  `CONCAT_WS(' ', ${a}.primer_nombre, ${a}.segundo_nombre, ${a}.primer_apellido, ${a}.segundo_apellido)`;
 
 // ---------------------------------------------------------------- tipos
 async function listarTipos({ soloActivos }) {

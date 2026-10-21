@@ -37,7 +37,7 @@ export const ITEMS_NAVEGACION = [
     id: 'descuentos',
     etiqueta: 'Descuentos',
     href: '/app/descuentos.html',
-    permiso: 'descuentos.gestionar',
+    permiso: 'descuentos.ver',
   },
   {
     id: 'membresias',
@@ -74,6 +74,15 @@ export const ITEMS_NAVEGACION = [
   },
   { id: 'mi-cuenta', etiqueta: 'Mi cuenta', href: '/app/mi-cuenta.html', permiso: 'portal.ver' },
 ];
+
+/**
+ * ¿La sesión puede abrir la pantalla? Exige el permiso de su ítem del menú (no aplica
+ * "excluir": el cliente puede abrir Celdas en solo lectura aunque no esté en su menú).
+ */
+export function puedeVerPagina(sesion, paginaId) {
+  const item = ITEMS_NAVEGACION.find((i) => i.id === paginaId);
+  return !item?.permiso || tienePermiso(sesion, item.permiso);
+}
 
 /** Ítems visibles para la sesión. */
 export function itemsPermitidos(sesion) {

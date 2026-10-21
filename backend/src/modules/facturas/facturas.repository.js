@@ -1,9 +1,7 @@
 // Acceso a datos de facturas (REQ-FAC-1, REQ-FAC-2) y del consecutivo.
 const { pool } = require('../../config/db');
+const { escaparLike, nombreCompleto: NOMBRE } = require('../../utils/sql');
 
-const escaparLike = (texto) => texto.replace(/[\\%_]/g, (c) => `\\${c}`);
-const NOMBRE = (a) =>
-  `CONCAT_WS(' ', ${a}.primer_nombre, ${a}.segundo_nombre, ${a}.primer_apellido, ${a}.segundo_apellido)`;
 
 /**
  * Siguiente número FAC-000001. Bloquea la fila del consecutivo hasta el commit:

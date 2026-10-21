@@ -83,6 +83,8 @@ CREATE TABLE parqueaderos (
   ciudad VARCHAR(60) NOT NULL,
   telefono VARCHAR(20) NULL,
   horario VARCHAR(60) NOT NULL DEFAULT 'Abierto 24 horas',
+  latitud DECIMAL(9,6) NULL,                -- ubicación para el mapa de la página pública
+  longitud DECIMAL(9,6) NULL,
   activo TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -531,6 +533,7 @@ CREATE TABLE configuracion (
 --   · reservas: vehículo, expiración y estados cumplida/expirada.
 --   · Fase 4: facturas guarda tarifa_id y detalle_calculo (JSON); tabla consecutivos.
 --   · Fase 5: consecutivos también numera las incidencias por día (fila incidencia-AAAAMMDD).
+--   · Fase 8: parqueaderos.latitud / longitud (mapa de la página pública).
 --   · Nuevas: pisos (texto del carril del mapa), puertas, accesos_denegados,
 --     vehiculos_historial_propietario y configuracion.
 --   · Reglas "un vehículo / una celda con una sola estadía abierta" y "una

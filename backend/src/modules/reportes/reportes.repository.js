@@ -1,10 +1,8 @@
 // Consultas de los reportes REQ-REP-01…11. Solo lectura y siempre parametrizadas.
 // Los rangos llegan como [inicio, fin) en 'AAAA-MM-DD HH:MM:SS' (hora de Bogotá).
 const { pool } = require('../../config/db');
+const { escaparLike, nombreCompleto: nombre } = require('../../utils/sql');
 
-const escaparLike = (texto) => texto.replace(/[\\%_]/g, (c) => `\\${c}`);
-const nombre = (a) =>
-  `CONCAT_WS(' ', ${a}.primer_nombre, ${a}.segundo_nombre, ${a}.primer_apellido, ${a}.segundo_apellido)`;
 const paginar = (limites) => (limites ? 'LIMIT ? OFFSET ?' : '');
 const valoresPagina = (limites) => (limites ? [limites.limit, limites.offset] : []);
 

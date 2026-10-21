@@ -327,14 +327,6 @@ describe('Salidas (REQ-INEX-2, REQ-INEX-3)', () => {
     expect(res.status).toBe(404);
   });
 
-  test('el /cerrar de la Fase 3 se retiró → 410', async () => {
-    const res = await operador
-      .post(`/api/v1/estadias/${estadias.MNP908.id}/cerrar`)
-      .send({ puerta_id: SUR });
-    expect(res.status).toBe(410);
-    expect(res.body.error.codigo).toBe('ENDPOINT_RETIRADO');
-  });
-
   test('pagar cierra la estadía: finalizada y la celda fija vuelve a "reservada"', async () => {
     const res = await operador
       .post(`/api/v1/estadias/${estadias.MNP908.id}/pagar`)

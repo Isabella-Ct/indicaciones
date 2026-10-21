@@ -5,6 +5,7 @@
 import { el } from '../utils/dom.js';
 import { montarApp } from './comun/montar-app.js';
 import { confirmar } from './comun/confirmar.js';
+import { abrirGestionPuertas } from './comun/puertas.js';
 import { limpiarErrores, mostrarErrorApi, marcarError } from './comun/formularios.js';
 import { createParkingMap } from '../components/organisms/parking-map/parking-map.js';
 import { createSpaceDetail } from '../components/organisms/space-detail/space-detail.js';
@@ -632,6 +633,16 @@ async function abrirGestion(celdaInicial, origen) {
     onClick: async () => {
       const celda = todas.find((c) => c.id === Number(selector.value));
       if (!celda) return;
+      if (celda.activa) {
+        const ok = await confirmar({
+          titulo: `Desactivar ${celda.codigo}`,
+          mensaje:
+            'La celda sale del mapa y no se podrá asignar. Su historial se conserva y puedes activarla de nuevo.',
+          textoConfirmar: 'Desactivar',
+          origen: activar,
+        });
+        if (!ok) return;
+      }
       try {
         const actualizada = await cambiarActivaCelda(celda.id, !celda.activa);
         Object.assign(celda, actualizada);
@@ -932,6 +943,19 @@ async function iniciar() {
               label: 'Gestionar celdas',
               icon: 'i-map',
               onClick: (e) => abrirGestion(null, e.currentTarget),
+            })
+          : null,
+        tienePermiso(sesion, 'puertas.gestionar')
+          ? createButton({
+              label: 'Puertas',
+              variant: 'dark',
+              icon: 'i-in',
+              onClick: (e) =>
+                abrirGestionPuertas({
+                  origen: e.currentTarget,
+                  // El modal de ingreso y el cobro usan las puertas activas de la sede.
+                  onCambio: (activas) => estado.sede && (estado.sede.puertas = activas),
+                }),
             })
           : null,
       ].filter(Boolean),

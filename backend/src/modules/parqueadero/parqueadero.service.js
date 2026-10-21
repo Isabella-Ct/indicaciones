@@ -6,7 +6,11 @@ async function obtenerSede() {
   const sede = await repo.obtenerPrincipal();
   if (!sede) throw errores.noEncontrado('No hay una sede de parqueadero configurada.');
   const puertas = await repo.listarPuertasActivas(sede.id);
-  return { ...sede, puertas };
+  const { latitud, longitud, ...datos } = sede;
+  // Ubicación para el mapa de la página pública (null si no está configurada).
+  const ubicacion =
+    latitud !== null && longitud !== null ? { lat: Number(latitud), lon: Number(longitud) } : null;
+  return { ...datos, ubicacion, puertas };
 }
 
 module.exports = { obtenerSede };

@@ -76,8 +76,15 @@
   background: var(--yellow);
 }
 
+/* En móvil el nombre se oculta a la vista pero sigue siendo el nombre accesible del botón */
 @media (max-width: 760px) {
   .user-menu-name {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
   }
 }

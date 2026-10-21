@@ -212,6 +212,11 @@ describe('Errores generales', () => {
   test('GET /parqueadero devuelve la sede desde la BD', async () => {
     const res = await request(app).get('/api/v1/parqueadero');
     expect(res.status).toBe(200);
-    expect(res.body.data).toMatchObject({ nombre: 'Parqueadero ABC', ciudad: 'Medellín' });
+    expect(res.body.data).toMatchObject({
+      nombre: 'Parqueadero ABC',
+      ciudad: 'Medellín',
+      ubicacion: { lat: 6.2462, lon: -75.5617 },
+    });
+    expect(res.body.data.latitud).toBeUndefined();
   });
 });

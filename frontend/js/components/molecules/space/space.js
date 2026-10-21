@@ -53,10 +53,19 @@ export function createSpace({ celda, seleccionada = false, onSelect }) {
   }
   if (placa) hijos.push(el('span', { className: 'space-plate', text: formatearPlaca(placa) }));
 
+  // El nombre accesible empieza por el texto visible (código, etiqueta y placa) y luego
+  // agrega el estado y si es accesible, para que coincida con lo que se lee en pantalla.
+  const visible = hijos
+    .filter((h) => h.tagName === 'SPAN')
+    .map((h) => [...h.childNodes].map((n) => n.textContent).join(' '))
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const repetido = visible.toLowerCase().includes(estado.texto);
   const etiquetaAccesible = [
-    `Espacio ${celda.codigo}, ${estado.texto}`,
-    celda.es_accesible ? 'accesible' : null,
-    placa ? `placa ${formatearPlaca(placa)}` : null,
+    visible,
+    repetido ? null : estado.texto,
+    celda.es_accesible ? 'celda accesible' : null,
   ]
     .filter(Boolean)
     .join(', ');

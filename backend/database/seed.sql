@@ -127,8 +127,8 @@ INSERT INTO usuarios (id, tipo_documento, numero_documento, primer_nombre, segun
   (9, 'CC', '1000000009', 'Felipe', NULL, 'Mora', 'Cano', 'felipe.mora@correo.test', '3101000009', '$2b$10$WzGIvgzbtytpHpt7CL8l6u/CtDnGuPYPOOaD3J4gmVq6DINe5ANNi', 0, 'inactivo', 3, 1);
 
 -- Sede, pisos y puertas
-INSERT INTO parqueaderos (id, nombre, direccion, ciudad, telefono, horario) VALUES
-  (1, 'Parqueadero ABC', 'Carrera 43 # 47-53', 'Medellín', '6045550143', 'Abierto 24 horas');
+INSERT INTO parqueaderos (id, nombre, direccion, ciudad, telefono, horario, latitud, longitud) VALUES
+  (1, 'Parqueadero ABC', 'Carrera 43 # 47-53', 'Medellín', '6045550143', 'Abierto 24 horas', 6.2462, -75.5617);
 
 INSERT INTO pisos (id, parqueadero_id, nombre, orden, texto_carril) VALUES
   (1, 1, 'Sótano 1', 1, 'ENTRADA → | → CIRCULACIÓN → | → RAMPA S2'),

@@ -12,7 +12,9 @@ import { createSpinner } from '../../components/atoms/spinner/spinner.js';
 import { showToast } from '../../components/molecules/toast/toast.js';
 import { obtenerSesion, cerrarSesion } from '../../services/auth.service.js';
 import { obtenerSede, subtituloSede } from '../../services/parqueadero.service.js';
-import { itemsPermitidos } from '../../utils/navegacion.js';
+import { createEmptyState } from '../../components/molecules/empty-state/empty-state.js';
+import { createButton } from '../../components/atoms/button/button.js';
+import { itemsPermitidos, puedeVerPagina } from '../../utils/navegacion.js';
 import { montarCampana } from './campana.js';
 import { leerPuertaPreferida, tomarAviso } from '../../utils/almacen.js';
 import {
@@ -42,16 +44,35 @@ async function salir() {
  * @param {{
  *   paginaId: string,
  *   cabecera: (sesion: object, sede: object|null) => { titulo: string, subtitulo?: string, acciones?: HTMLElement[] },
+ *   abiertaATodos?: boolean,   // pantallas de todos los roles aunque su ítem del menú pida un permiso
  * }} opciones
  * @returns {Promise<{ sesion: object, sede: object|null, main: HTMLElement } | null>}
  */
-export async function montarApp({ paginaId, cabecera }) {
+export async function montarApp({ paginaId, cabecera, abiertaATodos = false }) {
   const raiz = document.getElementById('app');
   raiz.replaceChildren(
     el('div', { className: 'page-loading' }, [createSpinner({ label: 'Cargando PARKO…' })])
   );
 
-  const [sesion, sede] = await Promise.all([obtenerSesion(), obtenerSede().catch(() => null)]);
+  let sesion;
+  let sede;
+  try {
+    [sesion, sede] = await Promise.all([obtenerSesion(), obtenerSede().catch(() => null)]);
+  } catch (error) {
+    // 401: api.js ya redirige al login. Otro error (servidor caído, 500): aviso con reintento.
+    if (error.estado !== 401) {
+      raiz.replaceChildren(
+        el('div', { className: 'page' }, [
+          createEmptyState({
+            title: 'No pudimos cargar PARKO',
+            text: error.message,
+            action: createButton({ label: 'Reintentar', onClick: () => location.reload() }),
+          }),
+        ])
+      );
+    }
+    return null;
+  }
   if (sesion.debe_cambiar_contrasena) {
     location.assign(RUTA_CAMBIAR_CONTRASENA);
     return null;
@@ -76,7 +97,11 @@ export async function montarApp({ paginaId, cabecera }) {
     ],
   });
 
-  const { titulo, subtitulo, acciones } = cabecera(sesion, sede);
+  // Abrir por URL una pantalla que el rol no tiene: se avisa y la página no carga datos.
+  const permitida = abiertaATodos || puedeVerPagina(sesion, paginaId);
+  const { titulo, subtitulo, acciones } = permitida
+    ? cabecera(sesion, sede)
+    : { titulo: 'Sin acceso', subtitulo: 'esta pantalla no está disponible para tu rol' };
   const layout = createAppLayout({
     header,
     navbar: createNavbar({ items: itemsPermitidos(sesion), activeId: paginaId }),
@@ -84,6 +109,16 @@ export async function montarApp({ paginaId, cabecera }) {
     footer: createFooter({ sede }),
   });
   raiz.replaceChildren(layout);
+  if (!permitida) {
+    layout.querySelector('main').append(
+      createEmptyState({
+        title: 'No tienes permiso para ver esta pantalla',
+        text: 'Usa el menú para ir a las secciones de tu cuenta.',
+        action: createButton({ label: 'Ir al inicio', href: RUTA_INICIO, icon: 'i-home' }),
+      })
+    );
+    return null;
+  }
 
   const aviso = tomarAviso();
   if (aviso) showToast(aviso.mensaje, aviso.variante);

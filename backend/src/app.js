@@ -30,7 +30,9 @@ const tiposIncidenciaRoutes = require('./modules/incidencias/tipos-incidencia.ro
 const reportesRoutes = require('./modules/reportes/reportes.routes');
 const reservasRoutes = require('./modules/reservas/reservas.routes');
 const dashboardRoutes = require('./modules/dashboard/dashboard.routes');
+const configuracionRoutes = require('./modules/configuracion/configuracion.routes');
 const { auth } = require('./middlewares/auth');
+const { requirePermiso } = require('./middlewares/require-permiso');
 const { CARPETA_UPLOADS } = require('./utils/archivos');
 
 const CARPETA_FRONTEND = path.join(__dirname, '..', '..', 'frontend');
@@ -38,6 +40,7 @@ const CARPETA_FRONTEND = path.join(__dirname, '..', '..', 'frontend');
 function crearApp() {
   const app = express();
   app.disable('x-powered-by');
+  if (env.TRUST_PROXY > 0) app.set('trust proxy', env.TRUST_PROXY);
 
   app.use(
     helmet({
@@ -88,9 +91,12 @@ function crearApp() {
   api.use('/reportes', reportesRoutes);
   api.use('/reservas', reservasRoutes);
   api.use('/dashboard', dashboardRoutes);
+  api.use('/configuracion', configuracionRoutes);
   app.use('/api/v1', api);
 
   // ---------- Archivos subidos (fotos): solo con sesión iniciada ----------
+  // Las fotos de lectura de placa (REQ-PLA-1) son solo para el personal.
+  app.use('/uploads/lecturas', auth(), requirePermiso('movimientos.ver'));
   app.use(
     '/uploads',
     auth({ permitirCambioPendiente: true }),

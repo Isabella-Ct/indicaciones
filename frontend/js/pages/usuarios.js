@@ -1,6 +1,6 @@
 /**
  * Usuarios — REQ-USR-2 (crear: admin y operador), REQ-USR-3 (estado: admin),
- * REQ-USR-5 (editar: admin). El operador solo ve el formulario de registro.
+ * REQ-USR-5 (editar y restablecer la contraseña: admin). El operador solo ve el formulario de registro.
  */
 import { el } from '../utils/dom.js';
 import { montarApp } from './comun/montar-app.js';
@@ -32,6 +32,7 @@ import {
   crearUsuario,
   actualizarUsuario,
   cambiarEstadoUsuario,
+  restablecerContrasenaUsuario,
 } from '../services/usuarios.service.js';
 import { listarRoles } from '../services/roles.service.js';
 import { TIPOS_DOCUMENTO, etiquetaRol, tienePermiso } from '../utils/sesion.js';
@@ -304,6 +305,74 @@ async function alternarEstado(usuario, origen) {
 }
 
 // ---------------------------------------------------------------------------
+// Restablecer contraseña (solo admin): para quien la olvidó; no hay recuperación por correo
+// ---------------------------------------------------------------------------
+function abrirRestablecer(usuario, origen) {
+  const input = createInput({
+    name: 'contrasena_temporal',
+    value: generarContrasena(),
+    maxLength: 72,
+    autocomplete: 'off',
+  });
+  const campo = createField({
+    label: 'Contraseña temporal',
+    control: input,
+    required: true,
+    hint: 'Entrégasela al usuario: deberá cambiarla en su próximo inicio de sesión.',
+  });
+  const alerta = createAlert();
+  const guardar = createButton({ label: 'Restablecer', type: 'submit', icon: 'i-key' });
+  const formulario = el('form', { attrs: { novalidate: true, id: 'form-restablecer' } }, [
+    el('p', {
+      text: `${usuario.nombre_completo} (${usuario.tipo_documento} ${usuario.numero_documento}) entrará con esta contraseña y el sistema le pedirá crear una nueva.`,
+    }),
+    alerta,
+    campo,
+    el('div', {}, [
+      createButton({
+        label: 'Generar otra',
+        variant: 'ghost',
+        size: 'sm',
+        onClick: () => (input.value = generarContrasena()),
+      }),
+    ]),
+  ]);
+  const modal = createModal({
+    title: 'Restablecer contraseña',
+    size: 'sm',
+    body: [formulario],
+    footer: [
+      createButton({ label: 'Cancelar', variant: 'ghost', onClick: () => closeModal(modal) }),
+      guardar,
+    ],
+    onClose: () => modal.remove(),
+  });
+  guardar.setAttribute('form', 'form-restablecer');
+  formulario.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    limpiarErrores({ contrasena_temporal: campo }, alerta);
+    if (input.value.length < 8) {
+      marcarError(campo, 'Mínimo 8 caracteres.');
+      return;
+    }
+    setButtonLoading(guardar, true, 'Guardando…');
+    try {
+      await restablecerContrasenaUsuario(usuario.id, input.value);
+      closeModal(modal);
+      showToast(
+        `Contraseña temporal asignada a ${usuario.nombre_completo}. Entrégasela en persona.`,
+        'success'
+      );
+    } catch (error) {
+      mostrarErrorApi(error, { contrasena_temporal: campo }, alerta);
+    } finally {
+      setButtonLoading(guardar, false);
+    }
+  });
+  openModal(modal, origen);
+}
+
+// ---------------------------------------------------------------------------
 // Listado (solo admin)
 // ---------------------------------------------------------------------------
 const contenedorTabla = el('div');
@@ -364,6 +433,18 @@ function columnas() {
               size: 'sm',
               ariaLabel: `Editar a ${u.nombre_completo}`,
               onClick: (e) => abrirFormulario(u, e.currentTarget),
+            })
+          );
+        }
+        if (puede('usuarios.editar') && u.id !== estado.sesion.id) {
+          acciones.push(
+            createButton({
+              label: 'Contraseña',
+              variant: 'ghost',
+              size: 'sm',
+              icon: 'i-key',
+              ariaLabel: `Restablecer la contraseña de ${u.nombre_completo}`,
+              onClick: (e) => abrirRestablecer(u, e.currentTarget),
             })
           );
         }

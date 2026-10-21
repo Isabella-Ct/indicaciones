@@ -4,6 +4,7 @@ const env = require('../config/env');
 const { AppError } = require('../utils/errores');
 
 const PAGINA_404 = path.join(__dirname, '..', '..', '..', 'frontend', '404.html');
+const PAGINA_ERROR = path.join(__dirname, '..', '..', '..', 'frontend', 'error.html');
 
 // 404: JSON para la API, página PARKO para el resto.
 function noEncontrado(req, res) {
@@ -43,6 +44,7 @@ function errorHandler(err, req, res, _next) {
 
   // Error inesperado: se registra, pero nunca se expone el stack en producción.
   console.error(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`, err);
+  if (!req.originalUrl.startsWith('/api/')) return res.status(500).sendFile(PAGINA_ERROR);
   const cuerpo = {
     codigo: 'ERROR_INTERNO',
     mensaje: 'Ocurrió un error inesperado. Intenta de nuevo.',

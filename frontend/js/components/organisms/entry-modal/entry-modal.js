@@ -207,7 +207,7 @@ export function createEntryModal(props) {
       placa: placa.value ? formatearPlaca(placa.value) : '',
       espacio: espacioElegido(),
       entrada: hora.value,
-      tarifa: textoTarifa(p?.tarifa),
+      tarifa: textoTarifa(p?.tarifa ?? p?.tarifas?.[estado.tipo]),
       cliente: p?.registrado
         ? p.tipo_cliente === 'mensualidad'
           ? `Mensualidad · ${p.titular}`

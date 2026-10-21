@@ -757,6 +757,9 @@ USE parking_lot_abc;
         ciudad: 'Medellín',
         telefono: '6045550143',
         horario: 'Abierto 24 horas',
+        // Carrera 43 # 47-53, Medellín (aproximada; se corrige en la BD si hace falta)
+        latitud: 6.2462,
+        longitud: -75.5617,
       },
     ])
   );

@@ -104,4 +104,12 @@ router.patch(
   controller.cambiarEstado
 );
 
+// PATCH /api/v1/usuarios/:id/contrasena — REQ-USR-5: contraseña temporal asignada por el admin
+router.patch(
+  '/:id/contrasena',
+  requirePermiso('usuarios.editar'),
+  validate({ params: esquemas.params, body: esquemas.restablecerContrasena }),
+  controller.restablecerContrasena
+);
+
 module.exports = router;

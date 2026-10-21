@@ -182,6 +182,37 @@ async function cambiarEstado(id, estado, solicitante) {
   return aPublico(await repo.buscarPorId(id));
 }
 
+/**
+ * REQ-USR-5: el administrador asigna una contraseña temporal a quien la olvidó (no hay
+ * recuperación por correo). El usuario debe cambiarla al entrar y recibe un aviso interno.
+ */
+async function restablecerContrasena(id, contrasenaTemporal, solicitante) {
+  if (id === solicitante.id) {
+    throw new AppError(
+      409,
+      'ACCION_SOBRE_SI_MISMO',
+      'Para tu propia cuenta usa "Cambiar contraseña".'
+    );
+  }
+  await obtenerExistente(id);
+  const hash = await bcrypt.hash(contrasenaTemporal, COSTO_BCRYPT);
+  await enTransaccion(async (conexion) => {
+    await repo.restablecerContrasena(id, hash, conexion);
+    await notificaciones.notificar(
+      {
+        usuarios: [id],
+        titulo: 'Tu contraseña fue restablecida',
+        mensaje:
+          'El administrador te asignó una contraseña temporal. Al iniciar sesión deberás crear una nueva.',
+        tipo: 'contrasena_restablecida',
+        enviadaPor: solicitante.id,
+      },
+      conexion
+    );
+  });
+  return aPublico(await repo.buscarPorId(id));
+}
+
 async function obtenerMiPerfil(id) {
   return aPublico(await obtenerExistente(id));
 }
@@ -240,6 +271,7 @@ module.exports = {
   crear,
   actualizar,
   cambiarEstado,
+  restablecerContrasena,
   obtenerMiPerfil,
   actualizarMiPerfil,
 };

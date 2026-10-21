@@ -5,7 +5,7 @@
 //  4. Membresía activa → total $0 (la factura se registra igual, en $0).
 //  5. Descuento (uno por factura) → total = subtotal × (1 − %/100), redondeado a la centena.
 // La usan el cobro de salida, el simulador de tarifas y la semilla de datos.
-const { formatearCOP, redondearCentena } = require('../../utils/dinero');
+const { formatearCOP, redondear } = require('../../utils/dinero');
 
 const MINUTOS_DIA = 24 * 60;
 
@@ -33,6 +33,7 @@ function textoTramo(minutos, { fracciones, bruto }, t) {
  *   tarifa: { valor_fraccion: number, minutos_fraccion: number, minutos_gracia: number, valor_dia_maximo: number },
  *   membresiaActiva?: { titular?: string } | null,
  *   descuento?: { id?: number, nombre: string, porcentaje: number } | null,
+ *   redondeo?: number,   // múltiplo del total con descuento (configuracion.facturacion_redondeo)
  * }} entrada
  * @returns {{
  *   minutos: number, fracciones: number, subtotal: number, valorDescuento: number, total: number,
@@ -40,7 +41,13 @@ function textoTramo(minutos, { fracciones, bruto }, t) {
  *   detalle: Array<{ paso: string, texto: string, valor: number }>,
  * }}
  */
-function calcularCobro({ minutos, tarifa, membresiaActiva = null, descuento = null }) {
+function calcularCobro({
+  minutos,
+  tarifa,
+  membresiaActiva = null,
+  descuento = null,
+  redondeo = 100,
+}) {
   const t = {
     valor_fraccion: Number(tarifa.valor_fraccion),
     minutos_fraccion: Number(tarifa.minutos_fraccion) || 1,
@@ -110,14 +117,14 @@ function calcularCobro({ minutos, tarifa, membresiaActiva = null, descuento = nu
     };
   }
 
-  // Paso 5: descuento, redondeado a la centena
+  // Paso 5: descuento, redondeado (por defecto a la centena)
   let total = subtotal;
   const porcentaje = descuento ? Math.min(100, Math.max(0, Number(descuento.porcentaje))) : 0;
   if (descuento) {
-    total = redondearCentena(subtotal * (1 - porcentaje / 100));
+    total = redondear(subtotal * (1 - porcentaje / 100), redondeo);
     detalle.push({
       paso: 'descuento',
-      texto: `Descuento ${descuento.nombre} (${porcentaje} %): −${formatearCOP(subtotal - total)} (redondeado a la centena)`,
+      texto: `Descuento ${descuento.nombre} (${porcentaje} %): −${formatearCOP(subtotal - total)} (redondeado ${Number(redondeo) === 100 ? 'a la centena' : `a múltiplos de ${formatearCOP(redondeo)}`})`,
       valor: total - subtotal,
     });
   }

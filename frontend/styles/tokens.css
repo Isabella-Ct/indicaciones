@@ -47,6 +47,7 @@
   --free-glow: rgba(47, 191, 113, 0.55);
   --panel-veil: rgba(243, 243, 240, 0.7);
   --reserved-stripe: rgba(255, 196, 0, 0.35);
+  --concrete-dot: rgba(0, 0, 0, 0.07); /* punteado del fondo de concreto (body) */
   /* col-chart de la maqueta (sección 7): rejilla, rayado y borde de barras futuras */
   --chart-grid: rgba(30, 32, 35, 0.15);
   --chart-stripe: rgba(30, 32, 35, 0.12);

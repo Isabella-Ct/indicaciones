@@ -5,9 +5,10 @@ function formatearCOP(valor) {
   return `$ ${formato.format(Math.round(Number(valor) || 0))}`;
 }
 
-/** Redondeo a la centena más cercana (16.956 → 17.000). */
-function redondearCentena(valor) {
-  return Math.round(valor / 100) * 100;
+/** Redondeo al múltiplo más cercano (por defecto la centena: 16.956 → 17.000). */
+function redondear(valor, multiplo = 100) {
+  const m = Number(multiplo) > 0 ? Number(multiplo) : 1;
+  return Math.round(valor / m) * m;
 }
 
-module.exports = { formatearCOP, redondearCentena };
+module.exports = { formatearCOP, redondear };

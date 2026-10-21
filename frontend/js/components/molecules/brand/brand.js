@@ -10,10 +10,6 @@ export function createBrand({ sede = '', href } = {}) {
   const texto = el('div', {}, ['PARKO', el('small', { text: sede })]);
   const hijos = [createBrandMark(), texto];
   return href
-    ? el(
-        'a',
-        { className: 'brand brand--link', attrs: { href, 'aria-label': `PARKO · ${sede}` } },
-        hijos
-      )
+    ? el('a', { className: 'brand brand--link', attrs: { href } }, hijos)
     : el('div', { className: 'brand' }, hijos);
 }

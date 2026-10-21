@@ -94,7 +94,11 @@ async function tarifaTexto(tipo) {
 async function previsualizar({ placa, requiere_accesible }) {
   const ahora = new Date();
   const vehiculo = await repo.vehiculoPorPlaca(placa);
-  if (!vehiculo) return { placa, registrado: false, vehiculo: null };
+  if (!vehiculo) {
+    // Placa nueva: el ticket de vista previa muestra la tarifa del tipo que elija el operador.
+    const [carro, moto] = await Promise.all([tarifaTexto('carro'), tarifaTexto('moto')]);
+    return { placa, registrado: false, vehiculo: null, tarifas: { carro, moto } };
+  }
 
   const [membresia, reserva, abierta, restriccion, tarifa] = await Promise.all([
     repo.membresiaVigente(vehiculo.id),
@@ -316,11 +320,15 @@ async function cotizarCobro(e, { descuentoId = null, ahora = new Date(), conexio
   const membresia = await repo.membresiaVigente(e.vehiculo_id);
   const descuento =
     descuentoId && !membresia ? await descuentosService.obtenerActivo(descuentoId, conexion) : null;
+  const redondeo = descuento
+    ? Number(await repo.valorConfiguracion('facturacion_redondeo')) || 100
+    : 100;
   const cobro = calcularCobro({
     minutos,
     tarifa,
     membresiaActiva: membresia ? { titular: membresia.titular } : null,
     descuento,
+    redondeo,
   });
   return { minutos, tarifa, membresia, descuento, cobro };
 }

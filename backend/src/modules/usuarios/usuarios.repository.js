@@ -1,5 +1,6 @@
 // Acceso a datos de usuarios. Nunca selecciona contrasena_hash salvo donde se indica.
 const { pool } = require('../../config/db');
+const { escaparLike } = require('../../utils/sql');
 
 const COLUMNAS = `
   u.id, u.tipo_documento, u.numero_documento, u.primer_nombre, u.segundo_nombre,
@@ -14,8 +15,6 @@ const ORDEN = {
   rol: 'r.nombre',
   estado: 'u.estado',
 };
-
-const escaparLike = (texto) => texto.replace(/[\\%_]/g, (c) => `\\${c}`);
 
 function filtros({ q, rol, estado }) {
   const condiciones = [];
@@ -152,7 +151,16 @@ async function actualizarEstado(id, estado) {
   await pool.query('UPDATE usuarios SET estado = ? WHERE id = ?', [estado, id]);
 }
 
+/** Contraseña temporal: obliga a cambiarla en el próximo inicio de sesión. */
+async function restablecerContrasena(id, hash, conexion = pool) {
+  await conexion.query(
+    'UPDATE usuarios SET contrasena_hash = ?, debe_cambiar_contrasena = 1 WHERE id = ?',
+    [hash, id]
+  );
+}
+
 module.exports = {
+  restablecerContrasena,
   listar,
   buscarPorId,
   buscarClientesActivosPorDocumento,

@@ -1,7 +1,7 @@
 // Acceso a datos de estadías (entradas/salidas), lecturas de placa y accesos denegados.
 const { pool } = require('../../config/db');
+const { escaparLike } = require('../../utils/sql');
 
-const escaparLike = (texto) => texto.replace(/[\\%_]/g, (c) => `\\${c}`);
 const NOMBRE = (a) => `CONCAT_WS(' ', ${a}.primer_nombre, ${a}.primer_apellido)`;
 
 // ---------------------------------------------------------------- consultas de apoyo
