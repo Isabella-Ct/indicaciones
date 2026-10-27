@@ -1,16 +1,16 @@
-/* Estilos SOLO del catálogo de componentes (app/_catalogo.html). */
-.catalogo {
+/* Estilos SOLO del catálogo de componentes (app/_catalogo.html). Prefijo: template-catalog */
+.template-catalog {
   display: grid;
   gap: 24px;
 }
 
-.catalogo-rejilla {
+.template-catalog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px 24px;
 }
 
-.catalogo-muestra {
+.template-catalog-sample {
   display: grid;
   align-content: start;
   gap: 10px;
@@ -18,7 +18,7 @@
   border-bottom: 1px solid var(--rule);
 }
 
-.catalogo-nombre {
+.template-catalog-name {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -31,7 +31,7 @@
   text-transform: uppercase;
 }
 
-.catalogo-nombre code {
+.template-catalog-name code {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
   font-weight: 400;
@@ -40,124 +40,28 @@
   color: var(--ink-2);
 }
 
-.catalogo-demo {
+.template-catalog-demo {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
 }
 
-.catalogo-demo > .hazard-strip,
-.catalogo-demo > .meter,
-.catalogo-demo > .form-grid,
-.catalogo-demo > .field,
-.catalogo-demo > .empty-state,
-.catalogo-demo > .alert,
-.catalogo-demo > .data-list,
-.catalogo-demo > .navbar,
-.catalogo-demo > .footer,
-.catalogo-demo > .input,
-.catalogo-demo > .select,
-.catalogo-demo > .textarea,
-.catalogo-demo > .catalogo-kpis,
-.catalogo-demo > .catalogo-oscuro,
-.catalogo-demo > .catalogo-iconos,
-.catalogo-demo > .data-table,
-.catalogo-demo > .search-box,
-.catalogo-demo > .pagination,
-.catalogo-demo > .map-legend,
-.catalogo-demo > .catalogo-lote,
-.catalogo-demo > .ticket,
-.catalogo-demo > .panel {
-  flex: 1 1 100%;
-}
-
-.catalogo-iconos {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: 8px;
-}
-
-.catalogo-iconos span {
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  padding: 8px 4px;
-  background: var(--white);
-  border: 1px solid var(--rule);
-}
-
-.catalogo-iconos small {
-  font-family: var(--font-mono);
-  font-size: 0.625rem;
-}
-
-.catalogo-autos {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 10px 16px;
-  background: var(--asphalt-2);
-  color: var(--car-body);
-}
-
-.catalogo-car {
-  width: 26px;
-  height: 46px;
-}
-
-.catalogo-moto {
-  width: 14px;
-  height: 34px;
-}
-
-.catalogo-kpis {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 2px;
-  background: var(--asphalt);
-  border: 2px solid var(--asphalt);
-}
-
-.catalogo-kpis > .kpi--main {
-  grid-column: 1 / -1;
-}
-
-.catalogo-oscuro {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px 24px;
-  padding: 14px 18px;
-  background: var(--asphalt);
-  color: var(--line);
-}
-
-@media (max-width: 760px) {
-  .catalogo-rejilla {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/* Fila de espacios de ejemplo sobre el asfalto del lote */
-.catalogo-lote {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  padding: 14px;
-  background: var(--asphalt-2);
-}
-
-.catalogo-lote .space {
-  border-top: 2px solid var(--line);
-}
-
-.catalogo-lote .space:last-child {
-  border-right: 2px solid var(--line);
-}
-
-/* Los hijos flex pueden encogerse: la tabla hace scroll dentro de su muestra */
-.catalogo-muestra,
-.catalogo-demo,
-.catalogo-demo > * {
-  min-width: 0;
+/* Las muestras de bloque ocupan todo el ancho de la tarjeta */
+.template-catalog-demo > .atom-hazard-strip,
+.template-catalog-demo > .atom-meter,
+.template-catalog-demo > .atom-input,
+.template-catalog-demo > .atom-select,
+.template-catalog-demo > .atom-textarea,
+.template-catalog-demo > .molecule-field,
+.template-catalog-demo > .molecule-empty-state,
+.template-catalog-demo > .molecule-alert,
+.template-catalog-demo > .molecule-data-list,
+.template-catalog-demo > .molecule-charge,
+.template-catalog-demo > .molecule-charge-note,
+.template-catalog-demo > .organism-kpis,
+.template-catalog-demo > .organism-parking-map-lot,
+.template-catalog-demo > .organism-data-table-scroll,
+.template-catalog-demo > .organism-ticket {
+  width: 100%;
 }

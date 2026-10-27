@@ -1,141 +1,77 @@
 /**
  * Cambio de contraseña. Obligatorio en el primer acceso (debe_cambiar_contrasena)
- * y disponible desde el menú de usuario.
+ * y disponible desde el menú de usuario. HTML en app/cambiar-contrasena.html.
  */
-import { el } from '../utils/dom.js';
-import { createAuthLayout } from '../components/templates/auth-layout/auth-layout.js';
-import { createField, setFieldError } from '../components/molecules/field/field.js';
-import { createAlert, setAlert } from '../components/molecules/alert/alert.js';
-import { createInput } from '../components/atoms/input/input.js';
-import { createButton, setButtonLoading } from '../components/atoms/button/button.js';
 import { obtenerSesion, cambiarContrasena, cerrarSesion } from '../services/auth.service.js';
-import { obtenerSede, subtituloSede } from '../services/parqueadero.service.js';
+import { montarMarcoPublico } from './comun/marco-publico.js';
+import { marcarCampo, mostrarAlerta, botonCargando } from './comun/plantillas.js';
 import { guardarAviso } from '../utils/almacen.js';
 import { RUTA_INICIO, RUTA_LOGIN } from '../utils/sesion.js';
 
 const MINIMO = 8;
+const $ = (id) => document.getElementById(id);
+const formulario = $('form-contrasena');
+const actual = $('contrasena-actual');
+const nueva = $('contrasena-nueva');
+const confirmacion = $('contrasena-confirmacion');
+const alerta = $('contrasena-alerta');
+const guardar = $('contrasena-guardar');
+const campos = { contrasena_actual: actual, contrasena_nueva: nueva, confirmacion };
+
+function validar() {
+  let valido = true;
+  if (!actual.value) valido = marcarCampo(actual, 'Escribe tu contraseña actual.');
+  if (nueva.value.length < MINIMO) {
+    valido = marcarCampo(nueva, `Debe tener al menos ${MINIMO} caracteres.`);
+  } else if (nueva.value === actual.value) {
+    valido = marcarCampo(nueva, 'Debe ser distinta de la actual.');
+  }
+  if (confirmacion.value !== nueva.value) {
+    valido = marcarCampo(confirmacion, 'Las contraseñas no coinciden.');
+  }
+  return valido;
+}
+
+formulario.addEventListener('submit', async (evento) => {
+  evento.preventDefault();
+  mostrarAlerta(alerta, '');
+  Object.values(campos).forEach((c) => marcarCampo(c, ''));
+  if (!validar()) {
+    formulario.querySelector('[aria-invalid="true"]')?.focus();
+    return;
+  }
+  botonCargando(guardar, true, 'Guardando…');
+  try {
+    await cambiarContrasena({ contrasena_actual: actual.value, contrasena_nueva: nueva.value });
+    guardarAviso('Tu contraseña se actualizó correctamente.', 'success');
+    location.assign(RUTA_INICIO);
+  } catch (error) {
+    botonCargando(guardar, false);
+    for (const detalle of error.detalles ?? []) {
+      if (campos[detalle.campo]) marcarCampo(campos[detalle.campo], detalle.mensaje);
+    }
+    mostrarAlerta(alerta, error.message);
+  }
+});
+
+$('contrasena-salir').addEventListener('click', async () => {
+  await cerrarSesion().catch(() => {});
+  location.assign(RUTA_LOGIN);
+});
 
 async function iniciar() {
-  const [sesion, sede] = await Promise.all([obtenerSesion(), obtenerSede().catch(() => null)]);
+  montarMarcoPublico();
+  const sesion = await obtenerSesion();
   const obligatorio = sesion.debe_cambiar_contrasena;
-
-  const actual = createInput({
-    id: 'contrasena-actual',
-    type: 'password',
-    autocomplete: 'current-password',
-    maxLength: 72,
-  });
-  const nueva = createInput({
-    id: 'contrasena-nueva',
-    type: 'password',
-    autocomplete: 'new-password',
-    maxLength: 72,
-  });
-  const confirmacion = createInput({
-    id: 'contrasena-confirmacion',
-    type: 'password',
-    autocomplete: 'new-password',
-    maxLength: 72,
-  });
-
-  const campos = {
-    contrasena_actual: createField({
-      label: obligatorio ? 'Contraseña temporal' : 'Contraseña actual',
-      control: actual,
-      required: true,
-    }),
-    contrasena_nueva: createField({
-      label: 'Nueva contraseña',
-      control: nueva,
-      required: true,
-      hint: `Mínimo ${MINIMO} caracteres. Evita tu número de documento.`,
-    }),
-    confirmacion: createField({
-      label: 'Repite la nueva contraseña',
-      control: confirmacion,
-      required: true,
-    }),
-  };
-  const alerta = createAlert();
-  const guardar = createButton({
-    label: 'Guardar contraseña',
-    type: 'submit',
-    block: true,
-    icon: 'i-key',
-  });
-  const secundario = obligatorio
-    ? createButton({
-        label: 'Cerrar sesión',
-        variant: 'ghost',
-        block: true,
-        onClick: async () => {
-          await cerrarSesion().catch(() => {});
-          location.assign(RUTA_LOGIN);
-        },
-      })
-    : createButton({ label: 'Volver al inicio', variant: 'ghost', block: true, href: RUTA_INICIO });
-
-  const formulario = el('form', { className: 'auth-form', attrs: { novalidate: true } }, [
-    alerta,
-    campos.contrasena_actual,
-    campos.contrasena_nueva,
-    campos.confirmacion,
-    guardar,
-    secundario,
-  ]);
-
-  function validar() {
-    let valido = true;
-    if (!actual.value) {
-      setFieldError(campos.contrasena_actual, 'Escribe tu contraseña actual.');
-      valido = false;
-    }
-    if (nueva.value.length < MINIMO) {
-      setFieldError(campos.contrasena_nueva, `Debe tener al menos ${MINIMO} caracteres.`);
-      valido = false;
-    } else if (nueva.value === actual.value) {
-      setFieldError(campos.contrasena_nueva, 'Debe ser distinta de la actual.');
-      valido = false;
-    }
-    if (confirmacion.value !== nueva.value) {
-      setFieldError(campos.confirmacion, 'Las contraseñas no coinciden.');
-      valido = false;
-    }
-    return valido;
-  }
-
-  formulario.addEventListener('submit', async (evento) => {
-    evento.preventDefault();
-    setAlert(alerta, '');
-    Object.values(campos).forEach((c) => setFieldError(c, ''));
-    if (!validar()) {
-      formulario.querySelector('[aria-invalid="true"]')?.focus();
-      return;
-    }
-    setButtonLoading(guardar, true, 'Guardando…');
-    try {
-      await cambiarContrasena({ contrasena_actual: actual.value, contrasena_nueva: nueva.value });
-      guardarAviso('Tu contraseña se actualizó correctamente.', 'success');
-      location.assign(RUTA_INICIO);
-    } catch (error) {
-      setButtonLoading(guardar, false);
-      for (const detalle of error.detalles ?? []) {
-        if (campos[detalle.campo]) setFieldError(campos[detalle.campo], detalle.mensaje);
-      }
-      setAlert(alerta, error.message, 'error');
-    }
-  });
-
-  document.getElementById('app').replaceChildren(
-    createAuthLayout({
-      sede: subtituloSede(sede),
-      title: obligatorio ? 'Crea tu contraseña' : 'Cambiar contraseña',
-      subtitle: obligatorio
-        ? `Hola, ${sesion.nombres}: tu contraseña es temporal; crea una nueva para continuar`
-        : `${sesion.nombre_completo} · ${sesion.tipo_documento} ${sesion.numero_documento}`,
-      content: [formulario],
-    })
-  );
+  $('auth-titulo').textContent = obligatorio ? 'Crea tu contraseña' : 'Cambiar contraseña';
+  $('auth-subtitulo').textContent = obligatorio
+    ? `// Hola, ${sesion.nombres}: tu contraseña es temporal; crea una nueva para continuar`
+    : `// ${sesion.nombre_completo} · ${sesion.tipo_documento} ${sesion.numero_documento}`;
+  $('contrasena-actual-etiqueta').firstChild.textContent = obligatorio
+    ? 'Contraseña temporal'
+    : 'Contraseña actual';
+  $('contrasena-salir').classList.toggle('hidden', !obligatorio);
+  $('contrasena-volver').classList.toggle('hidden', obligatorio);
   actual.focus();
 }
 

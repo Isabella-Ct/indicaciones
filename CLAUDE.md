@@ -48,19 +48,16 @@ Documentación de referencia en `docs/`:
 └── frontend/
     ├── index.html              # página pública
     ├── login.html
-    ├── app/                    # páginas internas (una .html por pantalla)
+    ├── app/                    # páginas internas (una .html por pantalla, con todo su marcado)
     ├── assets/                 # img, logo
     ├── styles/
     │   ├── tokens.css          # variables de diseño
-    │   ├── base.css            # reset + tipografía
-    │   └── main.css            # @import de tokens, base y CSS de componentes
+    │   ├── base.css            # reset + tipografía + utilidades
+    │   ├── atomic.css          # @import de tokens, base y los cuatro niveles
+    │   └── atomic/             # atoms.css · molecules.css · organisms.css · templates.css
     └── js/
-        ├── components/
-        │   ├── atoms/
-        │   ├── molecules/
-        │   ├── organisms/
-        │   └── templates/
-        ├── pages/              # un controlador JS por página
+        ├── pages/              # un controlador JS por página (solo eventos del DOM)
+        │   └── comun/          # marco, modales, tablas, mapa, gráficos, plantillas…
         ├── services/           # api.js (fetch wrapper) + un servicio por módulo
         └── utils/              # formato COP, fechas, validación de placa, auth/rol
 ```
@@ -84,7 +81,7 @@ Capas backend: **routes → controller → service → repository**. El controll
 ### 5.1 Sistema de diseño PARKO (obligatorio)
 - El aspecto visual de **toda** la aplicación (panel interno, login y página pública) sigue `docs/diseno-parko/`: estilo **plano industrial**, con concreto, asfalto, amarillo de seguridad, franjas de peligro, títulos condensados en mayúsculas, **esquinas rectas (border-radius 0) y cero sombras decorativas**.
 - `docs/diseno-parko/styles.css` es la fuente de verdad. Sus tokens (`--concrete`, `--panel`, `--asphalt`, `--asphalt-2/3`, `--line`, `--yellow`, `--orange`, `--green`, `--blue`, `--red`, `--steel`, `--ink`, `--ink-2`, `--hazard`, `--font-display`, `--font`, `--font-mono`) se copian **tal cual** a `frontend/styles/tokens.css`. Puedes agregar tokens nuevos (espaciados, z-index), pero no cambiar los existentes. Ningún color "suelto" fuera de tokens.
-- **Se conservan los nombres de clase de la maqueta** (`btn`, `panel`, `panel-head`, `kpi`, `space`, `space--free`, `status-chip`, `modal`, `ticket`, `field`, `tiles`, `log`, etc.) y su convención: bloque + `--modificador` + estados `is-active` / `is-selected` + utilidad `hidden`. Las clases nuevas siguen esa misma convención.
+- **Las clases llevan como prefijo su nivel de Atomic Design** y luego el nombre del componente de la maqueta: `atom-button`, `atom-plate`, `molecule-panel-head`, `molecule-kpi`, `molecule-space--free`, `atom-status-chip`, `organism-modal`, `organism-ticket`, `molecule-field`, `molecule-tiles`, `organism-log-table`, `template-app-layout-page`, etc. Convención: bloque + `--modificador` + estados `is-active` / `is-selected` + utilidad `hidden`. Las clases nuevas siguen esa misma convención.
 - Pantallas que la maqueta no muestra (tablas de usuarios, formularios, reportes, login, página pública) se construyen **con los mismos componentes y el mismo lenguaje visual**: tablas con el estilo `log`, formularios con `field` + `input` dentro de un `panel`, títulos de página con `page-head`, acciones con `btn`.
 - **Navbar:** la maqueta no tiene. Créalo debajo del `header` y antes de la `hazard-strip`: fondo `--asphalt-2`, ítems en `--font-display` en mayúsculas, ítem activo con fondo `--yellow` (igual que `level-tab.is-active`). Solo muestra los módulos permitidos al rol. En móvil (≤ 760 px) se vuelve un menú desplegable con botón `icon-button`.
 - **Marca:** el sistema se llama **PARKO** (fijo, en `brand`, `<title>` de las páginas como "PARKO · <pantalla>" y documentos PDF). El subtítulo es la sede: **"Parqueadero ABC · Medellín"**, que sale de la tabla `parqueaderos` (nombre + ciudad), no del código.
@@ -92,10 +89,10 @@ Capas backend: **routes → controller → service → repository**. El controll
 - Lo que **no** se copia de la maqueta está listado en `docs/diseno-parko/README.md`.
 
 ### 5.2 Atomic Design
-- Cada componente es una **función JS que recibe un objeto de props y devuelve un `HTMLElement`**, con su CSS al lado: `js/components/atoms/button/button.js` + `button.css`. El CSS de la maqueta se reparte en estos archivos sin cambiar los valores.
-- El mapeo de las clases de la maqueta a atoms, molecules, organisms y templates está en `docs/diseno-parko/README.md`. Componentes adicionales que se necesitan: atoms `spinner`, `link`, `avatar`; molecules `search-box`, `pagination`, `date-range`, `toast`; organisms `navbar`, `footer`, `data-table` (basado en `log`, con orden, paginación y estado vacío), `notification-bell`.
-- **Pages:** archivos `.html` mínimos que cargan `main.css` y un `js/pages/<pagina>.js`, que monta el template y los organisms.
-- Reglas: un nivel solo importa niveles inferiores. Los componentes no llaman a la API (eso lo hacen las pages a través de `services/`). Escapa siempre el texto: usa `textContent`, nunca `innerHTML` con datos del usuario. Los datos de una celda se guardan en el estado JS de la página, **no** en atributos `data-*` (solo `data-id`).
+- **HTML y CSS, no componentes JS.** Cada página `.html` tiene escrito todo su marcado (template, organismos, moléculas y átomos) y carga `atomic.css` y un `js/pages/<pagina>.js`. Los componentes son **marcado HTML + CSS**; el CSS está en `styles/atomic/`, un archivo por nivel, con los valores de la maqueta sin cambios.
+- **JavaScript solo para eventos del DOM:** clics, teclado, envío de formularios, abrir/cerrar menús y modales, pestañas; llamar a la API (`services/`), rellenar textos con `textContent` y mostrar/ocultar con la clase `hidden`. **No se crean componentes con JS** (`document.createElement`, `innerHTML` y similares están prohibidos).
+- Lo que se repite según los datos (celdas del mapa, filas de tablas, opciones de un `<select>`, notificaciones) se escribe una vez en un `<template>` de la página y el JS lo copia con `cloneNode` (`comun/plantillas.js`).
+- Reglas: los datos de una celda se guardan en el estado JS de la página, **no** en atributos `data-*` (solo `data-id`). Escapa siempre el texto: solo `textContent`.
 - Iconos: un único sprite SVG (`frontend/assets/icons.svg` o inyectado al cargar) con los símbolos de la maqueta (`car-top`, `moto-top`, `i-in`, `i-x`, `i-print`, `i-car`, `i-moto`, `i-wheel`) más los que hagan falta, dibujados con el mismo estilo de trazo (stroke 2.2, terminaciones cuadradas).
 - **Responsive:** mínimo 360 px de ancho, con los puntos de corte de la maqueta (1180 px y 760 px). En móvil, el mapa y las tablas hacen scroll horizontal dentro de su contenedor.
 - **Accesibilidad:** labels asociados, foco visible (`outline` naranja de la maqueta), contraste AA, `role="tablist"` / `aria-selected` en pestañas, `aria-modal` en modales, `aria-live` en el detalle y en los toasts. Cerrar modales con Esc y devolver el foco al botón que los abrió.

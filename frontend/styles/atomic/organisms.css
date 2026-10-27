@@ -1,0 +1,1725 @@
+/* ==========================================================================
+   ORGANISMOS · secciones completas. Prefijo de clase: organism-<nombre>
+   Generado desde el CSS original de la maqueta (docs/diseno-parko) sin cambiar
+   valores; solo cambian los nombres de clase.
+   ========================================================================== */
+
+/* Organism · availability-widget (nuevo): cupos en vivo de la página pública */
+.organism-availability {
+  display: grid;
+  gap: 12px;
+}
+
+.organism-availability-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.organism-availability-time {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.organism-availability-cards {
+  margin-bottom: 0;
+}
+
+/* En la portada las dos tarjetas quedan lado a lado también en tableta */
+@media (max-width: 1180px) {
+  .organism-availability-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .organism-availability-cards .molecule-kpi--main {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .organism-availability-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Organism · charge-modal: liquidación + descuento + método de pago (sección 6/8 de la maqueta) */
+.organism-charge-modal-aside {
+  align-self: start;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 2px solid var(--asphalt);
+  background: var(--white);
+}
+
+/* Organism · col-chart (maqueta, sección 7: .col-chart, .y-axis, .plot, .bar, .x-axis) */
+.organism-col-chart {
+  --h: 170px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.organism-col-chart .organism-col-chart-y-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: calc(var(--h) + 14px);
+  margin-top: -7px;
+  line-height: 14px;
+  text-align: right;
+}
+
+.organism-col-chart .organism-col-chart-plot {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  align-items: end;
+  justify-items: center;
+  height: var(--h);
+  border-bottom: 2px solid var(--asphalt);
+  background-image: linear-gradient(var(--chart-grid) 1px, transparent 1px);
+  background-size: 100% 25%;
+}
+
+.organism-col-chart .organism-col-chart-bar {
+  position: relative;
+  width: min(34px, 62%);
+  height: calc(var(--v) * 1%);
+  background: var(--steel);
+}
+
+.organism-col-chart .organism-col-chart-bar--current {
+  background: var(--yellow);
+  box-shadow: inset 0 0 0 2px var(--asphalt);
+}
+
+.organism-col-chart .organism-col-chart-bar--future {
+  height: 100%;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--chart-future);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--chart-stripe) 0 4px,
+    transparent 4px 8px
+  );
+}
+
+.organism-col-chart-bar-value {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-bottom: 4px;
+  transform: translateX(-50%);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.organism-col-chart .organism-col-chart-x-axis {
+  grid-column: 2;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  margin-top: 6px;
+  text-align: center;
+}
+
+/* Muchas columnas (24 h): etiquetas más pequeñas */
+.organism-col-chart--dense .organism-col-chart-x-axis {
+  font-size: 0.625rem;
+}
+
+.organism-col-chart--dense .organism-col-chart-bar-value {
+  font-size: 0.625rem;
+}
+
+/* Organism · contact-section (nuevo): datos de la sede + mapa de OpenStreetMap */
+.organism-contact {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 24px;
+  align-items: stretch;
+}
+
+.organism-contact-info {
+  display: grid;
+  align-content: space-between;
+  gap: 16px;
+}
+
+.organism-contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.organism-contact-map {
+  min-height: 300px;
+  border: 2px solid var(--asphalt);
+  background: var(--concrete-2);
+}
+
+.organism-contact-map iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  border: 0;
+}
+
+@media (max-width: 1180px) {
+  .organism-contact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Organism · data-table — base: bitácora de la maqueta (.log, .log th/td, .log .right) */
+.organism-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.organism-log-table th {
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--asphalt);
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.organism-log-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-mono);
+}
+
+.organism-log-table .organism-log-table-right {
+  text-align: right;
+}
+
+/* Agregados para la tabla de datos */
+.organism-data-table {
+  position: relative;
+}
+
+.organism-data-table-scroll {
+  overflow-x: auto;
+}
+
+.organism-data-table-table {
+  min-width: var(--min-width, 720px);
+}
+
+.organism-data-table-table td {
+  vertical-align: middle;
+}
+
+.organism-data-table-table tbody tr:hover {
+  background: var(--concrete-2);
+}
+
+.organism-data-table-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
+.organism-data-table-sort:hover {
+  color: var(--orange-dark);
+}
+
+.organism-data-table-arrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--ink-2);
+}
+
+[aria-sort='ascending'] .organism-data-table-arrow,
+[aria-sort='descending'] .organism-data-table-arrow {
+  color: var(--ink);
+}
+
+.organism-data-table-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--panel-veil);
+}
+
+/* Celdas frecuentes */
+.organism-data-table-cell-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font);
+  font-weight: 600;
+}
+
+.organism-data-table-cell-muted {
+  color: var(--ink-2);
+}
+
+.organism-data-table-cell-sub {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--ink-2);
+}
+
+.organism-data-table-cell-nowrap {
+  white-space: nowrap;
+}
+
+/* Texto largo recortado a 2 líneas (el completo va en el detalle) */
+.organism-data-table-cell-clamp {
+  display: -webkit-box;
+  max-width: 320px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.organism-data-table-row-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* Fila resaltada (ej. reglas que aplican hoy) */
+.organism-data-table-table tbody tr.is-highlighted {
+  background: var(--reserved-stripe);
+  box-shadow: inset 4px 0 0 var(--yellow);
+}
+
+.organism-data-table-cell-digit {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+/* Organism · entry-modal (maqueta, sección 8). El formulario usa .form-grid / .field
+   y el ticket .ticket; aquí solo lo nuevo. */
+
+/* Tipo de cliente detectado bajo la placa ("Visitante" / "Mensualidad · titular") */
+.organism-entry-modal-client {
+  min-height: 1.4em;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.organism-entry-modal-client--new {
+  color: var(--blue);
+}
+
+.organism-entry-modal-client--alert {
+  color: var(--red);
+}
+
+/* Marca, modelo y color (solo si la placa no existe) */
+.organism-entry-modal-vehicle-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.organism-entry-modal-vehicle.is-disabled .molecule-field-label,
+.organism-entry-modal-vehicle.is-disabled .molecule-field-hint {
+  opacity: 0.55;
+}
+
+/* Avisos que el operador debe ver de inmediato (pico y placa, sin cupo, ya dentro) */
+.molecule-alert--large {
+  padding: 14px 16px;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.molecule-alert--large > .atom-icon {
+  width: 28px;
+  height: 28px;
+}
+
+/* Vista de éxito con el ticket emitido */
+.organism-modal-success {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.organism-modal-success-number {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 0.9;
+}
+
+@media (max-width: 760px) {
+  .organism-entry-modal-vehicle-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Organism · feature-grid (nuevo): servicios del parqueadero */
+.organism-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  border: 2px solid var(--asphalt);
+  background: var(--asphalt);
+}
+
+.organism-feature-grid-item {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 18px;
+  background: var(--panel);
+}
+
+.organism-feature-grid-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: var(--yellow);
+  border: 2px solid var(--asphalt);
+}
+
+.organism-feature-grid-icon .atom-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.organism-feature-grid-title {
+  font-family: var(--font-display);
+  font-size: 1.1875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 1180px) {
+  .organism-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .organism-feature-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Organism · footer (nuevo): banda de asfalto con texto mono. */
+.organism-footer {
+  margin-top: auto;
+  background: var(--asphalt);
+  color: var(--ink-on-dark);
+}
+
+.organism-footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 24px;
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 18px 28px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.organism-footer-brand {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--yellow);
+}
+
+@media (max-width: 760px) {
+  .organism-footer-inner {
+    padding: 16px;
+  }
+}
+
+.organism-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+
+.organism-footer-links a {
+  color: var(--line);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.organism-footer-links a:hover {
+  color: var(--yellow);
+}
+
+/* Organism · hbar-chart (nuevo, mismo lenguaje que .col-chart): rankings REP-08/09 */
+.organism-hbar-chart {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.organism-hbar-chart-list {
+  display: grid;
+  gap: 8px;
+}
+
+.organism-hbar-chart-row {
+  display: grid;
+  grid-template-columns: minmax(84px, 140px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.organism-hbar-chart-label {
+  display: grid;
+  line-height: 1.2;
+}
+
+.organism-hbar-chart-label strong {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.organism-hbar-chart-label small {
+  overflow: hidden;
+  color: var(--ink-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.organism-hbar-chart-track {
+  height: 18px;
+  border-left: 2px solid var(--asphalt);
+  background-image: linear-gradient(90deg, var(--chart-grid) 1px, transparent 1px);
+  background-size: 25% 100%;
+}
+
+.organism-hbar-chart-fill {
+  display: block;
+  width: calc(var(--v) * 1%);
+  height: 100%;
+  background: var(--steel);
+}
+
+.organism-hbar-chart-fill--top {
+  background: var(--yellow);
+  box-shadow: inset 0 0 0 2px var(--asphalt);
+}
+
+.organism-hbar-chart-value {
+  min-width: 64px;
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Móvil: etiqueta y valor arriba, la barra a todo el ancho debajo */
+@media (max-width: 760px) {
+  .organism-hbar-chart-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 4px;
+  }
+
+  .organism-hbar-chart-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+/* Organism · header (maqueta: .header, .header-inner) */
+.organism-header {
+  background: var(--asphalt);
+  color: var(--line);
+}
+
+.organism-header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 14px 28px;
+}
+
+@media (max-width: 760px) {
+  .organism-header-inner {
+    gap: 12px 16px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* En móvil el menú de usuario queda junto a la marca y el turno baja de línea */
+  .organism-header-inner .molecule-user-menu {
+    order: 1;
+    margin-left: auto;
+  }
+
+  .organism-header-inner .molecule-shift {
+    order: 2;
+    width: 100%;
+  }
+
+  /* La marca cede espacio (el subtítulo de la sede se parte) para que la campana y el
+     menú quepan en la misma fila desde 360 px. */
+  .organism-header-inner .molecule-brand {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+/* Organism · heatmap (nuevo): día × hora, escala --concrete-2 → --yellow → --orange */
+.organism-heatmap {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+}
+
+.organism-heatmap-scroll {
+  overflow-x: auto;
+}
+
+.organism-heatmap-grid {
+  display: grid;
+  grid-template-columns: 72px repeat(24, minmax(18px, 1fr));
+  gap: 2px;
+  min-width: 560px;
+}
+
+.organism-heatmap-col {
+  text-align: center;
+}
+
+.organism-heatmap-row {
+  align-self: center;
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.organism-heatmap-cell {
+  display: block;
+  min-height: 22px;
+}
+
+.organism-heatmap-heat-0 {
+  background: var(--concrete-2);
+}
+
+.organism-heatmap-heat-1 {
+  background: color-mix(in srgb, var(--concrete-2) 62%, var(--yellow));
+}
+
+.organism-heatmap-heat-2 {
+  background: color-mix(in srgb, var(--concrete-2) 28%, var(--yellow));
+}
+
+.organism-heatmap-heat-3 {
+  background: var(--yellow);
+}
+
+.organism-heatmap-heat-4 {
+  background: color-mix(in srgb, var(--yellow) 50%, var(--orange));
+}
+
+.organism-heatmap-heat-5 {
+  background: var(--orange);
+}
+
+.organism-heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.organism-heatmap-legend .organism-heatmap-cell {
+  width: 18px;
+  min-height: 14px;
+}
+
+/* Organism · hero (nuevo): portada pública sobre asfalto con franja de peligro */
+.organism-hero {
+  background: var(--asphalt);
+  color: var(--line);
+}
+
+.organism-hero-inner {
+  display: grid;
+  gap: 18px;
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 56px 28px 48px;
+}
+
+.organism-hero-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+}
+
+.organism-hero-brand .atom-brand-mark {
+  width: 52px;
+  height: 52px;
+  font-size: 2.25rem;
+  font-weight: 700;
+}
+
+.organism-hero-brand strong {
+  display: block;
+  font-size: 1.75rem;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.organism-hero-brand small {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-on-dark-2);
+}
+
+.organism-hero-title {
+  max-width: 14ch;
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 7vw, 5.25rem);
+  font-weight: 700;
+  line-height: 0.92;
+  text-transform: uppercase;
+}
+
+.organism-hero-text {
+  max-width: 58ch;
+  font-size: 1.125rem;
+  color: var(--ink-on-dark-2);
+}
+
+.organism-hero-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.organism-hero-facts li {
+  padding: 6px 10px;
+  border: 1px solid var(--asphalt-3);
+  background: var(--asphalt-2);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--line);
+}
+
+.organism-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+/* btn--ghost claro sobre el asfalto */
+.organism-hero .atom-button--ghost {
+  border-color: var(--line);
+  color: var(--line);
+}
+
+.organism-hero .atom-button--ghost:hover {
+  background: var(--line);
+  color: var(--ink);
+}
+
+@media (max-width: 760px) {
+  .organism-hero-inner {
+    padding: 36px 16px 32px;
+  }
+
+  .organism-hero-text {
+    font-size: 1rem;
+  }
+}
+
+/* Organism · kpis (maqueta, sección 4 y responsive de la sección 10) */
+.organism-kpis {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(4, minmax(0, 1fr));
+  gap: 2px;
+  margin-bottom: 24px;
+  background: var(--asphalt);
+  border: 2px solid var(--asphalt);
+}
+
+.organism-kpis--2 {
+  grid-template-columns: 1.4fr minmax(0, 1fr);
+}
+
+.organism-kpis--3 {
+  grid-template-columns: 1.4fr repeat(2, minmax(0, 1fr));
+}
+
+.organism-kpis--4 {
+  grid-template-columns: 1.4fr repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 1180px) {
+  .organism-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .molecule-kpi--main {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Organism · line-chart (nuevo, SVG): mismo lenguaje del col-chart de la maqueta */
+.organism-line-chart {
+  margin: 0;
+}
+
+.organism-line-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.organism-line-chart-grid {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+}
+
+.organism-line-chart-base {
+  stroke: var(--asphalt);
+  stroke-width: 2;
+}
+
+.organism-line-chart-axis {
+  fill: var(--ink-2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.organism-line-chart-path {
+  fill: none;
+  stroke: var(--asphalt);
+  stroke-width: 2.5;
+  stroke-linejoin: miter;
+  vector-effect: non-scaling-stroke;
+}
+
+.organism-line-chart-point {
+  fill: var(--yellow);
+  stroke: var(--asphalt);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Organism · modal (maqueta: .modal-overlay, .modal, .modal-head, .modal-body, .modal-foot) */
+.organism-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--overlay);
+}
+
+.organism-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(940px, 100%);
+  max-height: calc(100vh - 48px);
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.organism-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 22px;
+  background: var(--asphalt);
+  color: var(--line);
+}
+
+.organism-modal-head h2 {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.organism-modal-head p {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-on-dark);
+}
+
+.organism-modal-head .atom-icon-button {
+  margin-left: auto;
+}
+
+/* En la maqueta el cuerpo es una rejilla formulario + ticket (270 px).
+   El modal genérico usa una sola columna; .modal-body--split recupera la rejilla. */
+.organism-modal-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  padding: 22px;
+  overflow-y: auto;
+}
+
+.organism-modal-body--split {
+  grid-template-columns: minmax(0, 1fr) 270px;
+}
+
+.organism-modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 22px;
+  border-top: 2px solid var(--asphalt);
+}
+
+/* Agregados */
+.organism-modal--sm {
+  width: min(520px, 100%);
+}
+
+body.has-modal {
+  overflow: hidden;
+}
+
+@media (max-width: 760px) {
+  .organism-modal-body,
+  .organism-modal-body--split {
+    grid-template-columns: 1fr;
+  }
+
+  .organism-modal-overlay {
+    padding: 10px;
+  }
+
+  .organism-modal-foot {
+    flex-wrap: wrap;
+  }
+}
+
+/* Organism · movement-log (maqueta, sección 7: .bottom, .move, .move--in, .move--out).
+   La tabla usa .log (organisms/data-table/data-table.css). */
+.template-app-layout-bottom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.organism-movement-log-move {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.organism-movement-log-move--in {
+  color: var(--green-dark);
+}
+
+.organism-movement-log-move--out {
+  color: var(--orange-dark);
+}
+
+/* Agregados: la maqueta usaba style="padding-top:8px"; si la bitácora va sola, ocupa todo el ancho */
+.organism-movement-log-body {
+  padding-top: 8px;
+}
+
+.template-app-layout-bottom > :only-child {
+  grid-column: 1 / -1;
+}
+
+.organism-movement-log-scroll {
+  overflow-x: auto;
+}
+
+.organism-movement-log-scroll .organism-log-table {
+  min-width: 520px;
+}
+
+@media (max-width: 1180px) {
+  .template-app-layout-bottom {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Organism · navbar (nuevo, CLAUDE.md §5.1): asfalto-2, ítems condensados en
+   mayúsculas, ítem activo amarillo igual que .level-tab.is-active. */
+.organism-navbar {
+  background: var(--asphalt-2);
+  color: var(--line);
+}
+
+.organism-navbar-inner {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+.organism-navbar-bar {
+  display: none;
+}
+
+.organism-navbar-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.organism-navbar-item {
+  display: block;
+  padding: 10px 14px;
+  color: var(--line);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.organism-navbar-item:hover {
+  background: var(--asphalt-3);
+}
+
+.organism-navbar-item.is-active {
+  background: var(--yellow);
+  color: var(--ink);
+}
+
+.organism-navbar-item:focus-visible {
+  outline-offset: -3px;
+}
+
+@media (max-width: 760px) {
+  .organism-navbar-inner {
+    padding: 0;
+  }
+
+  .organism-navbar-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 16px;
+  }
+
+  .organism-navbar-current {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--yellow);
+  }
+
+  .organism-navbar-bar .atom-icon-button {
+    background: var(--asphalt-3);
+  }
+
+  .organism-navbar-list {
+    display: none;
+    flex-direction: column;
+    padding: 0 0 8px;
+  }
+
+  .organism-navbar.is-open .organism-navbar-list {
+    display: flex;
+  }
+
+  .organism-navbar-item {
+    padding: 12px 16px;
+  }
+}
+
+/* Organism · notification-bell (nuevo): campana del header con contador y desplegable. */
+.organism-notification-bell {
+  position: relative;
+}
+
+.organism-notification-bell-button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 0;
+  background: var(--asphalt-2);
+  color: var(--line);
+}
+
+.organism-notification-bell-button .atom-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.organism-notification-bell-button:hover,
+.organism-notification-bell-button[aria-expanded='true'] {
+  background: var(--asphalt-3);
+}
+
+.organism-notification-bell-count {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  min-width: 20px;
+  padding: 1px 4px;
+  background: var(--yellow);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+}
+
+.organism-notification-bell-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: var(--z-menu);
+  width: min(360px, calc(100vw - 32px));
+  border: 2px solid var(--asphalt);
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.organism-notification-bell-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--asphalt);
+  color: var(--line);
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.organism-notification-bell-action {
+  border: 0;
+  background: transparent;
+  color: var(--yellow);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-decoration: underline;
+}
+
+.organism-notification-bell-action:disabled {
+  color: var(--ink-on-dark);
+  text-decoration: none;
+}
+
+.organism-notification-bell-list {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.organism-notification-bell-list li + li {
+  border-top: 1px solid var(--rule);
+}
+
+.organism-notification-bell-item {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 14px 10px 18px;
+  border: 0;
+  border-left: 4px solid transparent;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+
+.organism-notification-bell-item:hover {
+  background: var(--concrete);
+}
+
+.organism-notification-bell-item.is-unread {
+  border-left-color: var(--yellow);
+}
+
+.organism-notification-bell-item strong {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.organism-notification-bell-item-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 0.875rem;
+}
+
+.organism-notification-bell-item small,
+.organism-notification-bell-empty {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.organism-notification-bell-empty {
+  padding: 16px 14px;
+}
+
+.organism-notification-bell-all {
+  display: block;
+  padding: 12px 14px;
+  border-top: 2px solid var(--asphalt);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.organism-notification-bell-all:hover {
+  background: var(--yellow);
+}
+
+@media (max-width: 760px) {
+  .organism-header-inner .organism-notification-bell {
+    order: 1;
+    margin-left: auto;
+  }
+
+  /* Campana y menú juntos (8 px) para que quepan en la fila de la marca */
+  .organism-header-inner .organism-notification-bell + .molecule-user-menu {
+    margin-left: -8px;
+  }
+
+  .organism-notification-bell-button {
+    width: 40px;
+  }
+
+  .organism-notification-bell-panel {
+    position: fixed;
+    top: 84px;
+    right: 16px;
+  }
+}
+
+/* Organism · parking-map (maqueta, sección 5: .level, .level-title, .lot, .row, .lane) */
+.organism-parking-map-level {
+  padding: 18px;
+}
+
+.organism-parking-map-level-title {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.organism-parking-map-level-title span {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.organism-parking-map-lot {
+  padding: 14px;
+  background: var(--asphalt-2);
+}
+
+.organism-parking-map-lot + .organism-parking-map-level-title {
+  margin-top: 22px;
+}
+
+.organism-parking-map-row {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 12), minmax(0, 1fr));
+}
+
+.organism-parking-map-lane {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 46px;
+  margin: 6px 0;
+  padding: 0 12px;
+  color: var(--yellow);
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+}
+
+.organism-parking-map-lane::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: repeating-linear-gradient(90deg, var(--yellow) 0 22px, transparent 22px 40px);
+  transform: translateY(-50%);
+  opacity: 0.6;
+}
+
+.organism-parking-map-lane span {
+  position: relative;
+  padding: 0 8px;
+  background: var(--asphalt-2);
+}
+
+/* Responsive (maqueta, sección 10): en móvil el lote hace scroll horizontal */
+@media (max-width: 760px) {
+  .organism-parking-map-lot {
+    overflow-x: auto;
+  }
+
+  .organism-parking-map-row {
+    min-width: 640px;
+  }
+
+  .organism-parking-map-lane {
+    min-width: 640px;
+  }
+}
+
+/* Organism · pricing-table (nuevo): tarifas vigentes en tarjetas planas */
+.organism-pricing-table {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  border: 2px solid var(--asphalt);
+  background: var(--asphalt);
+}
+
+.organism-pricing-table-card {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 20px;
+  background: var(--panel);
+}
+
+.organism-pricing-table-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.organism-pricing-table-title .atom-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.organism-pricing-table-main {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  text-transform: uppercase;
+}
+
+.organism-pricing-table-main strong {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.organism-pricing-table-list {
+  display: grid;
+  gap: 6px;
+  padding-left: 18px;
+  list-style: square;
+}
+
+.organism-pricing-table-plans {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 2px solid var(--asphalt);
+  background: var(--yellow);
+}
+
+.organism-pricing-table-plans p {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.organism-pricing-table-plans strong {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+}
+
+@media (max-width: 760px) {
+  .organism-pricing-table {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Organism · space-detail (maqueta, sección 6: .detail-column, .space-hero, .detail-block,
+   .vehicle-line, .charge, .detail-actions). */
+.organism-space-detail-column {
+  position: sticky;
+  top: 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.organism-space-detail-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px;
+  background: var(--asphalt-2);
+  color: var(--line);
+}
+
+.organism-space-detail-hero .organism-space-detail-code {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  font-weight: 700;
+  line-height: 0.9;
+}
+
+.organism-space-detail-hero .atom-label-caps {
+  color: var(--ink-on-dark);
+}
+
+.organism-space-detail-block {
+  padding: 16px 18px;
+  border-top: 2px solid var(--asphalt);
+}
+
+.organism-space-detail-block:first-of-type {
+  border-top: 0;
+}
+
+.molecule-vehicle-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.molecule-vehicle-line .atom-plate {
+  font-size: 1.375rem;
+}
+
+.molecule-vehicle-line p {
+  font-weight: 600;
+}
+
+/* .charge, .charge-value y .charge-note viven en molecules/charge/charge.css */
+
+.organism-space-detail-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 16px 18px;
+  border-top: 2px solid var(--asphalt);
+}
+
+/* Agregados: el primer bloque tras el hero no lleva borde (el hero ya separa);
+   botones que ocupan toda la fila (la maqueta usaba style="grid-column:1/-1"). */
+.organism-space-detail-hero + .organism-space-detail-block {
+  border-top: 0;
+}
+
+.organism-space-detail-block > .atom-label-caps {
+  margin-bottom: 8px;
+}
+
+.organism-space-detail-message {
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+}
+
+.organism-space-detail-actions .organism-space-detail-full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1180px) {
+  .organism-space-detail-column {
+    position: static;
+  }
+}
+
+/* Organism · stacked-meter (nuevo): .meter de la maqueta en segmentos apilados */
+.organism-stacked-meter {
+  margin: 0;
+}
+
+.organism-stacked-meter-bar {
+  display: flex;
+  height: 22px;
+  border: 2px solid var(--asphalt);
+  background: var(--track);
+}
+
+.organism-stacked-meter-seg {
+  display: block;
+  width: calc(var(--v) * 1%);
+  height: 100%;
+}
+
+.organism-stacked-meter-seg + .organism-stacked-meter-seg {
+  border-left: 2px solid var(--panel);
+}
+
+.organism-stacked-meter-seg--yellow {
+  background: var(--yellow);
+}
+
+.organism-stacked-meter-seg--steel {
+  background: var(--steel);
+}
+
+.organism-stacked-meter-seg--asphalt {
+  background: var(--asphalt-3);
+}
+
+.organism-stacked-meter-seg--orange {
+  background: var(--orange);
+}
+
+.organism-stacked-meter-seg--blue {
+  background: var(--blue);
+}
+
+.organism-stacked-meter-seg--green {
+  background: var(--green);
+}
+
+.organism-stacked-meter-legend {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.organism-stacked-meter-legend li {
+  display: grid;
+  grid-template-columns: 12px auto 1fr;
+  align-items: center;
+  gap: 8px;
+}
+
+.organism-stacked-meter-legend strong {
+  font-weight: 600;
+}
+
+.organism-stacked-meter-legend li > span:last-child {
+  text-align: right;
+}
+
+.organism-stacked-meter-key {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--asphalt);
+}
+
+/* Organism · ticket (maqueta, sección 8: .ticket, .ticket-head, .barcode, .ticket-note) */
+.organism-ticket {
+  align-self: start;
+  background: var(--white);
+  border: 2px solid var(--asphalt);
+  font-family: var(--font-mono);
+}
+
+.organism-ticket-head {
+  padding: 12px 16px;
+  background: var(--hazard);
+}
+
+.organism-ticket-head span {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--asphalt);
+  color: var(--yellow);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.organism-ticket dl {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.organism-ticket dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.875rem;
+}
+
+.organism-ticket dt {
+  color: var(--ink-2);
+}
+
+.organism-ticket dd {
+  font-weight: 600;
+}
+
+.organism-ticket-barcode {
+  height: 54px;
+  margin: 0 16px 16px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--ink) 0 2px,
+    transparent 2px 4px,
+    var(--ink) 4px 5px,
+    transparent 5px 8px,
+    var(--ink) 8px 11px,
+    transparent 11px 13px
+  );
+}
+
+.organism-ticket-note {
+  padding: 0 16px 16px;
+  font-size: 0.6875rem;
+  color: var(--ink-2);
+}
+
+/* Agregados: valores largos sin desbordar; ticket ya emitido con su número grande */
+.organism-ticket dd {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.organism-ticket--issued .organism-ticket-number dd {
+  font-size: 1.125rem;
+}
+
+/* ---------- Agregados de las páginas en HTML estático ---------- */
+/* Formularios en una sola columna */
+.organism-form--stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 760px) {
+  .organism-form--grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Título del nivel: el nombre conserva la letra del título; el conteo va en mono */
+.organism-parking-map-level-title .organism-parking-map-level-name {
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+
+.organism-parking-map-row:empty {
+  display: none;
+}
+
+/* El primer bloque visible tras el hero no lleva borde (lo marca el JS) */
+.organism-space-detail-block.is-first {
+  border-top: 0;
+}
+
+/* Las tablas leen su ancho mínimo de --min-width (por defecto 720 px) */
+.organism-data-table-table--w420 {
+  --min-width: 420px;
+}
+
+.organism-data-table-table--w480 {
+  --min-width: 480px;
+}
+
+.organism-data-table-table--w520 {
+  --min-width: 520px;
+}
+
+.organism-data-table-table--w560 {
+  --min-width: 560px;
+}
+
+.organism-data-table-table--w600 {
+  --min-width: 600px;
+}
+
+.organism-data-table-table--w640 {
+  --min-width: 640px;
+}
+
+.organism-data-table-table--w760 {
+  --min-width: 760px;
+}
+
+.organism-data-table-table--w900 {
+  --min-width: 900px;
+}
+
+.organism-data-table-table--w960 {
+  --min-width: 960px;
+}
+
+.organism-data-table-table--w980 {
+  --min-width: 980px;
+}
+
+.organism-data-table-table--w1040 {
+  --min-width: 1040px;
+}

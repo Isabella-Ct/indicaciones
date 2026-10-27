@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PARKO · Cambiar contraseña</title>
+
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -11,11 +12,114 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     />
-    <link rel="stylesheet" href="/styles/main.css" />
+    <link rel="stylesheet" href="/styles/atomic.css" />
     <script type="module" src="/js/pages/cambiar-contrasena.js"></script>
   </head>
   <body>
-    <noscript>PARKO necesita JavaScript activado para funcionar.</noscript>
-    <div id="app"></div>
+    <main class="template-auth-layout" id="contenido">
+      <section class="molecule-panel template-auth-layout-panel" aria-labelledby="auth-titulo">
+        <div class="molecule-panel-head template-auth-layout-head">
+          <a class="molecule-brand molecule-brand--link" href="/">
+            <span class="atom-brand-mark" aria-hidden="true">P</span>
+            <div>PARKO<small id="marco-sede"></small></div>
+          </a>
+        </div>
+        <div class="atom-hazard-strip" aria-hidden="true"></div>
+        <div class="molecule-panel-body template-auth-layout-body">
+          <h1 class="template-auth-layout-title" id="auth-titulo">Cambiar contraseña</h1>
+          <p class="template-auth-layout-subtitle" id="auth-subtitulo"></p>
+          <form class="organism-login-form" id="form-contrasena" novalidate>
+            <div
+              class="molecule-alert molecule-alert--error hidden"
+              id="contrasena-alerta"
+              aria-live="assertive"
+            >
+              <svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-alert"></use>
+              </svg>
+              <p></p>
+            </div>
+            <div class="molecule-field">
+              <label for="contrasena-actual" id="contrasena-actual-etiqueta"
+                >Contraseña actual<span class="molecule-field-required" aria-hidden="true">
+                  *</span
+                ></label
+              >
+              <input
+                class="atom-input"
+                type="password"
+                id="contrasena-actual"
+                required
+                aria-describedby="contrasena-actual-error"
+                autocomplete="current-password"
+                maxlength="72"
+              />
+
+              <p class="molecule-field-error" id="contrasena-actual-error" aria-live="polite"></p>
+            </div>
+            <div class="molecule-field">
+              <label for="contrasena-nueva" id="contrasena-nueva-etiqueta"
+                >Nueva contraseña<span class="molecule-field-required" aria-hidden="true">
+                  *</span
+                ></label
+              >
+              <input
+                class="atom-input"
+                type="password"
+                id="contrasena-nueva"
+                required
+                aria-describedby="contrasena-nueva-ayuda contrasena-nueva-error"
+                autocomplete="new-password"
+                maxlength="72"
+              />
+              <p class="molecule-field-hint" id="contrasena-nueva-ayuda">
+                Mínimo 8 caracteres. Evita tu número de documento.
+              </p>
+              <p class="molecule-field-error" id="contrasena-nueva-error" aria-live="polite"></p>
+            </div>
+            <div class="molecule-field">
+              <label for="contrasena-confirmacion" id="contrasena-confirmacion-etiqueta"
+                >Repite la nueva contraseña<span class="molecule-field-required" aria-hidden="true">
+                  *</span
+                ></label
+              >
+              <input
+                class="atom-input"
+                type="password"
+                id="contrasena-confirmacion"
+                required
+                aria-describedby="contrasena-confirmacion-error"
+                autocomplete="new-password"
+                maxlength="72"
+              />
+
+              <p
+                class="molecule-field-error"
+                id="contrasena-confirmacion-error"
+                aria-live="polite"
+              ></p>
+            </div>
+            <button class="atom-button atom-button--block" type="submit" id="contrasena-guardar">
+              <svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-key"></use></svg
+              ><span>Guardar contraseña</span>
+            </button>
+            <button
+              class="atom-button atom-button--ghost atom-button--block hidden"
+              type="button"
+              id="contrasena-salir"
+            >
+              <span>Cerrar sesión</span>
+            </button>
+            <a
+              class="atom-button atom-button--ghost atom-button--block"
+              href="/app/inicio.html"
+              id="contrasena-volver"
+              ><span>Volver al inicio</span></a
+            >
+          </form>
+        </div>
+      </section>
+    </main>
   </body>
 </html>

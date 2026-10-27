@@ -1,0 +1,1122 @@
+/* ==========================================================================
+   MOLÉCULAS · grupos de átomos. Prefijo de clase: molecule-<nombre>
+   Generado desde el CSS original de la maqueta (docs/diseno-parko) sin cambiar
+   valores; solo cambian los nombres de clase.
+   ========================================================================== */
+
+/* Molecule · alert (nuevo): aviso en línea con borde izquierdo de color. */
+.molecule-alert {
+  --tone: var(--blue);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 2px solid var(--asphalt);
+  border-left: 8px solid var(--tone);
+  background: var(--white);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.molecule-alert > .atom-icon {
+  color: var(--tone);
+}
+
+.molecule-alert--error {
+  --tone: var(--red);
+}
+
+.molecule-alert--success {
+  --tone: var(--green);
+}
+
+/* Molecule · brand (maqueta: .brand, .brand small) */
+.molecule-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.molecule-brand small {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--ink-on-dark);
+}
+
+/* Agregado: la marca como enlace al inicio */
+.molecule-brand--link {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Molecule · charge (maqueta, sección 6: .charge, .charge-value, .charge-note) */
+.molecule-charge {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.molecule-charge-value {
+  font-family: var(--font-display);
+  font-size: 2.75rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.molecule-charge-note {
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+/* La maqueta usaba <p class="mono" style="font-size:.8125rem"> para el "% del tope" */
+.molecule-charge-pct {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+/* Pasos del cálculo (detalle[] del servidor) y resumen del cobro: modal y simulador */
+.molecule-charge-steps {
+  display: grid;
+  gap: 4px;
+  margin: 6px 0 0;
+  padding: 10px 14px 10px 30px;
+  border: 2px solid var(--asphalt);
+  background: var(--white);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.molecule-charge-steps:empty {
+  display: none;
+}
+
+.molecule-charge-summary {
+  display: grid;
+  gap: 14px;
+}
+
+/* Molecule · check (maqueta: .check) */
+.molecule-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.molecule-check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--asphalt);
+}
+
+/* Molecule · countdown (nuevo): tiempo para llegar a la reserva, cifra en --font-mono */
+.molecule-countdown {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 2px solid var(--asphalt);
+  background: var(--yellow);
+}
+
+.molecule-countdown-label {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.molecule-countdown-value {
+  font-family: var(--font-mono);
+  font-size: 2.25rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.molecule-countdown--urgent {
+  background: var(--orange);
+}
+
+.molecule-countdown--done {
+  background: var(--concrete-2);
+  color: var(--ink-2);
+}
+
+/* Molecule · data-list (maqueta: .data-list) */
+.molecule-data-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.molecule-data-list dt {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.molecule-data-list dd {
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Molecule · empty-state (maqueta: .empty-state) */
+.molecule-empty-state {
+  padding: 26px 22px;
+  border: 2px dashed var(--asphalt);
+  background: var(--concrete-2);
+  text-align: center;
+}
+
+.molecule-empty-state strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.molecule-empty-state p {
+  font-size: 0.9375rem;
+  color: var(--ink-2);
+}
+
+.molecule-empty-state-action {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* Molecule · field + form-grid (maqueta: .form-grid, .field, .field--full, .req) */
+.organism-form--grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.molecule-field {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+}
+
+.molecule-field--full {
+  grid-column: 1 / -1;
+}
+
+.molecule-field > label,
+.molecule-field > .molecule-field-label {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.molecule-field-required {
+  color: var(--red);
+}
+
+/* Agregados: ayuda y error del campo */
+.molecule-field-hint {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.molecule-field-error {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--red);
+}
+
+.molecule-field-error:empty {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .organism-form--grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Molecule · kpi (maqueta: .kpi, .kpi-value, .kpi-note, .kpi--main) */
+.molecule-kpi {
+  padding: 16px 18px;
+  background: var(--panel);
+}
+
+.molecule-kpi-value {
+  margin-top: 4px;
+  font-family: var(--font-display);
+  font-size: 2.375rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.molecule-kpi-value small {
+  font-size: 1.125rem;
+  color: var(--ink-2);
+}
+
+.molecule-kpi-note {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.molecule-kpi--main {
+  background: var(--yellow);
+}
+
+/* Molecule · level-tabs (maqueta, sección 5: .level-tabs, .level-tab, .is-active) */
+.molecule-level-tabs {
+  display: flex;
+  gap: 2px;
+}
+
+.molecule-level-tab {
+  padding: 8px 16px;
+  border: 0;
+  background: var(--asphalt-3);
+  color: var(--line);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.molecule-level-tab.is-active {
+  background: var(--yellow);
+  color: var(--ink);
+}
+
+/* Variante vertical (menú lateral de reportes): mismas pestañas apiladas */
+.molecule-level-tabs--vertical {
+  flex-direction: column;
+  padding: 2px;
+  background: var(--asphalt-2);
+}
+
+.molecule-level-tabs--vertical .molecule-level-tab {
+  display: block;
+  width: 100%;
+  text-align: left;
+}
+
+/* Molecule · live-status (nuevo): mismo formato que .status-chip, sobre asfalto. */
+.molecule-live-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 14px;
+  background: var(--asphalt);
+  color: var(--line);
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.molecule-live-status::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: var(--steel);
+}
+
+.molecule-live-status--en-vivo::before {
+  background: var(--green);
+}
+
+.molecule-live-status--reconectando {
+  color: var(--yellow);
+}
+
+.molecule-live-status--reconectando::before {
+  background: var(--yellow);
+  animation: live-parpadeo 1s steps(2) infinite;
+}
+
+@keyframes live-parpadeo {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Molecule · map-legend (maqueta, sección 5) */
+.molecule-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--asphalt);
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.molecule-map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.molecule-map-legend i {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--asphalt);
+}
+
+.molecule-map-legend .molecule-map-legend-free {
+  background: var(--asphalt-2);
+  box-shadow: inset 0 0 0 3px var(--green);
+}
+
+.molecule-map-legend .molecule-map-legend-occupied {
+  background: var(--asphalt-2);
+}
+
+.molecule-map-legend .molecule-map-legend-reserved {
+  background: repeating-linear-gradient(-45deg, var(--yellow) 0 4px, var(--asphalt-2) 4px 8px);
+}
+
+.molecule-map-legend .molecule-map-legend-accessible {
+  background: var(--blue);
+}
+
+.molecule-map-legend .molecule-map-legend-out {
+  background: repeating-linear-gradient(-45deg, var(--orange) 0 4px, var(--asphalt) 4px 8px);
+}
+
+/* Molecule · notification-item (nuevo): fila de la bandeja con borde amarillo si no está leída. */
+.molecule-notification-item-list {
+  display: grid;
+}
+
+.molecule-notification-item {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px 14px 18px;
+  border-bottom: 1px solid var(--rule);
+  border-left: 4px solid transparent;
+}
+
+.molecule-notification-item.is-unread {
+  border-left-color: var(--yellow);
+  background: var(--white);
+}
+
+.molecule-notification-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.molecule-notification-item-title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.molecule-notification-item-text {
+  overflow-wrap: anywhere;
+}
+
+.molecule-notification-item-actions {
+  justify-content: flex-start;
+}
+
+/* Barra y paginación de la bandeja (panel sin relleno) */
+.molecule-notification-item-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px 16px;
+  border-bottom: 2px solid var(--asphalt);
+}
+
+.molecule-notification-item-pagination {
+  padding: 12px 16px;
+}
+
+/* Molecule · page-head (maqueta: .page-head) */
+.molecule-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.molecule-page-head h1 {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.molecule-page-head p {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+/* Agregado */
+.molecule-page-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .molecule-page-head h1 {
+    font-size: 2rem;
+  }
+
+  /* Las acciones ocupan el ancho de la página y se acomodan en varias líneas */
+  .molecule-page-head-actions {
+    width: 100%;
+  }
+}
+
+/* Molecule · pagination (nuevo) */
+.molecule-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding-top: 14px;
+}
+
+.molecule-pagination-status {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+/* Molecule · panel (maqueta: .panel, .panel-head, .panel-body) */
+.molecule-panel {
+  background: var(--panel);
+  border: 2px solid var(--asphalt);
+}
+
+.molecule-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--asphalt);
+  color: var(--line);
+}
+
+.molecule-panel-head h2 {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.molecule-panel-body {
+  padding: 18px;
+}
+
+/* Agregados */
+.molecule-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.molecule-panel-body--flush {
+  padding: 0;
+}
+
+/* Molecule · photo-input (nuevo): vista previa cuadrada + botón de archivo. */
+.molecule-photo-input-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.molecule-photo-input-preview {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 96px;
+  height: 96px;
+  overflow: hidden;
+  border: 2px solid var(--asphalt);
+  background: var(--yellow);
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 700;
+}
+
+.molecule-photo-input-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.molecule-photo-input-actions {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+}
+
+.molecule-photo-input-actions .atom-button {
+  cursor: pointer;
+}
+
+/* El input real está oculto: el foco se ve en su etiqueta-botón */
+.molecule-photo-input input[type='file']:focus-visible + .atom-button {
+  outline: 3px solid var(--orange);
+  outline-offset: 2px;
+}
+
+/* Molecule · search-box (nuevo) — misma etiqueta que .field > label */
+.molecule-search-box {
+  display: grid;
+  gap: 6px;
+}
+
+.molecule-search-box-label {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Barra de filtros sobre una tabla (search-box, selects, botones) */
+.molecule-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
+  gap: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.molecule-filters .molecule-field > label {
+  font-size: 0.875rem;
+}
+
+/* Búsqueda compacta en el page-head (salida por placa o ticket) */
+.molecule-exit-search {
+  display: flex;
+  gap: 2px;
+}
+
+.molecule-exit-search .atom-input {
+  width: 180px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .molecule-exit-search {
+    width: 100%;
+  }
+
+  .molecule-exit-search .atom-input {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+}
+
+/* Molecule · shift (maqueta: .shift) */
+.molecule-shift {
+  display: flex;
+  gap: 24px;
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-on-dark-2);
+}
+
+.molecule-shift strong {
+  display: block;
+  font-size: 1.25rem;
+  color: var(--yellow);
+}
+
+@media (max-width: 760px) {
+  .molecule-shift {
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin-left: 0;
+  }
+
+  .molecule-shift strong {
+    font-size: 1.0625rem;
+  }
+}
+
+/* Molecule · space — maqueta, sección 5 ("Espacio de parqueo": las líneas
+   blancas imitan la pintura del piso). Colores sueltos → tokens con el mismo valor. */
+.molecule-space {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-height: 112px;
+  padding: 8px 4px;
+  border: 0;
+  border-left: 2px solid var(--line);
+  background: transparent;
+  color: var(--line);
+  font-family: var(--font-mono);
+  transition: background 0.15s ease;
+}
+
+.organism-parking-map-row .molecule-space:last-child {
+  border-right: 2px solid var(--line);
+}
+
+.organism-parking-map-row--top .molecule-space {
+  border-top: 2px solid var(--line);
+}
+
+.organism-parking-map-row--bottom .molecule-space {
+  border-bottom: 2px solid var(--line);
+}
+
+.molecule-space:hover {
+  background: var(--asphalt-3);
+}
+
+.molecule-space.is-selected {
+  background: var(--asphalt-3);
+  box-shadow: inset 0 0 0 4px var(--yellow);
+}
+
+.molecule-space-code {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.molecule-space-plate {
+  padding: 1px 4px;
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 0.625rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.molecule-space-car {
+  width: 26px;
+  height: 46px;
+  color: var(--car-body);
+}
+
+.molecule-space--free .molecule-space-tag {
+  color: var(--green);
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.molecule-space--free {
+  box-shadow: inset 0 0 0 3px var(--free-glow);
+}
+
+.molecule-space--reserved {
+  background: repeating-linear-gradient(-45deg, var(--reserved-stripe) 0 6px, transparent 6px 14px);
+}
+
+.molecule-space--reserved .molecule-space-tag {
+  padding: 1px 4px;
+  background: var(--yellow);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.molecule-space--out {
+  background: repeating-linear-gradient(-45deg, var(--orange) 0 8px, var(--asphalt) 8px 16px);
+}
+
+.molecule-space--out .molecule-space-tag {
+  padding: 2px 4px;
+  background: var(--asphalt);
+  color: var(--orange);
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.molecule-space--accessible::after {
+  content: '';
+  position: absolute;
+  top: 28px;
+  bottom: 28px;
+  left: 4px;
+  width: 5px;
+  background: var(--blue);
+}
+
+.molecule-space--accessible .molecule-space-code::before {
+  content: '♿ ';
+  color: var(--blue-light);
+}
+
+.molecule-space--moto {
+  min-height: 84px;
+}
+
+.molecule-space--moto .molecule-space-car {
+  width: 14px;
+  height: 34px;
+}
+
+/* Agregado: el seleccionado tiene prioridad sobre el fondo de reservado/fuera de servicio */
+.molecule-space--reserved.is-selected,
+.molecule-space--out.is-selected {
+  box-shadow: inset 0 0 0 4px var(--yellow);
+}
+
+.molecule-space:focus-visible {
+  outline-offset: -3px;
+}
+
+/* Molecule · tiles (maqueta: .tiles, .tile). El número de columnas va en --cols
+   (la maqueta usaba style="grid-template-columns:…" en línea). */
+.molecule-tiles {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+  gap: 2px;
+  background: var(--asphalt);
+  border: 2px solid var(--asphalt);
+}
+
+.molecule-tile {
+  position: relative;
+}
+
+.molecule-tile input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.molecule-tile span {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  background: var(--white);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.molecule-tile input:checked + span {
+  background: var(--yellow);
+}
+
+.molecule-tile input:focus-visible + span {
+  outline: 3px solid var(--orange);
+  outline-offset: -3px;
+}
+
+/* Molecule · toast (nuevo). Asfalto, borde izquierdo de color, sin sombras. */
+.molecule-toast-region {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: var(--z-toast);
+  display: grid;
+  gap: 8px;
+  width: min(380px, calc(100% - 32px));
+}
+
+.molecule-toast {
+  --tone: var(--blue);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 10px;
+  padding: 12px 12px 12px 14px;
+  border-left: 6px solid var(--tone);
+  background: var(--asphalt);
+  color: var(--line);
+  font-size: 0.9375rem;
+}
+
+.molecule-toast > .atom-icon {
+  color: var(--tone);
+}
+
+.molecule-toast--success {
+  --tone: var(--green);
+}
+
+.molecule-toast--error {
+  --tone: var(--red);
+}
+
+.molecule-toast-close {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: -4px -4px 0 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-on-dark);
+}
+
+.molecule-toast-close:hover {
+  background: var(--asphalt-3);
+  color: var(--line);
+}
+
+.molecule-toast-close .atom-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Molecule · user-menu (nuevo): botón sobre asfalto + lista desplegable tipo panel. */
+.molecule-user-menu {
+  position: relative;
+}
+
+.molecule-user-menu-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 6px 10px;
+  border: 0;
+  background: var(--asphalt-2);
+  color: var(--line);
+  text-align: left;
+}
+
+.molecule-user-menu-button:hover,
+.molecule-user-menu-button[aria-expanded='true'] {
+  background: var(--asphalt-3);
+}
+
+.molecule-user-menu-name {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.molecule-user-menu-name small {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--ink-on-dark);
+}
+
+.molecule-user-menu-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: var(--z-menu);
+  min-width: 220px;
+  border: 2px solid var(--asphalt);
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.molecule-user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-align: left;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.molecule-user-menu-list li + li .molecule-user-menu-item {
+  border-top: 1px solid var(--rule);
+}
+
+.molecule-user-menu-item:hover {
+  background: var(--yellow);
+}
+
+/* En móvil el nombre se oculta a la vista pero sigue siendo el nombre accesible del botón */
+@media (max-width: 760px) {
+  .molecule-user-menu-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}
+
+/* Molecule · user-picker (nuevo): busca un usuario por documento. */
+.molecule-user-picker-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.molecule-user-picker-search .atom-button {
+  min-height: 46px;
+}
+
+.molecule-user-picker-results {
+  display: grid;
+  gap: 2px;
+  background: var(--asphalt);
+}
+
+.molecule-user-picker-results:empty {
+  display: none;
+}
+
+.molecule-user-picker-results li {
+  border: 0;
+}
+
+.molecule-user-picker-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  background: var(--white);
+  text-align: left;
+}
+
+.molecule-user-picker-option:hover {
+  background: var(--yellow);
+}
+
+.molecule-user-picker-option span {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.molecule-user-picker-selected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 2px solid var(--asphalt);
+  background: var(--white);
+}
+
+.molecule-user-picker-selected > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.molecule-user-picker-selected strong {
+  display: block;
+  font-weight: 600;
+}
+
+.molecule-user-picker-selected small {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+/* ---------- Agregados de las páginas en HTML estático ---------- */
+.molecule-alert--info {
+  --tone: var(--blue);
+}
+
+/* Etiqueta de un grupo de controles que no es <label> (tiles, foto, marca/modelo/color) */
+.molecule-field-label {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Mosaicos de dos columnas (la maqueta usaba --cols en línea) */
+.molecule-tiles--2 {
+  --cols: 2;
+}
+
+.molecule-tiles--3 {
+  --cols: 3;
+}
+
+.molecule-charge-note:empty {
+  display: none;
+}
+
+/* "FUERA DE\nSERVICIO" se parte en dos líneas con un salto en el texto */
+.molecule-space-tag {
+  white-space: pre-line;
+}

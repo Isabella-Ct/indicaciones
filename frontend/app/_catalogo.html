@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PARKO · Catálogo de componentes</title>
+    <link rel="stylesheet" href="/styles/catalogo.css" />
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -11,12 +12,648 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     />
-    <link rel="stylesheet" href="/styles/main.css" />
-    <link rel="stylesheet" href="/styles/catalogo.css" />
+    <link rel="stylesheet" href="/styles/atomic.css" />
     <script type="module" src="/js/pages/catalogo.js"></script>
   </head>
   <body>
-    <noscript>PARKO necesita JavaScript activado para funcionar.</noscript>
-    <div id="app"></div>
+    <div class="template-app-layout template-public-layout">
+      <a class="skip-link" href="#contenido">Saltar al contenido</a>
+      <!-- organism-header -->
+      <header class="organism-header">
+        <div class="organism-header-inner">
+          <a class="molecule-brand molecule-brand--link" href="/">
+            <span class="atom-brand-mark" aria-hidden="true">P</span>
+            <div>PARKO<small id="marco-sede"></small></div>
+          </a>
+          <nav class="template-public-layout-actions" aria-label="Accesos">
+            <a class="atom-button atom-button--sm" href="/login.html"
+              ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-in"></use></svg
+              ><span>Ingresar</span></a
+            >
+          </nav>
+        </div>
+      </header>
+      <div class="atom-hazard-strip" aria-hidden="true"></div>
+      <main id="contenido" tabindex="-1">
+        <div class="template-app-layout-page template-public-layout-page">
+          <div class="template-catalog">
+            <div class="molecule-page-head">
+              <div>
+                <h1>Catálogo de componentes</h1>
+                <p>
+                  // solo desarrollo · clases Atomic Design (atom-, molecule-, organism-, template-)
+                </p>
+              </div>
+            </div>
+            <section class="molecule-panel" aria-label="Átomos">
+              <div class="molecule-panel-head"><h2>Átomos</h2></div>
+              <div class="molecule-panel-body">
+                <div class="template-catalog-grid">
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Botón <code>.atom-button</code></p>
+                    <div class="template-catalog-demo">
+                      <button class="atom-button" type="button">
+                        <svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-check"></use></svg
+                        ><span>Primario</span></button
+                      ><button class="atom-button atom-button--dark" type="button">
+                        <span>Oscuro</span></button
+                      ><button class="atom-button atom-button--ghost" type="button">
+                        <span>Fantasma</span></button
+                      ><button class="atom-button atom-button--sm" type="button">
+                        <span>Pequeño</span></button
+                      ><button
+                        class="atom-button atom-button--dark"
+                        type="button"
+                        id="demo-cargando"
+                      >
+                        <span>En espera</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">
+                      Botón de ícono <code>.atom-icon-button</code>
+                    </p>
+                    <div class="template-catalog-demo">
+                      <button
+                        class="atom-icon-button"
+                        type="button"
+                        aria-label="Imprimir"
+                        title="Imprimir"
+                      >
+                        <svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-print"></use>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Íconos <code>.atom-icon</code></p>
+                    <div class="template-catalog-demo">
+                      <svg class="atom-icon" aria-hidden="true" focusable="false">
+                        <use href="/assets/icons.svg#car-top"></use></svg
+                      ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                        <use href="/assets/icons.svg#moto-top"></use></svg
+                      ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                        <use href="/assets/icons.svg#i-in"></use></svg
+                      ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                        <use href="/assets/icons.svg#i-out"></use></svg
+                      ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                        <use href="/assets/icons.svg#i-x"></use></svg
+                      ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                        <use href="/assets/icons.svg#i-print"></use></svg
+                      ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                        <use href="/assets/icons.svg#i-car"></use></svg
+                      ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                        <use href="/assets/icons.svg#i-moto"></use></svg
+                      ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                        <use href="/assets/icons.svg#i-bell"></use></svg
+                      ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                        <use href="/assets/icons.svg#i-check"></use></svg
+                      ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                        <use href="/assets/icons.svg#i-alert"></use>
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Campo de texto <code>.atom-input</code></p>
+                    <div class="template-catalog-demo">
+                      <input
+                        class="atom-input"
+                        type="text"
+                        placeholder="Texto"
+                        aria-label="Texto de ejemplo"
+                      />
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">
+                      Placa (campo) <code>.atom-input--plate</code>
+                    </p>
+                    <div class="template-catalog-demo">
+                      <input
+                        class="atom-input atom-input--plate"
+                        type="text"
+                        value="MNP908"
+                        aria-label="Placa de ejemplo"
+                      />
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Lista <code>.atom-select</code></p>
+                    <div class="template-catalog-demo">
+                      <select class="atom-select" aria-label="Lista de ejemplo">
+                        <option>Opción 1</option>
+                        <option>Opción 2</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Área de texto <code>.atom-textarea</code></p>
+                    <div class="template-catalog-demo">
+                      <textarea class="atom-textarea" aria-label="Área de ejemplo">
+Observaciones</textarea>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Etiqueta <code>.atom-label-caps</code></p>
+                    <div class="template-catalog-demo">
+                      <p class="atom-label-caps">Ocupación actual</p>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">
+                      Chip de estado <code>.atom-status-chip</code>
+                    </p>
+                    <div class="template-catalog-demo">
+                      <span class="atom-status-chip atom-status-chip--free">Libre</span
+                      ><span class="atom-status-chip atom-status-chip--occupied">Ocupado</span
+                      ><span class="atom-status-chip atom-status-chip--reserved">Reservado</span
+                      ><span class="atom-status-chip atom-status-chip--out">Fuera de servicio</span
+                      ><span class="atom-status-chip">Neutro</span>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Placa <code>.atom-plate</code></p>
+                    <div class="template-catalog-demo">
+                      <span class="atom-plate">MNP 908</span
+                      ><span class="atom-plate atom-plate--large">JKL 482</span>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Medidor <code>.atom-meter</code></p>
+                    <div class="template-catalog-demo">
+                      <div
+                        class="atom-meter"
+                        id="demo-medidor"
+                        role="meter"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow="64"
+                        aria-label="Ejemplo"
+                      >
+                        <span></span>
+                      </div>
+                      <div
+                        class="atom-meter atom-meter--orange"
+                        id="demo-medidor-naranja"
+                        role="meter"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow="67"
+                        aria-label="Ejemplo naranja"
+                      >
+                        <span></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Carga <code>.atom-spinner</code></p>
+                    <div class="template-catalog-demo">
+                      <span class="atom-spinner" role="status"
+                        ><span class="visually-hidden">Cargando…</span></span
+                      >
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Enlace <code>.atom-link</code></p>
+                    <div class="template-catalog-demo">
+                      <a class="atom-link" href="#">Volver a la página principal</a>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Avatar <code>.atom-avatar</code></p>
+                    <div class="template-catalog-demo">
+                      <span class="atom-avatar" aria-hidden="true">LG</span>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Marca <code>.atom-brand-mark</code></p>
+                    <div class="template-catalog-demo">
+                      <span class="atom-brand-mark" aria-hidden="true">P</span>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">
+                      Franja de peligro <code>.atom-hazard-strip</code>
+                    </p>
+                    <div class="template-catalog-demo">
+                      <div class="atom-hazard-strip" aria-hidden="true"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section class="molecule-panel" aria-label="Moléculas">
+              <div class="molecule-panel-head"><h2>Moléculas</h2></div>
+              <div class="molecule-panel-body">
+                <div class="template-catalog-grid">
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Campo <code>.molecule-field</code></p>
+                    <div class="template-catalog-demo">
+                      <div class="molecule-field">
+                        <label for="demo-campo" id="demo-campo-etiqueta"
+                          >Número de documento<span
+                            class="molecule-field-required"
+                            aria-hidden="true"
+                          >
+                            *</span
+                          ></label
+                        >
+                        <input
+                          class="atom-input"
+                          type="text"
+                          id="demo-campo"
+                          required
+                          aria-describedby="demo-campo-ayuda demo-campo-error"
+                        />
+                        <p class="molecule-field-hint" id="demo-campo-ayuda">
+                          Solo letras y números.
+                        </p>
+                        <p
+                          class="molecule-field-error"
+                          id="demo-campo-error"
+                          aria-live="polite"
+                        ></p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Casilla <code>.molecule-check</code></p>
+                    <div class="template-catalog-demo">
+                      <label class="molecule-check"
+                        ><input type="checkbox" id="demo-check" />Requiere celda accesible</label
+                      >
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Mosaicos <code>.molecule-tiles</code></p>
+                    <div class="template-catalog-demo">
+                      <div class="molecule-field molecule-field--full">
+                        <span class="molecule-field-label" id="demo-tipo-titulo"
+                          >Tipo de vehículo</span
+                        >
+                        <div
+                          class="molecule-tiles molecule-tiles--2"
+                          role="radiogroup"
+                          aria-labelledby="demo-tipo-titulo"
+                        >
+                          <label class="molecule-tile"
+                            ><input type="radio" name="demo-tipo" value="carro" checked /><span
+                              ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                                <use href="/assets/icons.svg#i-car"></use></svg
+                              >Carro</span
+                            ></label
+                          ><label class="molecule-tile"
+                            ><input type="radio" name="demo-tipo" value="moto" /><span
+                              ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                                <use href="/assets/icons.svg#i-moto"></use></svg
+                              >Moto</span
+                            ></label
+                          >
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Alerta <code>.molecule-alert</code></p>
+                    <div class="template-catalog-demo">
+                      <div class="molecule-alert molecule-alert--error">
+                        <svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-alert"></use>
+                        </svg>
+                        <p>Entrada rechazada por pico y placa.</p>
+                      </div>
+                      <div class="molecule-alert molecule-alert--success">
+                        <svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-check"></use>
+                        </svg>
+                        <p>Ingreso registrado.</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Indicador <code>.molecule-kpi</code></p>
+                    <div class="template-catalog-demo">
+                      <div class="organism-kpis organism-kpis--2">
+                        <article class="molecule-kpi molecule-kpi--main" id="demo-kpi-tarjeta">
+                          <p class="atom-label-caps" id="demo-kpi-titulo">Ocupación actual</p>
+                          <p class="molecule-kpi-value">
+                            <span id="demo-kpi">—</span
+                            ><small class="" id="demo-kpi-unidad"> %</small>
+                          </p>
+
+                          <p class="molecule-kpi-note" id="demo-kpi-nota"></p>
+                        </article>
+                        <article class="molecule-kpi" id="demo-kpi-2-tarjeta">
+                          <p class="atom-label-caps" id="demo-kpi-2-titulo">Espacios libres</p>
+                          <p class="molecule-kpi-value">
+                            <span id="demo-kpi-2">—</span
+                            ><small class="hidden" id="demo-kpi-2-unidad"></small>
+                          </p>
+
+                          <p class="molecule-kpi-note" id="demo-kpi-2-nota"></p>
+                        </article>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">
+                      Estado vacío <code>.molecule-empty-state</code>
+                    </p>
+                    <div class="template-catalog-demo">
+                      <div class="molecule-empty-state" id="demo-vacio">
+                        <strong>Sin resultados</strong>
+                        <p>No hay registros que coincidan.</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Marca y sede <code>.molecule-brand</code></p>
+                    <div class="template-catalog-demo">
+                      <div class="molecule-brand">
+                        <span class="atom-brand-mark" aria-hidden="true">P</span>
+                        <div>PARKO<small>Parqueadero ABC · Medellín</small></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">
+                      Lista de datos <code>.molecule-data-list</code>
+                    </p>
+                    <div class="template-catalog-demo">
+                      <dl class="molecule-data-list">
+                        <div>
+                          <dt>Ticket</dt>
+                          <dd>T-000123</dd>
+                        </div>
+                        <div>
+                          <dt>Tiempo dentro</dt>
+                          <dd>2 h 37 min</dd>
+                        </div>
+                      </dl>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Cobro <code>.molecule-charge</code></p>
+                    <div class="template-catalog-demo">
+                      <div class="molecule-charge">
+                        <div>
+                          <p class="atom-label-caps">Valor a pagar</p>
+                          <p class="molecule-charge-value">$ 18.840</p>
+                        </div>
+                        <p class="molecule-charge-pct">67 % del tope</p>
+                      </div>
+                      <p class="molecule-charge-note">157 min × $ 120 = $ 18.840</p>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Pestañas <code>.molecule-level-tabs</code></p>
+                    <div class="template-catalog-demo">
+                      <div
+                        class="molecule-level-tabs"
+                        id="demo-pestanas"
+                        role="tablist"
+                        aria-label="Niveles de ejemplo"
+                      >
+                        <button
+                          class="molecule-level-tab is-active"
+                          type="button"
+                          role="tab"
+                          data-id="s1"
+                          id="tab-demo-s1"
+                          aria-controls="demo-s1"
+                          aria-selected="true"
+                          tabindex="0"
+                        >
+                          Sótano 1</button
+                        ><button
+                          class="molecule-level-tab"
+                          type="button"
+                          role="tab"
+                          data-id="s2"
+                          id="tab-demo-s2"
+                          aria-controls="demo-s2"
+                          aria-selected="false"
+                          tabindex="-1"
+                        >
+                          Sótano 2
+                        </button>
+                      </div>
+                      <div id="demo-s1"></div>
+                      <div class="hidden" id="demo-s2"></div>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">
+                      Estado en vivo <code>.molecule-live-status</code>
+                    </p>
+                    <div class="template-catalog-demo">
+                      <span class="molecule-live-status molecule-live-status--en-vivo" role="status"
+                        >En vivo</span
+                      >
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">
+                      Cuenta regresiva <code>.molecule-countdown</code>
+                    </p>
+                    <div class="template-catalog-demo">
+                      <div class="molecule-countdown" id="demo-cuenta">
+                        <span class="molecule-countdown-label"></span
+                        ><span class="molecule-countdown-value" aria-hidden="true"></span
+                        ><span class="visually-hidden" aria-live="polite"></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Celda del mapa <code>.molecule-space</code></p>
+                    <div class="template-catalog-demo">
+                      <div class="organism-parking-map-lot">
+                        <div
+                          class="organism-parking-map-row organism-parking-map-row--top"
+                          id="demo-fila"
+                        >
+                          <button
+                            class="molecule-space molecule-space--free"
+                            type="button"
+                            aria-label="A-01 LIBRE"
+                          >
+                            <span class="molecule-space-code">A-01</span
+                            ><span class="molecule-space-tag">LIBRE</span>
+                          </button>
+                          <button
+                            class="molecule-space molecule-space--occupied"
+                            type="button"
+                            aria-label="A-02 GHT 215, ocupado"
+                          >
+                            <span class="molecule-space-code">A-02</span
+                            ><svg
+                              class="molecule-space-car"
+                              viewBox="0 0 26 46"
+                              aria-hidden="true"
+                              focusable="false"
+                            >
+                              <use href="/assets/icons.svg#car-top"></use></svg
+                            ><span class="molecule-space-plate">GHT 215</span>
+                          </button>
+                          <button
+                            class="molecule-space molecule-space--reserved"
+                            type="button"
+                            aria-label="A-04 MENSUAL"
+                          >
+                            <span class="molecule-space-code">A-04</span
+                            ><span class="molecule-space-tag">MENSUAL</span>
+                          </button>
+                          <button
+                            class="molecule-space molecule-space--out"
+                            type="button"
+                            aria-label="A-09 fuera de servicio"
+                          >
+                            <span class="molecule-space-code">A-09</span
+                            ><span class="molecule-space-tag">FUERA DE SERVICIO</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Aviso <code>.molecule-toast</code></p>
+                    <div class="template-catalog-demo">
+                      <button class="atom-button" type="button" id="demo-aviso">
+                        <span>Mostrar aviso</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section class="molecule-panel" aria-label="Organismos">
+              <div class="molecule-panel-head"><h2>Organismos</h2></div>
+              <div class="molecule-panel-body">
+                <div class="template-catalog-grid">
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Ticket <code>.organism-ticket</code></p>
+                    <div class="template-catalog-demo">
+                      <aside class="organism-ticket" aria-label="Ticket de ejemplo">
+                        <div class="organism-ticket-head"><span>TICKET DE INGRESO</span></div>
+                        <dl>
+                          <div class="organism-ticket-number">
+                            <dt>N.º</dt>
+                            <dd>T-000123</dd>
+                          </div>
+                          <div>
+                            <dt>Placa</dt>
+                            <dd>MNP 908</dd>
+                          </div>
+                          <div>
+                            <dt>Espacio</dt>
+                            <dd>A-04 · Sótano 1</dd>
+                          </div>
+                        </dl>
+                        <div class="organism-ticket-barcode" aria-hidden="true"></div>
+                        <p class="organism-ticket-note">Conserve este ticket.</p>
+                      </aside>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Modal <code>.organism-modal</code></p>
+                    <div class="template-catalog-demo">
+                      <button class="atom-button" type="button" id="demo-modal-abrir">
+                        <span>Abrir modal</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="template-catalog-sample">
+                    <p class="template-catalog-name">Tabla <code>.organism-data-table</code></p>
+                    <div class="template-catalog-demo">
+                      <div class="organism-data-table-scroll">
+                        <table
+                          class="organism-log-table organism-data-table-table organism-data-table-table--w420"
+                        >
+                          <caption class="visually-hidden">
+                            Ejemplo
+                          </caption>
+                          <thead>
+                            <tr>
+                              <th scope="col">Hora</th>
+                              <th scope="col">Placa</th>
+                              <th class="organism-log-table-right" scope="col">Valor</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>10:42</td>
+                              <td>MNP 908</td>
+                              <td class="organism-log-table-right">$ 18.840</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+      <!-- organism-footer -->
+      <footer class="organism-footer">
+        <div class="organism-footer-inner">
+          <p class="organism-footer-brand">PARKO</p>
+          <p class="hidden" id="pie-sede"></p>
+
+          <p>© <span id="pie-anio"></span> PARKO · Sistema de gestión de parqueaderos</p>
+        </div>
+      </footer>
+    </div>
+    <div class="organism-modal-overlay hidden" id="demo-modal">
+      <section
+        class="organism-modal organism-modal--sm"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="demo-modal-titulo"
+      >
+        <header class="organism-modal-head">
+          <div>
+            <h2 id="demo-modal-titulo">Modal de ejemplo</h2>
+            <p id="demo-modal-subtitulo">// Esc o clic fuera para cerrar</p>
+          </div>
+          <button
+            class="atom-icon-button organism-modal-close"
+            type="button"
+            aria-label="Cerrar"
+            title="Cerrar"
+          >
+            <svg class="atom-icon" aria-hidden="true" focusable="false">
+              <use href="/assets/icons.svg#i-x"></use>
+            </svg>
+          </button>
+        </header>
+        <div class="organism-modal-body" id="demo-modal-cuerpo"><p>Contenido del modal.</p></div>
+        <footer class="organism-modal-foot" id="demo-modal-pie">
+          <button class="atom-button atom-button--ghost organism-modal-close" type="button">
+            <span>Cerrar</span>
+          </button>
+        </footer>
+      </section>
+    </div>
+    <div class="molecule-toast-region" id="avisos" aria-live="polite"></div>
+    <template id="tpl-aviso">
+      <div class="molecule-toast" role="status">
+        <svg class="atom-icon" aria-hidden="true" focusable="false">
+          <use href="/assets/icons.svg#i-info"></use>
+        </svg>
+        <p></p>
+        <button class="molecule-toast-close" type="button" aria-label="Cerrar aviso">
+          <svg class="atom-icon" aria-hidden="true" focusable="false">
+            <use href="/assets/icons.svg#i-x"></use>
+          </svg>
+        </button>
+      </div>
+    </template>
   </body>
 </html>

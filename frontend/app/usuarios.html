@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PARKO · Usuarios</title>
+
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -11,11 +12,907 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     />
-    <link rel="stylesheet" href="/styles/main.css" />
+    <link rel="stylesheet" href="/styles/atomic.css" />
     <script type="module" src="/js/pages/usuarios.js"></script>
   </head>
   <body>
-    <noscript>PARKO necesita JavaScript activado para funcionar.</noscript>
-    <div id="app"></div>
+    <div class="template-app-layout-loading" id="pagina-cargando">
+      <span class="atom-spinner" role="status"
+        ><span class="visually-hidden">Cargando PARKO…</span></span
+      >
+    </div>
+    <div class="template-app-layout-page hidden" id="pagina-error">
+      <div class="molecule-empty-state">
+        <strong>No pudimos cargar PARKO</strong>
+        <p id="pagina-error-texto"></p>
+        <div class="molecule-empty-state-action">
+          <button class="atom-button" type="button" id="pagina-error-reintentar">
+            <span>Reintentar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="template-app-layout hidden" id="app">
+      <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+      <!-- organism-header -->
+      <header class="organism-header">
+        <div class="organism-header-inner">
+          <a class="molecule-brand molecule-brand--link" href="/app/inicio.html">
+            <span class="atom-brand-mark" aria-hidden="true">P</span>
+            <div>PARKO<small id="marco-sede"></small></div>
+          </a>
+          <div class="molecule-shift">
+            <div>Fecha<strong id="marco-fecha">—</strong></div>
+            <div>
+              Hora<time id="marco-reloj"><strong id="marco-hora">—</strong></time>
+            </div>
+            <div>
+              <span id="marco-turno-etiqueta">Turno</span><strong id="marco-turno">—</strong>
+            </div>
+          </div>
+          <div class="organism-notification-bell" id="campana">
+            <button
+              class="organism-notification-bell-button"
+              id="campana-boton"
+              type="button"
+              aria-expanded="false"
+              aria-controls="campana-panel"
+              aria-label="Notificaciones"
+            >
+              <svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-bell"></use>
+              </svg>
+              <span
+                class="organism-notification-bell-count hidden"
+                id="campana-contador"
+                aria-hidden="true"
+                >0</span
+              >
+            </button>
+            <div
+              class="organism-notification-bell-panel hidden"
+              id="campana-panel"
+              role="region"
+              aria-label="Notificaciones recientes"
+            >
+              <div class="organism-notification-bell-head">
+                <strong>Notificaciones</strong>
+                <button
+                  class="organism-notification-bell-action"
+                  id="campana-leer-todas"
+                  type="button"
+                  disabled
+                >
+                  Marcar todas leídas
+                </button>
+              </div>
+              <ul
+                class="organism-notification-bell-list"
+                id="campana-lista"
+                aria-live="polite"
+              ></ul>
+              <a class="organism-notification-bell-all" href="/app/notificaciones.html"
+                >Ver todas</a
+              >
+            </div>
+          </div>
+          <div class="molecule-user-menu" id="menu-usuario">
+            <button
+              class="molecule-user-menu-button"
+              id="menu-usuario-boton"
+              type="button"
+              aria-expanded="false"
+              aria-controls="menu-usuario-lista"
+              aria-haspopup="true"
+            >
+              <span class="atom-avatar" aria-hidden="true">
+                <img class="hidden" id="menu-usuario-foto" alt="" />
+                <span id="menu-usuario-iniciales"></span>
+              </span>
+              <span class="molecule-user-menu-name"
+                ><span id="menu-usuario-nombre"></span><small id="menu-usuario-rol"></small
+              ></span>
+              <svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-chevron-down"></use>
+              </svg>
+            </button>
+            <ul class="molecule-user-menu-list hidden" id="menu-usuario-lista">
+              <li>
+                <a class="molecule-user-menu-item" href="/app/mi-cuenta.html"
+                  ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                    <use href="/assets/icons.svg#i-user"></use></svg
+                  >Mi cuenta</a
+                >
+              </li>
+              <li>
+                <a class="molecule-user-menu-item" href="/app/cambiar-contrasena.html"
+                  ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                    <use href="/assets/icons.svg#i-key"></use></svg
+                  >Cambiar contraseña</a
+                >
+              </li>
+              <li>
+                <button class="molecule-user-menu-item" id="menu-usuario-salir" type="button">
+                  <svg class="atom-icon" aria-hidden="true" focusable="false">
+                    <use href="/assets/icons.svg#i-logout"></use></svg
+                  >Cerrar sesión
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </header>
+
+      <!-- organism-navbar (el JS oculta los ítems sin permiso) -->
+      <nav class="organism-navbar" id="navbar" aria-label="Principal">
+        <div class="organism-navbar-inner">
+          <div class="organism-navbar-bar">
+            <span class="organism-navbar-current">Usuarios</span>
+            <button
+              class="atom-icon-button"
+              id="navbar-alternar"
+              type="button"
+              aria-label="Abrir menú de navegación"
+              title="Menú"
+              aria-expanded="false"
+              aria-controls="navbar-lista"
+            >
+              <svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-menu"></use>
+              </svg>
+            </button>
+          </div>
+          <ul class="organism-navbar-list" id="navbar-lista">
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="inicio" href="/app/inicio.html">Inicio</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="celdas" href="/app/celdas.html">Celdas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="historial" href="/app/historial.html"
+                >Movimientos</a
+              >
+            </li>
+            <li class="hidden">
+              <a
+                class="organism-navbar-item is-active"
+                data-id="usuarios"
+                href="/app/usuarios.html"
+                aria-current="page"
+                >Usuarios</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="vehiculos" href="/app/vehiculos.html"
+                >Vehículos</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="pico-placa" href="/app/pico-placa.html"
+                >Pico y placa</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="facturas" href="/app/facturacion.html"
+                >Facturas</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="tarifas" href="/app/tarifas.html">Tarifas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="descuentos" href="/app/descuentos.html"
+                >Descuentos</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="membresias" href="/app/membresias.html"
+                >Membresías</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="reservas" href="/app/reservas.html"
+                >Reservas</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="incidencias" href="/app/incidencias.html"
+                >Incidencias</a
+              >
+            </li>
+            <li class="hidden">
+              <a
+                class="organism-navbar-item"
+                data-id="notificaciones"
+                href="/app/notificaciones.html"
+                >Notificaciones</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="reportes" href="/app/reportes.html"
+                >Reportes</a
+              >
+            </li>
+            <li class="hidden">
+              <a
+                class="organism-navbar-item"
+                data-id="disponibilidad"
+                href="/app/disponibilidad.html"
+                >Disponibilidad</a
+              >
+            </li>
+            <li class="hidden">
+              <a
+                class="organism-navbar-item"
+                data-id="mis-movimientos"
+                href="/app/mis-movimientos.html"
+                >Mis movimientos</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mi-cuenta" href="/app/mi-cuenta.html"
+                >Mi cuenta</a
+              >
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <div class="atom-hazard-strip" aria-hidden="true"></div>
+
+      <main class="template-app-layout-page" id="contenido" tabindex="-1">
+        <!-- molecule-page-head -->
+        <div class="molecule-page-head">
+          <div>
+            <h1 id="pagina-titulo">Usuarios</h1>
+            <p id="pagina-subtitulo">// registro de nuevos usuarios</p>
+          </div>
+          <div class="molecule-page-head-actions" id="pagina-acciones">
+            <button class="atom-button" type="button" id="accion-nuevo">
+              <svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-user"></use></svg
+              ><span>Crear usuario</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="molecule-empty-state hidden" id="pagina-sin-acceso">
+          <strong>No tienes permiso para ver esta pantalla</strong>
+          <p>Usa el menú para ir a las secciones de tu cuenta.</p>
+          <div class="molecule-empty-state-action">
+            <a class="atom-button" href="/app/inicio.html"
+              ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-home"></use></svg
+              ><span>Ir al inicio</span></a
+            >
+          </div>
+        </div>
+
+        <div id="pagina-contenido">
+          <section
+            class="molecule-panel hidden"
+            id="panel-usuarios"
+            aria-labelledby="panel-usuarios-titulo"
+          >
+            <div class="molecule-panel-head">
+              <h2 id="panel-usuarios-titulo">Usuarios registrados</h2>
+            </div>
+            <div class="molecule-panel-body">
+              <div class="molecule-filters">
+                <div class="molecule-search-box" role="search">
+                  <label class="molecule-search-box-label" for="filtro-texto">Buscar</label>
+                  <input
+                    class="atom-input"
+                    id="filtro-texto"
+                    type="search"
+                    placeholder="Documento, nombre o correo"
+                    autocomplete="off"
+                  />
+                </div>
+                <div class="molecule-field">
+                  <label for="filtro-rol">Rol</label>
+                  <select class="atom-select" id="filtro-rol">
+                    <option value="">Todos</option>
+                    <option value="administrador">Administrador</option>
+                    <option value="operador">Operador</option>
+                    <option value="usuario">Cliente</option>
+                  </select>
+                </div>
+                <div class="molecule-field">
+                  <label for="filtro-estado">Estado</label>
+                  <select class="atom-select" id="filtro-estado">
+                    <option value="">Todos</option>
+                    <option value="activo">Activos</option>
+                    <option value="inactivo">Inactivos</option>
+                  </select>
+                </div>
+              </div>
+              <div class="organism-data-table" id="tabla-usuarios">
+                <div
+                  class="organism-data-table-scroll"
+                  tabindex="0"
+                  role="region"
+                  aria-label="Usuarios registrados"
+                >
+                  <table
+                    class="organism-log-table organism-data-table-table organism-data-table-table--w980"
+                  >
+                    <caption class="visually-hidden">
+                      Usuarios registrados
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col" aria-sort="none">
+                          <button class="organism-data-table-sort" type="button" data-id="id">
+                            Código
+                            <span class="organism-data-table-arrow" aria-hidden="true">↕</span>
+                          </button>
+                        </th>
+                        <th scope="col" aria-sort="none">
+                          <button
+                            class="organism-data-table-sort"
+                            type="button"
+                            data-id="documento"
+                          >
+                            Documento
+                            <span class="organism-data-table-arrow" aria-hidden="true">↕</span>
+                          </button>
+                        </th>
+                        <th scope="col" aria-sort="none">
+                          <button class="organism-data-table-sort" type="button" data-id="nombre">
+                            Nombre
+                            <span class="organism-data-table-arrow" aria-hidden="true">↕</span>
+                          </button>
+                        </th>
+                        <th scope="col">Contacto</th>
+                        <th scope="col" aria-sort="none">
+                          <button class="organism-data-table-sort" type="button" data-id="rol">
+                            Rol <span class="organism-data-table-arrow" aria-hidden="true">↕</span>
+                          </button>
+                        </th>
+                        <th scope="col" aria-sort="none">
+                          <button class="organism-data-table-sort" type="button" data-id="estado">
+                            Estado
+                            <span class="organism-data-table-arrow" aria-hidden="true">↕</span>
+                          </button>
+                        </th>
+                        <th scope="col" class="organism-log-table-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+                <div class="molecule-empty-state hidden">
+                  <strong>Sin usuarios</strong>
+                  <p>Ningún usuario coincide con los filtros.</p>
+                </div>
+                <nav class="molecule-pagination hidden" aria-label="Paginación">
+                  <button class="atom-button atom-button--ghost atom-button--sm" type="button">
+                    <span>Anterior</span>
+                  </button>
+                  <p class="molecule-pagination-status" aria-live="polite"></p>
+                  <button class="atom-button atom-button--ghost atom-button--sm" type="button">
+                    <span>Siguiente</span>
+                  </button>
+                </nav>
+                <div class="organism-data-table-loading hidden">
+                  <span class="atom-spinner" role="status"
+                    ><span class="visually-hidden">Cargando datos…</span></span
+                  >
+                </div>
+              </div>
+            </div>
+          </section>
+          <section
+            class="molecule-panel hidden"
+            id="panel-registro"
+            aria-labelledby="panel-registro-titulo"
+          >
+            <div class="molecule-panel-head">
+              <h2 id="panel-registro-titulo">Registro de usuarios</h2>
+            </div>
+            <div class="molecule-panel-body">
+              <p id="registro-intro">
+                Registra clientes y operadores. El listado completo y la edición de usuarios están a
+                cargo del administrador.
+              </p>
+              <div class="template-app-layout-stack hidden" id="registro-ultimo">
+                <p class="atom-label-caps">Último usuario registrado</p>
+                <dl class="molecule-data-list">
+                  <div>
+                    <dt>Código</dt>
+                    <dd id="ultimo-codigo"></dd>
+                  </div>
+                  <div>
+                    <dt>Documento</dt>
+                    <dd id="ultimo-documento"></dd>
+                  </div>
+                  <div>
+                    <dt>Nombre</dt>
+                    <dd id="ultimo-nombre"></dd>
+                  </div>
+                  <div>
+                    <dt>Tipo de usuario</dt>
+                    <dd id="ultimo-rol"></dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <!-- organism-footer -->
+      <footer class="organism-footer">
+        <div class="organism-footer-inner">
+          <p class="organism-footer-brand">PARKO</p>
+          <p class="hidden" id="pie-sede"></p>
+          <p>© <span id="pie-anio"></span> PARKO · Sistema de gestión de parqueaderos</p>
+        </div>
+      </footer>
+    </div>
+
+    <!-- ====================== Modales ====================== -->
+    <div class="organism-modal-overlay hidden" id="modal-usuario">
+      <section
+        class="organism-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-usuario-titulo"
+      >
+        <header class="organism-modal-head">
+          <div>
+            <h2 id="modal-usuario-titulo">Crear usuario</h2>
+            <p id="modal-usuario-subtitulo">// el sistema asigna el código automáticamente</p>
+          </div>
+          <button
+            class="atom-icon-button organism-modal-close"
+            type="button"
+            aria-label="Cerrar"
+            title="Cerrar"
+          >
+            <svg class="atom-icon" aria-hidden="true" focusable="false">
+              <use href="/assets/icons.svg#i-x"></use>
+            </svg>
+          </button>
+        </header>
+        <div class="organism-modal-body" id="modal-usuario-cuerpo">
+          <form id="form-usuario" novalidate>
+            <div
+              class="molecule-alert molecule-alert--error hidden"
+              id="usuario-alerta"
+              aria-live="assertive"
+            >
+              <svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-alert"></use>
+              </svg>
+              <p></p>
+            </div>
+            <div class="organism-form--grid">
+              <div class="molecule-field">
+                <label for="tipo_documento" id="tipo_documento-etiqueta"
+                  >Tipo de documento<span class="molecule-field-required" aria-hidden="true">
+                    *</span
+                  ></label
+                >
+                <select
+                  class="atom-select"
+                  id="tipo_documento"
+                  name="tipo_documento"
+                  required
+                  aria-describedby="tipo_documento-error"
+                >
+                  <option value="CC">Cédula de ciudadanía (CC)</option>
+                  <option value="CE">Cédula de extranjería (CE)</option>
+                  <option value="TI">Tarjeta de identidad (TI)</option>
+                  <option value="PAS">Pasaporte (PAS)</option>
+                  <option value="NIT">NIT</option>
+                </select>
+
+                <p class="molecule-field-error" id="tipo_documento-error" aria-live="polite"></p>
+              </div>
+              <div class="molecule-field">
+                <label for="numero_documento" id="numero_documento-etiqueta"
+                  >Número de documento<span class="molecule-field-required" aria-hidden="true">
+                    *</span
+                  ></label
+                >
+                <input
+                  class="atom-input"
+                  type="text"
+                  id="numero_documento"
+                  name="numero_documento"
+                  required
+                  aria-describedby="numero_documento-error"
+                  maxlength="20"
+                  autocomplete="off"
+                />
+
+                <p class="molecule-field-error" id="numero_documento-error" aria-live="polite"></p>
+              </div>
+              <div class="molecule-field">
+                <label for="primer_nombre" id="primer_nombre-etiqueta"
+                  >Primer nombre<span class="molecule-field-required" aria-hidden="true">
+                    *</span
+                  ></label
+                >
+                <input
+                  class="atom-input"
+                  type="text"
+                  id="primer_nombre"
+                  name="primer_nombre"
+                  required
+                  aria-describedby="primer_nombre-error"
+                  maxlength="60"
+                />
+
+                <p class="molecule-field-error" id="primer_nombre-error" aria-live="polite"></p>
+              </div>
+              <div class="molecule-field">
+                <label for="segundo_nombre" id="segundo_nombre-etiqueta">Segundo nombre</label>
+                <input
+                  class="atom-input"
+                  type="text"
+                  id="segundo_nombre"
+                  name="segundo_nombre"
+                  aria-describedby="segundo_nombre-error"
+                  maxlength="60"
+                />
+
+                <p class="molecule-field-error" id="segundo_nombre-error" aria-live="polite"></p>
+              </div>
+              <div class="molecule-field">
+                <label for="primer_apellido" id="primer_apellido-etiqueta"
+                  >Primer apellido<span class="molecule-field-required" aria-hidden="true">
+                    *</span
+                  ></label
+                >
+                <input
+                  class="atom-input"
+                  type="text"
+                  id="primer_apellido"
+                  name="primer_apellido"
+                  required
+                  aria-describedby="primer_apellido-error"
+                  maxlength="60"
+                />
+
+                <p class="molecule-field-error" id="primer_apellido-error" aria-live="polite"></p>
+              </div>
+              <div class="molecule-field">
+                <label for="segundo_apellido" id="segundo_apellido-etiqueta"
+                  >Segundo apellido</label
+                >
+                <input
+                  class="atom-input"
+                  type="text"
+                  id="segundo_apellido"
+                  name="segundo_apellido"
+                  aria-describedby="segundo_apellido-error"
+                  maxlength="60"
+                />
+
+                <p class="molecule-field-error" id="segundo_apellido-error" aria-live="polite"></p>
+              </div>
+              <div class="molecule-field">
+                <label for="correo" id="correo-etiqueta"
+                  >Correo electrónico<span class="molecule-field-required" aria-hidden="true">
+                    *</span
+                  ></label
+                >
+                <input
+                  class="atom-input"
+                  type="email"
+                  id="correo"
+                  name="correo"
+                  required
+                  aria-describedby="correo-error"
+                  maxlength="120"
+                  autocomplete="off"
+                />
+
+                <p class="molecule-field-error" id="correo-error" aria-live="polite"></p>
+              </div>
+              <div class="molecule-field">
+                <label for="celular" id="celular-etiqueta"
+                  >Celular<span class="molecule-field-required" aria-hidden="true"> *</span></label
+                >
+                <input
+                  class="atom-input"
+                  type="tel"
+                  id="celular"
+                  name="celular"
+                  required
+                  aria-describedby="celular-ayuda celular-error"
+                  inputmode="numeric"
+                  maxlength="10"
+                  placeholder="3001234567"
+                />
+                <p class="molecule-field-hint" id="celular-ayuda">10 dígitos, empieza por 3.</p>
+                <p class="molecule-field-error" id="celular-error" aria-live="polite"></p>
+              </div>
+              <div class="molecule-field">
+                <label for="rol_id" id="rol_id-etiqueta"
+                  >Tipo de usuario<span class="molecule-field-required" aria-hidden="true">
+                    *</span
+                  ></label
+                >
+                <select
+                  class="atom-select"
+                  id="rol_id"
+                  name="rol_id"
+                  required
+                  aria-describedby="rol_id-ayuda rol_id-error"
+                ></select>
+                <p class="molecule-field-hint" id="rol_id-ayuda">
+                  Los operadores no pueden crear administradores.
+                </p>
+                <p class="molecule-field-error" id="rol_id-error" aria-live="polite"></p>
+              </div>
+              <div class="molecule-field molecule-field--full" id="campo-contrasena">
+                <label for="contrasena_temporal"
+                  >Contraseña temporal<span class="molecule-field-required" aria-hidden="true">
+                    *</span
+                  ></label
+                >
+                <input
+                  class="atom-input"
+                  type="text"
+                  id="contrasena_temporal"
+                  name="contrasena_temporal"
+                  maxlength="72"
+                  autocomplete="off"
+                  required
+                  aria-describedby="contrasena_temporal-ayuda contrasena_temporal-error"
+                />
+                <p class="molecule-field-hint" id="contrasena_temporal-ayuda">
+                  Entrégasela al usuario: deberá cambiarla en su primer inicio de sesión.
+                </p>
+                <p
+                  class="molecule-field-error"
+                  id="contrasena_temporal-error"
+                  aria-live="polite"
+                ></p>
+                <div>
+                  <button
+                    class="atom-button atom-button--ghost atom-button--sm"
+                    type="button"
+                    id="contrasena-generar"
+                  >
+                    <span>Generar otra</span>
+                  </button>
+                </div>
+              </div>
+              <div class="molecule-field molecule-field--full molecule-photo-input">
+                <span class="molecule-field-label">Fotografía (opcional)</span>
+                <div class="molecule-photo-input-row">
+                  <div class="molecule-photo-input-preview" aria-hidden="true">
+                    <img class="hidden" id="usuario-foto-vista" alt="" />
+                    <span id="usuario-foto-iniciales">—</span>
+                  </div>
+                  <div class="molecule-photo-input-actions">
+                    <input
+                      class="visually-hidden"
+                      id="usuario-foto"
+                      name="foto"
+                      type="file"
+                      accept="image/jpeg,image/png"
+                      aria-describedby="usuario-foto-error"
+                    />
+                    <label class="atom-button atom-button--ghost atom-button--sm" for="usuario-foto"
+                      >Elegir foto</label
+                    >
+                    <p class="molecule-field-hint">JPG o PNG, máximo 2 MB.</p>
+                    <label class="molecule-check hidden" id="usuario-foto-quitar-etiqueta"
+                      ><input type="checkbox" id="usuario-foto-quitar" name="quitar_foto" />Quitar
+                      la foto actual</label
+                    >
+                  </div>
+                </div>
+                <p class="molecule-field-error" id="usuario-foto-error" aria-live="polite"></p>
+              </div>
+            </div>
+          </form>
+        </div>
+        <footer class="organism-modal-foot" id="modal-usuario-pie">
+          <button class="atom-button atom-button--ghost organism-modal-close" type="button">
+            <span>Cancelar</span></button
+          ><button class="atom-button" type="submit" id="usuario-guardar" form="form-usuario">
+            <svg class="atom-icon" aria-hidden="true" focusable="false">
+              <use href="/assets/icons.svg#i-check"></use></svg
+            ><span>Crear usuario</span>
+          </button>
+        </footer>
+      </section>
+    </div>
+    <div class="organism-modal-overlay hidden" id="modal-restablecer">
+      <section
+        class="organism-modal organism-modal--sm"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-restablecer-titulo"
+      >
+        <header class="organism-modal-head">
+          <div>
+            <h2 id="modal-restablecer-titulo">Restablecer contraseña</h2>
+            <p id="modal-restablecer-subtitulo"></p>
+          </div>
+          <button
+            class="atom-icon-button organism-modal-close"
+            type="button"
+            aria-label="Cerrar"
+            title="Cerrar"
+          >
+            <svg class="atom-icon" aria-hidden="true" focusable="false">
+              <use href="/assets/icons.svg#i-x"></use>
+            </svg>
+          </button>
+        </header>
+        <div class="organism-modal-body" id="modal-restablecer-cuerpo">
+          <form class="organism-form--stack" id="form-restablecer" novalidate>
+            <p id="restablecer-texto"></p>
+            <div
+              class="molecule-alert molecule-alert--error hidden"
+              id="restablecer-alerta"
+              aria-live="assertive"
+            >
+              <svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-alert"></use>
+              </svg>
+              <p></p>
+            </div>
+            <div class="molecule-field">
+              <label for="restablecer-contrasena" id="restablecer-contrasena-etiqueta"
+                >Contraseña temporal<span class="molecule-field-required" aria-hidden="true">
+                  *</span
+                ></label
+              >
+              <input
+                class="atom-input"
+                type="text"
+                id="restablecer-contrasena"
+                required
+                aria-describedby="restablecer-contrasena-ayuda restablecer-contrasena-error"
+                maxlength="72"
+                autocomplete="off"
+              />
+              <p class="molecule-field-hint" id="restablecer-contrasena-ayuda">
+                Entrégasela al usuario: deberá cambiarla en su próximo inicio de sesión.
+              </p>
+              <p
+                class="molecule-field-error"
+                id="restablecer-contrasena-error"
+                aria-live="polite"
+              ></p>
+            </div>
+            <div>
+              <button
+                class="atom-button atom-button--ghost atom-button--sm"
+                type="button"
+                id="restablecer-generar"
+              >
+                <span>Generar otra</span>
+              </button>
+            </div>
+          </form>
+        </div>
+        <footer class="organism-modal-foot" id="modal-restablecer-pie">
+          <button class="atom-button atom-button--ghost organism-modal-close" type="button">
+            <span>Cancelar</span></button
+          ><button
+            class="atom-button"
+            type="submit"
+            id="restablecer-guardar"
+            form="form-restablecer"
+          >
+            <svg class="atom-icon" aria-hidden="true" focusable="false">
+              <use href="/assets/icons.svg#i-key"></use></svg
+            ><span>Restablecer</span>
+          </button>
+        </footer>
+      </section>
+    </div>
+
+    <div class="organism-modal-overlay hidden" id="modal-confirmar">
+      <section
+        class="organism-modal organism-modal--sm"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirmar-titulo"
+      >
+        <header class="organism-modal-head">
+          <div><h2 id="confirmar-titulo"></h2></div>
+          <button
+            class="atom-icon-button organism-modal-close"
+            type="button"
+            aria-label="Cerrar"
+            title="Cerrar"
+          >
+            <svg class="atom-icon" aria-hidden="true" focusable="false">
+              <use href="/assets/icons.svg#i-x"></use>
+            </svg>
+          </button>
+        </header>
+        <div class="organism-modal-body"><p id="confirmar-mensaje"></p></div>
+        <footer class="organism-modal-foot">
+          <button class="atom-button atom-button--ghost organism-modal-close" type="button">
+            <span>Cancelar</span>
+          </button>
+          <button class="atom-button atom-button--dark" id="confirmar-aceptar" type="button">
+            <span>Confirmar</span>
+          </button>
+        </footer>
+      </section>
+    </div>
+
+    <div class="molecule-toast-region" id="avisos" aria-live="polite"></div>
+    <a class="hidden" id="descarga" aria-hidden="true" tabindex="-1">Descargar</a>
+
+    <template id="tpl-aviso">
+      <div class="molecule-toast" role="status">
+        <svg class="atom-icon" aria-hidden="true" focusable="false">
+          <use href="/assets/icons.svg#i-info"></use>
+        </svg>
+        <p></p>
+        <button class="molecule-toast-close" type="button" aria-label="Cerrar aviso">
+          <svg class="atom-icon" aria-hidden="true" focusable="false">
+            <use href="/assets/icons.svg#i-x"></use>
+          </svg>
+        </button>
+      </div>
+    </template>
+    <template id="tpl-opcion"><option></option></template>
+    <template id="tpl-grupo"><optgroup></optgroup></template>
+
+    <template id="tpl-notificacion">
+      <li>
+        <button class="organism-notification-bell-item" type="button">
+          <strong></strong>
+          <span class="organism-notification-bell-item-text"></span>
+          <small></small>
+        </button>
+      </li>
+    </template>
+    <template id="tpl-notificacion-vacia"
+      ><li class="organism-notification-bell-empty"></li
+    ></template>
+
+    <!-- ====================== Plantillas de la pantalla ====================== -->
+    <template id="tpl-usuario">
+      <tr>
+        <td></td>
+        <td><span class="organism-data-table-cell-nowrap"></span></td>
+        <td>
+          <span class="organism-data-table-cell-person"
+            ><span class="atom-avatar" aria-hidden="true"
+              ><img class="hidden" alt="" /><span></span></span
+            ><span></span
+          ></span>
+        </td>
+        <td>
+          <span><span></span><span class="organism-data-table-cell-sub"></span></span>
+        </td>
+        <td><span class="atom-status-chip"></span></td>
+        <td><span class="atom-status-chip"></span></td>
+        <td class="organism-log-table-right">
+          <div class="organism-data-table-row-actions">
+            <button class="atom-button atom-button--ghost atom-button--sm hidden" type="button">
+              <span>Editar</span>
+            </button>
+            <button class="atom-button atom-button--ghost atom-button--sm hidden" type="button">
+              <svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-key"></use></svg
+              ><span>Contraseña</span>
+            </button>
+            <button class="atom-button atom-button--dark atom-button--sm hidden" type="button">
+              <span>Inactivar</span>
+            </button>
+          </div>
+        </td>
+      </tr>
+    </template>
   </body>
 </html>

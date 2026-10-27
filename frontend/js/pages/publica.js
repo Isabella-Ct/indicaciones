@@ -2,203 +2,161 @@
  * Página pública (REQ-WEB-1), sin sesión: portada, disponibilidad en vivo, tarifas
  * vigentes, servicios, pico y placa de hoy, ubicación y contacto. Todos los datos salen
  * de la API pública (solo totales: nunca celdas, placas ni personas).
+ * HTML en index.html: aquí solo se rellenan textos y se muestran u ocultan partes.
  */
-import { el } from '../utils/dom.js';
-import {
-  createPublicLayout,
-  createPublicSection,
-} from '../components/templates/public-layout/public-layout.js';
-import { createHero } from '../components/organisms/hero/hero.js';
-import {
-  createAvailabilityWidget,
-  setAvailability,
-  setAvailabilityStatus,
-} from '../components/organisms/availability-widget/availability-widget.js';
-import { createPricingTable } from '../components/organisms/pricing-table/pricing-table.js';
-import { createFeatureGrid } from '../components/organisms/feature-grid/feature-grid.js';
-import { createContactSection } from '../components/organisms/contact-section/contact-section.js';
-import { createFooter } from '../components/organisms/footer/footer.js';
-import { createButton } from '../components/atoms/button/button.js';
-import { createIcon } from '../components/atoms/icon/icon.js';
-import { createEmptyState } from '../components/molecules/empty-state/empty-state.js';
-import { obtenerSede, subtituloSede } from '../services/parqueadero.service.js';
+import { montarMarcoPublico } from './comun/marco-publico.js';
+import { clonar } from './comun/plantillas.js';
+import { subtituloSede } from '../services/parqueadero.service.js';
 import {
   obtenerDisponibilidad,
   obtenerTarifas,
   obtenerPicoPlacaHoy,
   suscribirDisponibilidad,
 } from '../services/publico.service.js';
-import { RUTA_LOGIN } from '../utils/sesion.js';
+import { formatearCOP, formatearHora } from '../utils/formato.js';
 
-const SERVICIOS = [
-  {
-    icono: 'i-clock',
-    titulo: 'Abierto 24 horas',
-    texto: 'Entra y sal a cualquier hora, todos los días del año.',
-  },
-  {
-    icono: 'i-car',
-    titulo: 'Carros y motos',
-    texto: 'Celdas separadas por tipo y celdas accesibles para quien las necesita.',
-  },
-  {
-    icono: 'i-calendar',
-    titulo: 'Mensualidades',
-    texto: 'Planes mensuales o anuales, con celda fija opcional.',
-  },
-  {
-    icono: 'i-map',
-    titulo: 'Reservas',
-    texto: 'Desde tu cuenta aparta una celda libre antes de llegar.',
-  },
-  {
-    icono: 'i-shield',
-    titulo: 'Seguridad',
-    texto: 'Registro de cada entrada y salida con ticket y factura.',
-  },
-  {
-    icono: 'i-alert',
-    titulo: 'Registro de incidentes',
-    texto: 'Cualquier novedad con tu vehículo queda registrada y te avisamos.',
-  },
-];
+const $ = (id) => document.getElementById(id);
+const mostrar = (nodo, visible) => nodo.classList.toggle('hidden', !visible);
 
-const ENLACES = [
-  { texto: 'Disponibilidad', href: '#disponibilidad' },
-  { texto: 'Tarifas', href: '#tarifas' },
-  { texto: 'Servicios', href: '#servicios' },
-  { texto: 'Pico y placa', href: '#pico-placa' },
-  { texto: 'Ubicación', href: '#ubicacion' },
-  { texto: 'Ingresar', href: RUTA_LOGIN },
-];
+// ---------------------------------------------------------------- disponibilidad
+const TEXTOS_VIVO = {
+  conectando: 'Conectando…',
+  'en-vivo': 'En vivo',
+  reconectando: 'Reconectando…',
+};
 
-const sinDatos = () =>
-  createEmptyState({
-    title: 'No disponible',
-    text: 'No pudimos cargar esta información. Intenta de nuevo en un momento.',
-  });
-
-function seccionDisponibilidad() {
-  const widget = createAvailabilityWidget();
-  obtenerDisponibilidad()
-    .then((datos) => setAvailability(widget, datos))
-    .catch(() => {});
-  suscribirDisponibilidad({
-    onDisponibilidad: (datos) => setAvailability(widget, datos),
-    onEstado: (e) => setAvailabilityStatus(widget, e),
-  });
-  return createPublicSection({
-    id: 'disponibilidad',
-    titulo: 'Disponibilidad en vivo',
-    subtitulo: 'Cupos libres en este momento',
-    children: [widget],
-  });
+function ponerCupos(tipo, t) {
+  const libres = t?.disponibles ?? 0;
+  const total = t?.habilitadas ?? 0;
+  const v = total ? Math.round((libres / total) * 100) : 0;
+  $(`cupos-${tipo}`).textContent = String(libres);
+  $(`cupos-${tipo}-unidad`).textContent = libres === 1 ? ' libre' : ' libres';
+  const medidor = $(`cupos-${tipo}-medidor`);
+  medidor.setAttribute('aria-valuenow', String(v));
+  medidor.firstElementChild.style.setProperty('--v', String(v));
+  $(`cupos-${tipo}-nota`).textContent = total
+    ? `de ${total} celdas habilitadas`
+    : 'Sin celdas habilitadas';
 }
 
-function seccionTarifas(datos) {
-  return createPublicSection({
-    id: 'tarifas',
-    titulo: 'Tarifas',
-    subtitulo: 'Pagas por minuto, con un tope por cada 24 horas',
-    children: [
-      datos
-        ? createPricingTable({
-            tarifas: { carro: datos.carro, moto: datos.moto },
-            mensualidades: datos.mensualidades,
-          })
-        : sinDatos(),
-    ],
-  });
+function ponerDisponibilidad(datos) {
+  ponerCupos('carro', datos.carro);
+  ponerCupos('moto', datos.moto);
+  $('disponibilidad-hora').textContent = datos.actualizado_en
+    ? `Actualizado a las ${formatearHora(datos.actualizado_en)}`
+    : '';
 }
 
-function reglaTipo(tipo, titulo, regla) {
-  return el('div', {}, [
-    el('h3', { className: 'price-title' }, [
-      createIcon({ name: tipo === 'moto' ? 'i-moto' : 'i-car' }),
-      titulo,
-    ]),
-    regla.digitos.length
-      ? el(
-          'div',
-          {
-            className: 'plate-digits',
-            attrs: { 'aria-label': `Dígitos restringidos: ${regla.digitos.join(', ')}` },
-          },
-          regla.digitos.map((d) => el('span', { className: 'plate-digit', text: String(d) }))
-        )
-      : el('p', { text: 'Sin restricción hoy.' }),
-    el('p', {
-      text: regla.digitos.length
-        ? `Según el ${regla.criterio}, de ${regla.horarios.join(' y ')}.`
-        : `Hoy pueden circular todas las placas.`,
-    }),
-  ]);
+function ponerIndicador(estado) {
+  const indicador = $('indicador-vivo');
+  indicador.className = `molecule-live-status molecule-live-status--${estado}`;
+  indicador.textContent = TEXTOS_VIVO[estado];
 }
 
-function seccionPicoPlaca(datos) {
-  return createPublicSection({
-    id: 'pico-placa',
-    titulo: 'Pico y placa hoy',
-    subtitulo: datos ? `${datos.dia_nombre} ${datos.fecha}` : 'Medellín',
-    children: [
-      datos
-        ? el('div', { className: 'plate-rule' }, [
-            reglaTipo('carro', 'Carros', datos.carro),
-            reglaTipo('moto', 'Motos', datos.moto),
-          ])
-        : sinDatos(),
-    ],
-  });
+// ---------------------------------------------------------------- tarifas
+const fraccion = (t) =>
+  t.minutos_fraccion === 1 ? ' por minuto' : ` cada ${t.minutos_fraccion} minutos`;
+
+function ponerPrecio(tipo, t, m) {
+  if (t) {
+    $(`precio-${tipo}-valor`).textContent = formatearCOP(t.valor_fraccion);
+    $(`precio-${tipo}-fraccion`).textContent = fraccion(t);
+    $(`precio-${tipo}-tope`).textContent =
+      `Nunca pagas más de ${formatearCOP(t.valor_dia_maximo)} por cada 24 horas.`;
+    $(`precio-${tipo}-gracia`).textContent = t.minutos_gracia
+      ? `Los primeros ${t.minutos_gracia} minutos no se cobran.`
+      : 'Pagas solo el tiempo que estuviste.';
+  } else {
+    $(`precio-${tipo}-valor`).textContent = '';
+    $(`precio-${tipo}-fraccion`).textContent = 'Consulta en la caseta';
+  }
+  mostrar($(`precio-${tipo}-lista`), Boolean(t));
+  mostrar($(`precio-${tipo}-planes`), Boolean(m?.mensual));
+  if (m?.mensual) {
+    $(`precio-${tipo}-mensual`).textContent = formatearCOP(m.mensual);
+    mostrar($(`precio-${tipo}-anual-fila`), Boolean(m.anual));
+    if (m.anual) $(`precio-${tipo}-anual`).textContent = formatearCOP(m.anual);
+  }
+}
+
+function ponerTarifas(datos) {
+  mostrar($('tarifas-tabla'), Boolean(datos));
+  mostrar($('tarifas-error'), !datos);
+  if (!datos) return;
+  ponerPrecio('carro', datos.carro, datos.mensualidades?.carro);
+  ponerPrecio('moto', datos.moto, datos.mensualidades?.moto);
+}
+
+// ---------------------------------------------------------------- pico y placa
+function ponerRegla(tipo, regla) {
+  const hay = regla.digitos.length > 0;
+  const digitos = $(`pico-${tipo}-digitos`);
+  digitos.replaceChildren(
+    ...regla.digitos.map((d) => {
+      const span = clonar('tpl-digito');
+      span.textContent = String(d);
+      return span;
+    })
+  );
+  digitos.setAttribute('aria-label', `Dígitos restringidos: ${regla.digitos.join(', ')}`);
+  mostrar(digitos, hay);
+  mostrar($(`pico-${tipo}-libre`), !hay);
+  $(`pico-${tipo}-texto`).textContent = hay
+    ? `Según el ${regla.criterio}, de ${regla.horarios.join(' y ')}.`
+    : 'Hoy pueden circular todas las placas.';
+}
+
+function ponerPicoPlaca(datos) {
+  mostrar($('pico-reglas'), Boolean(datos));
+  mostrar($('pico-error'), !datos);
+  if (!datos) return;
+  $('pico-placa-subtitulo').textContent = `${datos.dia_nombre} ${datos.fecha}`;
+  ponerRegla('carro', datos.carro);
+  ponerRegla('moto', datos.moto);
+}
+
+// ---------------------------------------------------------------- sede y mapa
+function ponerSede(sede) {
+  if (!sede) return;
+  $('hero-sede').textContent = subtituloSede(sede) || 'Parqueadero ABC · Medellín';
+  $('hero-direccion').textContent = `${sede.direccion}, ${sede.ciudad}`;
+  $('hero-horario').textContent = sede.horario;
+  mostrar($('hero-datos'), true);
+
+  const direccion = `${sede.direccion}, ${sede.ciudad}`;
+  $('contacto-direccion').textContent = direccion;
+  $('contacto-horario').textContent = sede.horario ?? 'Abierto 24 horas';
+  $('contacto-telefono').textContent = sede.telefono ?? '—';
+
+  const mapa = sede.ubicacion;
+  if (!mapa) return;
+  const d = 0.004;
+  const bbox = [mapa.lon - d, mapa.lat - d * 0.75, mapa.lon + d, mapa.lat + d * 0.75]
+    .map((n) => n.toFixed(5))
+    .join('%2C');
+  const iframe = $('contacto-mapa-iframe');
+  iframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${mapa.lat}%2C${mapa.lon}`;
+  iframe.title = `Mapa de la ubicación: ${direccion}`;
+  const enlace = $('contacto-mapa-enlace');
+  enlace.href = `https://www.openstreetmap.org/?mlat=${mapa.lat}&mlon=${mapa.lon}#map=${mapa.zoom ?? 17}/${mapa.lat}/${mapa.lon}`;
+  mostrar(enlace, true);
+  mostrar($('contacto-mapa'), true);
 }
 
 async function iniciar() {
+  obtenerDisponibilidad()
+    .then(ponerDisponibilidad)
+    .catch(() => {});
+  suscribirDisponibilidad({ onDisponibilidad: ponerDisponibilidad, onEstado: ponerIndicador });
+
   const [sede, tarifas, picoPlaca] = await Promise.all([
-    obtenerSede().catch(() => null),
+    montarMarcoPublico(),
     obtenerTarifas().catch(() => null),
     obtenerPicoPlacaHoy().catch(() => null),
   ]);
-
-  const hero = createHero({
-    sede: subtituloSede(sede) || 'Parqueadero ABC · Medellín',
-    titulo: '24 horas en el corazón de Medellín',
-    texto:
-      'Parqueo para carros y motos con cobro por minuto, mensualidades y reservas desde tu cuenta.',
-    datos: sede ? [`${sede.direccion}, ${sede.ciudad}`, sede.horario] : [],
-    acciones: [
-      createButton({ label: 'Ver disponibilidad', href: '#disponibilidad' }),
-      createButton({ label: 'Ingresar', href: RUTA_LOGIN, variant: 'ghost', icon: 'i-in' }),
-    ],
-  });
-
-  document.getElementById('app').replaceChildren(
-    createPublicLayout({
-      sede: subtituloSede(sede),
-      actions: [createButton({ label: 'Ingresar', href: RUTA_LOGIN, size: 'sm', icon: 'i-in' })],
-      hero,
-      content: [
-        seccionDisponibilidad(),
-        seccionTarifas(tarifas),
-        createPublicSection({
-          id: 'servicios',
-          titulo: 'Servicios',
-          children: [createFeatureGrid({ items: SERVICIOS })],
-        }),
-        seccionPicoPlaca(picoPlaca),
-        createPublicSection({
-          id: 'ubicacion',
-          titulo: 'Ubicación y contacto',
-          children: [
-            createContactSection({
-              sede,
-              mapa: sede?.ubicacion ?? null,
-              acciones: [createButton({ label: 'Ingresar', href: RUTA_LOGIN, size: 'sm' })],
-            }),
-          ],
-        }),
-      ],
-      footer: createFooter({ sede, franja: true, enlaces: ENLACES }),
-    })
-  );
+  ponerSede(sede);
+  ponerTarifas(tarifas);
+  ponerPicoPlaca(picoPlaca);
 }
 
 iniciar();

@@ -1,7 +1,7 @@
 /* ==========================================================================
    PARKO · Base: reset, tipografía, foco y utilidades.
    Origen: sección "2. Base" y "9. Utilidades" de docs/diseno-parko/styles.css.
-   Los componentes (.btn, .plate, .label-caps…) viven en js/components/.
+   Los componentes (.atom-button, .atom-plate…) viven en styles/atomic/.
    ========================================================================== */
 *,
 *::before,

@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PARKO · Reportes</title>
+
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -11,11 +12,2501 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     />
-    <link rel="stylesheet" href="/styles/main.css" />
+    <link rel="stylesheet" href="/styles/atomic.css" />
     <script type="module" src="/js/pages/reportes.js"></script>
   </head>
   <body>
-    <noscript>PARKO necesita JavaScript activado para funcionar.</noscript>
-    <div id="app"></div>
+    <div class="template-app-layout-loading" id="pagina-cargando">
+      <span class="atom-spinner" role="status"
+        ><span class="visually-hidden">Cargando PARKO…</span></span
+      >
+    </div>
+    <div class="template-app-layout-page hidden" id="pagina-error">
+      <div class="molecule-empty-state">
+        <strong>No pudimos cargar PARKO</strong>
+        <p id="pagina-error-texto"></p>
+        <div class="molecule-empty-state-action">
+          <button class="atom-button" type="button" id="pagina-error-reintentar">
+            <span>Reintentar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="template-app-layout hidden" id="app">
+      <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+      <!-- organism-header -->
+      <header class="organism-header">
+        <div class="organism-header-inner">
+          <a class="molecule-brand molecule-brand--link" href="/app/inicio.html">
+            <span class="atom-brand-mark" aria-hidden="true">P</span>
+            <div>PARKO<small id="marco-sede"></small></div>
+          </a>
+          <div class="molecule-shift">
+            <div>Fecha<strong id="marco-fecha">—</strong></div>
+            <div>
+              Hora<time id="marco-reloj"><strong id="marco-hora">—</strong></time>
+            </div>
+            <div>
+              <span id="marco-turno-etiqueta">Turno</span><strong id="marco-turno">—</strong>
+            </div>
+          </div>
+          <div class="organism-notification-bell" id="campana">
+            <button
+              class="organism-notification-bell-button"
+              id="campana-boton"
+              type="button"
+              aria-expanded="false"
+              aria-controls="campana-panel"
+              aria-label="Notificaciones"
+            >
+              <svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-bell"></use>
+              </svg>
+              <span
+                class="organism-notification-bell-count hidden"
+                id="campana-contador"
+                aria-hidden="true"
+                >0</span
+              >
+            </button>
+            <div
+              class="organism-notification-bell-panel hidden"
+              id="campana-panel"
+              role="region"
+              aria-label="Notificaciones recientes"
+            >
+              <div class="organism-notification-bell-head">
+                <strong>Notificaciones</strong>
+                <button
+                  class="organism-notification-bell-action"
+                  id="campana-leer-todas"
+                  type="button"
+                  disabled
+                >
+                  Marcar todas leídas
+                </button>
+              </div>
+              <ul
+                class="organism-notification-bell-list"
+                id="campana-lista"
+                aria-live="polite"
+              ></ul>
+              <a class="organism-notification-bell-all" href="/app/notificaciones.html"
+                >Ver todas</a
+              >
+            </div>
+          </div>
+          <div class="molecule-user-menu" id="menu-usuario">
+            <button
+              class="molecule-user-menu-button"
+              id="menu-usuario-boton"
+              type="button"
+              aria-expanded="false"
+              aria-controls="menu-usuario-lista"
+              aria-haspopup="true"
+            >
+              <span class="atom-avatar" aria-hidden="true">
+                <img class="hidden" id="menu-usuario-foto" alt="" />
+                <span id="menu-usuario-iniciales"></span>
+              </span>
+              <span class="molecule-user-menu-name"
+                ><span id="menu-usuario-nombre"></span><small id="menu-usuario-rol"></small
+              ></span>
+              <svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-chevron-down"></use>
+              </svg>
+            </button>
+            <ul class="molecule-user-menu-list hidden" id="menu-usuario-lista">
+              <li>
+                <a class="molecule-user-menu-item" href="/app/mi-cuenta.html"
+                  ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                    <use href="/assets/icons.svg#i-user"></use></svg
+                  >Mi cuenta</a
+                >
+              </li>
+              <li>
+                <a class="molecule-user-menu-item" href="/app/cambiar-contrasena.html"
+                  ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                    <use href="/assets/icons.svg#i-key"></use></svg
+                  >Cambiar contraseña</a
+                >
+              </li>
+              <li>
+                <button class="molecule-user-menu-item" id="menu-usuario-salir" type="button">
+                  <svg class="atom-icon" aria-hidden="true" focusable="false">
+                    <use href="/assets/icons.svg#i-logout"></use></svg
+                  >Cerrar sesión
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </header>
+
+      <!-- organism-navbar (el JS oculta los ítems sin permiso) -->
+      <nav class="organism-navbar" id="navbar" aria-label="Principal">
+        <div class="organism-navbar-inner">
+          <div class="organism-navbar-bar">
+            <span class="organism-navbar-current">Reportes</span>
+            <button
+              class="atom-icon-button"
+              id="navbar-alternar"
+              type="button"
+              aria-label="Abrir menú de navegación"
+              title="Menú"
+              aria-expanded="false"
+              aria-controls="navbar-lista"
+            >
+              <svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-menu"></use>
+              </svg>
+            </button>
+          </div>
+          <ul class="organism-navbar-list" id="navbar-lista">
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="inicio" href="/app/inicio.html">Inicio</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="celdas" href="/app/celdas.html">Celdas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="historial" href="/app/historial.html"
+                >Movimientos</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="usuarios" href="/app/usuarios.html"
+                >Usuarios</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="vehiculos" href="/app/vehiculos.html"
+                >Vehículos</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="pico-placa" href="/app/pico-placa.html"
+                >Pico y placa</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="facturas" href="/app/facturacion.html"
+                >Facturas</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="tarifas" href="/app/tarifas.html">Tarifas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="descuentos" href="/app/descuentos.html"
+                >Descuentos</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="membresias" href="/app/membresias.html"
+                >Membresías</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="reservas" href="/app/reservas.html"
+                >Reservas</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="incidencias" href="/app/incidencias.html"
+                >Incidencias</a
+              >
+            </li>
+            <li class="hidden">
+              <a
+                class="organism-navbar-item"
+                data-id="notificaciones"
+                href="/app/notificaciones.html"
+                >Notificaciones</a
+              >
+            </li>
+            <li class="hidden">
+              <a
+                class="organism-navbar-item is-active"
+                data-id="reportes"
+                href="/app/reportes.html"
+                aria-current="page"
+                >Reportes</a
+              >
+            </li>
+            <li class="hidden">
+              <a
+                class="organism-navbar-item"
+                data-id="disponibilidad"
+                href="/app/disponibilidad.html"
+                >Disponibilidad</a
+              >
+            </li>
+            <li class="hidden">
+              <a
+                class="organism-navbar-item"
+                data-id="mis-movimientos"
+                href="/app/mis-movimientos.html"
+                >Mis movimientos</a
+              >
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mi-cuenta" href="/app/mi-cuenta.html"
+                >Mi cuenta</a
+              >
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <div class="atom-hazard-strip" aria-hidden="true"></div>
+
+      <main class="template-app-layout-page" id="contenido" tabindex="-1">
+        <!-- molecule-page-head -->
+        <div class="molecule-page-head">
+          <div>
+            <h1 id="pagina-titulo">Reportes</h1>
+            <p id="pagina-subtitulo">
+              // los 11 reportes del administrador · exportar a CSV e imprimir
+            </p>
+          </div>
+          <div class="molecule-page-head-actions hidden" id="pagina-acciones"></div>
+        </div>
+
+        <div class="molecule-empty-state hidden" id="pagina-sin-acceso">
+          <strong>No tienes permiso para ver esta pantalla</strong>
+          <p>Usa el menú para ir a las secciones de tu cuenta.</p>
+          <div class="molecule-empty-state-action">
+            <a class="atom-button" href="/app/inicio.html"
+              ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-home"></use></svg
+              ><span>Ir al inicio</span></a
+            >
+          </div>
+        </div>
+
+        <div id="pagina-contenido">
+          <div class="template-app-layout-reports">
+            <div class="template-app-layout-reports-nav">
+              <div
+                class="molecule-level-tabs molecule-level-tabs--vertical"
+                id="reportes-nav"
+                role="tablist"
+                aria-label="Reportes"
+                aria-orientation="vertical"
+              >
+                <button
+                  class="molecule-level-tab is-active"
+                  type="button"
+                  role="tab"
+                  data-id="usuarios"
+                  id="tab-reporte-activo-usuarios"
+                  aria-controls="reporte-activo-usuarios"
+                  aria-selected="true"
+                  tabindex="0"
+                >
+                  01 · Usuarios</button
+                ><button
+                  class="molecule-level-tab"
+                  type="button"
+                  role="tab"
+                  data-id="vehiculos"
+                  id="tab-reporte-activo-vehiculos"
+                  aria-controls="reporte-activo-vehiculos"
+                  aria-selected="false"
+                  tabindex="-1"
+                >
+                  02 · Vehículos</button
+                ><button
+                  class="molecule-level-tab"
+                  type="button"
+                  role="tab"
+                  data-id="entradas"
+                  id="tab-reporte-activo-entradas"
+                  aria-controls="reporte-activo-entradas"
+                  aria-selected="false"
+                  tabindex="-1"
+                >
+                  03 · Entradas</button
+                ><button
+                  class="molecule-level-tab"
+                  type="button"
+                  role="tab"
+                  data-id="salidas"
+                  id="tab-reporte-activo-salidas"
+                  aria-controls="reporte-activo-salidas"
+                  aria-selected="false"
+                  tabindex="-1"
+                >
+                  04 · Salidas</button
+                ><button
+                  class="molecule-level-tab"
+                  type="button"
+                  role="tab"
+                  data-id="incidencias"
+                  id="tab-reporte-activo-incidencias"
+                  aria-controls="reporte-activo-incidencias"
+                  aria-selected="false"
+                  tabindex="-1"
+                >
+                  05 · Incidencias</button
+                ><button
+                  class="molecule-level-tab"
+                  type="button"
+                  role="tab"
+                  data-id="pico-placa"
+                  id="tab-reporte-activo-pico-placa"
+                  aria-controls="reporte-activo-pico-placa"
+                  aria-selected="false"
+                  tabindex="-1"
+                >
+                  06 · Pico y placa</button
+                ><button
+                  class="molecule-level-tab"
+                  type="button"
+                  role="tab"
+                  data-id="celdas-ocupadas"
+                  id="tab-reporte-activo-celdas-ocupadas"
+                  aria-controls="reporte-activo-celdas-ocupadas"
+                  aria-selected="false"
+                  tabindex="-1"
+                >
+                  07 · Celdas ocupadas</button
+                ><button
+                  class="molecule-level-tab"
+                  type="button"
+                  role="tab"
+                  data-id="celdas-mas-usadas"
+                  id="tab-reporte-activo-celdas-mas-usadas"
+                  aria-controls="reporte-activo-celdas-mas-usadas"
+                  aria-selected="false"
+                  tabindex="-1"
+                >
+                  08 · Celdas más usadas</button
+                ><button
+                  class="molecule-level-tab"
+                  type="button"
+                  role="tab"
+                  data-id="vehiculos-frecuentes"
+                  id="tab-reporte-activo-vehiculos-frecuentes"
+                  aria-controls="reporte-activo-vehiculos-frecuentes"
+                  aria-selected="false"
+                  tabindex="-1"
+                >
+                  09 · Vehículos frecuentes</button
+                ><button
+                  class="molecule-level-tab"
+                  type="button"
+                  role="tab"
+                  data-id="ocupacion"
+                  id="tab-reporte-activo-ocupacion"
+                  aria-controls="reporte-activo-ocupacion"
+                  aria-selected="false"
+                  tabindex="-1"
+                >
+                  10 · Horas y días pico</button
+                ><button
+                  class="molecule-level-tab"
+                  type="button"
+                  role="tab"
+                  data-id="financiero"
+                  id="tab-reporte-activo-financiero"
+                  aria-controls="reporte-activo-financiero"
+                  aria-selected="false"
+                  tabindex="-1"
+                >
+                  11 · Financiero
+                </button>
+              </div>
+            </div>
+            <div>
+              <section
+                class="molecule-panel"
+                id="reporte-activo-usuarios"
+                role="tabpanel"
+                aria-labelledby="tab-reporte-activo-usuarios"
+              >
+                <div class="molecule-panel-head">
+                  <h2>REP-01 · Usuarios</h2>
+                  <div class="molecule-panel-actions">
+                    <div class="template-app-layout-report-actions">
+                      <a
+                        class="atom-button atom-button--dark atom-button--sm"
+                        id="usuarios-exportar"
+                        href="#"
+                        download
+                        ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-out"></use></svg
+                        ><span>Exportar CSV</span></a
+                      >
+                      <button
+                        class="atom-button atom-button--sm"
+                        type="button"
+                        id="usuarios-imprimir"
+                      >
+                        <svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-print"></use></svg
+                        ><span>Imprimir</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="molecule-panel-body">
+                  <div class="template-app-layout-stack">
+                    <p class="template-app-layout-report-description">
+                      Todos los usuarios con sus datos y su rol (nunca la contraseña).
+                    </p>
+                    <div class="molecule-filters">
+                      <div class="molecule-field">
+                        <label for="usuarios-rol">Rol</label
+                        ><select class="atom-select" id="usuarios-rol">
+                          <option value="">Todos</option>
+                          <option value="administrador">Administradores</option>
+                          <option value="operador">Operadores</option>
+                          <option value="usuario">Clientes</option>
+                        </select>
+                      </div>
+                      <div class="molecule-field">
+                        <label for="usuarios-estado">Estado</label
+                        ><select class="atom-select" id="usuarios-estado">
+                          <option value="">Todos</option>
+                          <option value="activo">Activos</option>
+                          <option value="inactivo">Inactivos</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div
+                      class="template-app-layout-stack"
+                      aria-live="polite"
+                      id="usuarios-resultado"
+                    >
+                      <div class="template-app-layout-report-loading" id="usuarios-cargando">
+                        <span class="atom-spinner" role="status"
+                          ><span class="visually-hidden">Generando reporte…</span></span
+                        >
+                      </div>
+                      <div class="molecule-empty-state hidden" id="usuarios-error">
+                        <strong>No se pudo generar el reporte</strong>
+                        <p></p>
+                      </div>
+                      <div class="template-app-layout-stack hidden" id="usuarios-datos">
+                        <div class="organism-data-table" id="tabla-usuarios">
+                          <div
+                            class="organism-data-table-scroll"
+                            tabindex="0"
+                            role="region"
+                            aria-label="Usuarios"
+                          >
+                            <table
+                              class="organism-log-table organism-data-table-table organism-data-table-table--w980"
+                            >
+                              <caption class="visually-hidden">
+                                Usuarios
+                              </caption>
+                              <thead>
+                                <tr>
+                                  <th scope="col">Código</th>
+                                  <th scope="col">Nombre</th>
+                                  <th scope="col">Documento</th>
+                                  <th scope="col">Celular</th>
+                                  <th scope="col">Rol</th>
+                                  <th scope="col">Estado</th>
+                                  <th scope="col" class="organism-log-table-right">Vehículos</th>
+                                  <th scope="col">Último acceso</th>
+                                </tr>
+                              </thead>
+                              <tbody></tbody>
+                            </table>
+                          </div>
+                          <div class="molecule-empty-state hidden">
+                            <strong>Sin resultados</strong>
+                            <p>No hay registros que coincidan con los filtros.</p>
+                          </div>
+                          <nav class="molecule-pagination hidden" aria-label="Paginación">
+                            <button
+                              class="atom-button atom-button--ghost atom-button--sm"
+                              type="button"
+                            >
+                              <span>Anterior</span>
+                            </button>
+                            <p class="molecule-pagination-status" aria-live="polite"></p>
+                            <button
+                              class="atom-button atom-button--ghost atom-button--sm"
+                              type="button"
+                            >
+                              <span>Siguiente</span>
+                            </button>
+                          </nav>
+                          <div class="organism-data-table-loading hidden">
+                            <span class="atom-spinner" role="status"
+                              ><span class="visually-hidden">Cargando datos…</span></span
+                            >
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              <section
+                class="molecule-panel hidden"
+                id="reporte-activo-vehiculos"
+                role="tabpanel"
+                aria-labelledby="tab-reporte-activo-vehiculos"
+              >
+                <div class="molecule-panel-head">
+                  <h2>REP-02 · Vehículos</h2>
+                  <div class="molecule-panel-actions">
+                    <div class="template-app-layout-report-actions">
+                      <a
+                        class="atom-button atom-button--dark atom-button--sm"
+                        id="vehiculos-exportar"
+                        href="#"
+                        download
+                        ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-out"></use></svg
+                        ><span>Exportar CSV</span></a
+                      >
+                      <button
+                        class="atom-button atom-button--sm"
+                        type="button"
+                        id="vehiculos-imprimir"
+                      >
+                        <svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-print"></use></svg
+                        ><span>Imprimir</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="molecule-panel-body">
+                  <div class="template-app-layout-stack">
+                    <p class="template-app-layout-report-description">
+                      Vehículos registrados con sus datos y el usuario propietario.
+                    </p>
+                    <div class="molecule-filters">
+                      <div class="molecule-field">
+                        <label for="vehiculos-tipo">Tipo</label
+                        ><select class="atom-select" id="vehiculos-tipo">
+                          <option value="">Todos</option>
+                          <option value="carro">Carros</option>
+                          <option value="moto">Motos</option>
+                        </select>
+                      </div>
+                      <div class="molecule-field">
+                        <label for="vehiculos-propietario">Propietario</label
+                        ><select class="atom-select" id="vehiculos-propietario">
+                          <option value="">Todos</option>
+                          <option value="con">Con propietario</option>
+                          <option value="sin">Visitantes</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div
+                      class="template-app-layout-stack"
+                      aria-live="polite"
+                      id="vehiculos-resultado"
+                    >
+                      <div class="template-app-layout-report-loading" id="vehiculos-cargando">
+                        <span class="atom-spinner" role="status"
+                          ><span class="visually-hidden">Generando reporte…</span></span
+                        >
+                      </div>
+                      <div class="molecule-empty-state hidden" id="vehiculos-error">
+                        <strong>No se pudo generar el reporte</strong>
+                        <p></p>
+                      </div>
+                      <div class="template-app-layout-stack hidden" id="vehiculos-datos">
+                        <div class="organism-data-table" id="tabla-vehiculos">
+                          <div
+                            class="organism-data-table-scroll"
+                            tabindex="0"
+                            role="region"
+                            aria-label="Vehículos"
+                          >
+                            <table
+                              class="organism-log-table organism-data-table-table organism-data-table-table--w760"
+                            >
+                              <caption class="visually-hidden">
+                                Vehículos
+                              </caption>
+                              <thead>
+                                <tr>
+                                  <th scope="col">Placa</th>
+                                  <th scope="col">Tipo</th>
+                                  <th scope="col">Marca y modelo</th>
+                                  <th scope="col">Propietario</th>
+                                  <th scope="col" class="organism-log-table-right">Visitas</th>
+                                  <th scope="col">Estado</th>
+                                </tr>
+                              </thead>
+                              <tbody></tbody>
+                            </table>
+                          </div>
+                          <div class="molecule-empty-state hidden">
+                            <strong>Sin resultados</strong>
+                            <p>No hay registros que coincidan con los filtros.</p>
+                          </div>
+                          <nav class="molecule-pagination hidden" aria-label="Paginación">
+                            <button
+                              class="atom-button atom-button--ghost atom-button--sm"
+                              type="button"
+                            >
+                              <span>Anterior</span>
+                            </button>
+                            <p class="molecule-pagination-status" aria-live="polite"></p>
+                            <button
+                              class="atom-button atom-button--ghost atom-button--sm"
+                              type="button"
+                            >
+                              <span>Siguiente</span>
+                            </button>
+                          </nav>
+                          <div class="organism-data-table-loading hidden">
+                            <span class="atom-spinner" role="status"
+                              ><span class="visually-hidden">Cargando datos…</span></span
+                            >
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              <section
+                class="molecule-panel hidden"
+                id="reporte-activo-entradas"
+                role="tabpanel"
+                aria-labelledby="tab-reporte-activo-entradas"
+              >
+                <div class="molecule-panel-head">
+                  <h2>REP-03 · Entradas</h2>
+                  <div class="molecule-panel-actions">
+                    <div class="template-app-layout-report-actions">
+                      <a
+                        class="atom-button atom-button--dark atom-button--sm"
+                        id="entradas-exportar"
+                        href="#"
+                        download
+                        ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-out"></use></svg
+                        ><span>Exportar CSV</span></a
+                      >
+                      <button
+                        class="atom-button atom-button--sm"
+                        type="button"
+                        id="entradas-imprimir"
+                      >
+                        <svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-print"></use></svg
+                        ><span>Imprimir</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="molecule-panel-body">
+                  <div class="template-app-layout-stack">
+                    <p class="template-app-layout-report-description">
+                      Entradas con fecha, hora, vehículo, puerta y celda.
+                    </p>
+                    <div class="molecule-filters">
+                      <div class="molecule-field">
+                        <label for="entradas-desde">Desde</label
+                        ><input class="atom-input" type="date" id="entradas-desde" />
+                      </div>
+                      <div class="molecule-field">
+                        <label for="entradas-hasta">Hasta</label
+                        ><input class="atom-input" type="date" id="entradas-hasta" />
+                      </div>
+                      <div class="molecule-field">
+                        <label for="entradas-tipo">Tipo</label
+                        ><select class="atom-select" id="entradas-tipo">
+                          <option value="">Todos</option>
+                          <option value="carro">Carros</option>
+                          <option value="moto">Motos</option>
+                        </select>
+                      </div>
+                      <div class="molecule-field">
+                        <label for="entradas-puerta_id">Puerta</label
+                        ><select class="atom-select" id="entradas-puerta_id">
+                          <option value="">Todas</option>
+                        </select>
+                      </div>
+                      <div class="molecule-search-box" role="search">
+                        <label class="molecule-search-box-label" for="entradas-placa">Placa</label>
+                        <input
+                          class="atom-input"
+                          id="entradas-placa"
+                          type="search"
+                          placeholder="Ej. MNP908"
+                          autocomplete="off"
+                        />
+                      </div>
+                    </div>
+                    <div
+                      class="template-app-layout-stack"
+                      aria-live="polite"
+                      id="entradas-resultado"
+                    >
+                      <div class="template-app-layout-report-loading" id="entradas-cargando">
+                        <span class="atom-spinner" role="status"
+                          ><span class="visually-hidden">Generando reporte…</span></span
+                        >
+                      </div>
+                      <div class="molecule-empty-state hidden" id="entradas-error">
+                        <strong>No se pudo generar el reporte</strong>
+                        <p></p>
+                      </div>
+                      <div class="template-app-layout-stack hidden" id="entradas-datos">
+                        <section class="organism-kpis organism-kpis--2" aria-label="Resumen">
+                          <article
+                            class="molecule-kpi molecule-kpi--main"
+                            id="entradas-kpi-1-tarjeta"
+                          >
+                            <p class="atom-label-caps" id="entradas-kpi-1-titulo">Entradas</p>
+                            <p class="molecule-kpi-value">
+                              <span id="entradas-kpi-1">—</span
+                              ><small class="hidden" id="entradas-kpi-1-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="entradas-kpi-1-nota"></p>
+                          </article>
+                          <article class="molecule-kpi" id="entradas-kpi-2-tarjeta">
+                            <p class="atom-label-caps" id="entradas-kpi-2-titulo">
+                              Promedio diario
+                            </p>
+                            <p class="molecule-kpi-value">
+                              <span id="entradas-kpi-2">—</span
+                              ><small class="hidden" id="entradas-kpi-2-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="entradas-kpi-2-nota"></p>
+                          </article>
+                        </section>
+                        <div class="organism-data-table" id="tabla-entradas">
+                          <div
+                            class="organism-data-table-scroll"
+                            tabindex="0"
+                            role="region"
+                            aria-label="Entradas"
+                          >
+                            <table
+                              class="organism-log-table organism-data-table-table organism-data-table-table--w960"
+                            >
+                              <caption class="visually-hidden">
+                                Entradas
+                              </caption>
+                              <thead>
+                                <tr>
+                                  <th scope="col">Fecha y hora</th>
+                                  <th scope="col">Ticket</th>
+                                  <th scope="col">Vehículo</th>
+                                  <th scope="col">Cliente</th>
+                                  <th scope="col">Puerta</th>
+                                  <th scope="col">Celda</th>
+                                  <th scope="col">Registró</th>
+                                  <th scope="col">Estado</th>
+                                </tr>
+                              </thead>
+                              <tbody></tbody>
+                            </table>
+                          </div>
+                          <div class="molecule-empty-state hidden">
+                            <strong>Sin resultados</strong>
+                            <p>No hay registros que coincidan con los filtros.</p>
+                          </div>
+                          <nav class="molecule-pagination hidden" aria-label="Paginación">
+                            <button
+                              class="atom-button atom-button--ghost atom-button--sm"
+                              type="button"
+                            >
+                              <span>Anterior</span>
+                            </button>
+                            <p class="molecule-pagination-status" aria-live="polite"></p>
+                            <button
+                              class="atom-button atom-button--ghost atom-button--sm"
+                              type="button"
+                            >
+                              <span>Siguiente</span>
+                            </button>
+                          </nav>
+                          <div class="organism-data-table-loading hidden">
+                            <span class="atom-spinner" role="status"
+                              ><span class="visually-hidden">Cargando datos…</span></span
+                            >
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              <section
+                class="molecule-panel hidden"
+                id="reporte-activo-salidas"
+                role="tabpanel"
+                aria-labelledby="tab-reporte-activo-salidas"
+              >
+                <div class="molecule-panel-head">
+                  <h2>REP-04 · Salidas</h2>
+                  <div class="molecule-panel-actions">
+                    <div class="template-app-layout-report-actions">
+                      <a
+                        class="atom-button atom-button--dark atom-button--sm"
+                        id="salidas-exportar"
+                        href="#"
+                        download
+                        ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-out"></use></svg
+                        ><span>Exportar CSV</span></a
+                      >
+                      <button
+                        class="atom-button atom-button--sm"
+                        type="button"
+                        id="salidas-imprimir"
+                      >
+                        <svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-print"></use></svg
+                        ><span>Imprimir</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="molecule-panel-body">
+                  <div class="template-app-layout-stack">
+                    <p class="template-app-layout-report-description">
+                      Salidas con fecha, hora, vehículo, puerta, duración y valor cobrado.
+                    </p>
+                    <div class="molecule-filters">
+                      <div class="molecule-field">
+                        <label for="salidas-desde">Desde</label
+                        ><input class="atom-input" type="date" id="salidas-desde" />
+                      </div>
+                      <div class="molecule-field">
+                        <label for="salidas-hasta">Hasta</label
+                        ><input class="atom-input" type="date" id="salidas-hasta" />
+                      </div>
+                      <div class="molecule-field">
+                        <label for="salidas-tipo">Tipo</label
+                        ><select class="atom-select" id="salidas-tipo">
+                          <option value="">Todos</option>
+                          <option value="carro">Carros</option>
+                          <option value="moto">Motos</option>
+                        </select>
+                      </div>
+                      <div class="molecule-field">
+                        <label for="salidas-puerta_id">Puerta</label
+                        ><select class="atom-select" id="salidas-puerta_id">
+                          <option value="">Todas</option>
+                        </select>
+                      </div>
+                      <div class="molecule-search-box" role="search">
+                        <label class="molecule-search-box-label" for="salidas-placa">Placa</label>
+                        <input
+                          class="atom-input"
+                          id="salidas-placa"
+                          type="search"
+                          placeholder="Ej. MNP908"
+                          autocomplete="off"
+                        />
+                      </div>
+                    </div>
+                    <div
+                      class="template-app-layout-stack"
+                      aria-live="polite"
+                      id="salidas-resultado"
+                    >
+                      <div class="template-app-layout-report-loading" id="salidas-cargando">
+                        <span class="atom-spinner" role="status"
+                          ><span class="visually-hidden">Generando reporte…</span></span
+                        >
+                      </div>
+                      <div class="molecule-empty-state hidden" id="salidas-error">
+                        <strong>No se pudo generar el reporte</strong>
+                        <p></p>
+                      </div>
+                      <div class="template-app-layout-stack hidden" id="salidas-datos">
+                        <section class="organism-kpis organism-kpis--3" aria-label="Resumen">
+                          <article
+                            class="molecule-kpi molecule-kpi--main"
+                            id="salidas-kpi-1-tarjeta"
+                          >
+                            <p class="atom-label-caps" id="salidas-kpi-1-titulo">Recaudado</p>
+                            <p class="molecule-kpi-value">
+                              <span id="salidas-kpi-1">—</span
+                              ><small class="hidden" id="salidas-kpi-1-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="salidas-kpi-1-nota"></p>
+                          </article>
+                          <article class="molecule-kpi" id="salidas-kpi-2-tarjeta">
+                            <p class="atom-label-caps" id="salidas-kpi-2-titulo">Salidas</p>
+                            <p class="molecule-kpi-value">
+                              <span id="salidas-kpi-2">—</span
+                              ><small class="hidden" id="salidas-kpi-2-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="salidas-kpi-2-nota"></p>
+                          </article>
+                          <article class="molecule-kpi" id="salidas-kpi-3-tarjeta">
+                            <p class="atom-label-caps" id="salidas-kpi-3-titulo">
+                              Permanencia prom.
+                            </p>
+                            <p class="molecule-kpi-value">
+                              <span id="salidas-kpi-3">—</span
+                              ><small class="" id="salidas-kpi-3-unidad"> min</small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="salidas-kpi-3-nota"></p>
+                          </article>
+                        </section>
+                        <div class="organism-data-table" id="tabla-salidas">
+                          <div
+                            class="organism-data-table-scroll"
+                            tabindex="0"
+                            role="region"
+                            aria-label="Salidas"
+                          >
+                            <table
+                              class="organism-log-table organism-data-table-table organism-data-table-table--w980"
+                            >
+                              <caption class="visually-hidden">
+                                Salidas
+                              </caption>
+                              <thead>
+                                <tr>
+                                  <th scope="col">Salida</th>
+                                  <th scope="col">Ticket</th>
+                                  <th scope="col">Vehículo</th>
+                                  <th scope="col">Puerta</th>
+                                  <th scope="col">Celda</th>
+                                  <th scope="col">Duración</th>
+                                  <th scope="col" class="organism-log-table-right">Valor</th>
+                                  <th scope="col">Método</th>
+                                </tr>
+                              </thead>
+                              <tbody></tbody>
+                            </table>
+                          </div>
+                          <div class="molecule-empty-state hidden">
+                            <strong>Sin resultados</strong>
+                            <p>No hay registros que coincidan con los filtros.</p>
+                          </div>
+                          <nav class="molecule-pagination hidden" aria-label="Paginación">
+                            <button
+                              class="atom-button atom-button--ghost atom-button--sm"
+                              type="button"
+                            >
+                              <span>Anterior</span>
+                            </button>
+                            <p class="molecule-pagination-status" aria-live="polite"></p>
+                            <button
+                              class="atom-button atom-button--ghost atom-button--sm"
+                              type="button"
+                            >
+                              <span>Siguiente</span>
+                            </button>
+                          </nav>
+                          <div class="organism-data-table-loading hidden">
+                            <span class="atom-spinner" role="status"
+                              ><span class="visually-hidden">Cargando datos…</span></span
+                            >
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              <section
+                class="molecule-panel hidden"
+                id="reporte-activo-incidencias"
+                role="tabpanel"
+                aria-labelledby="tab-reporte-activo-incidencias"
+              >
+                <div class="molecule-panel-head">
+                  <h2>REP-05 · Incidencias</h2>
+                  <div class="molecule-panel-actions">
+                    <div class="template-app-layout-report-actions">
+                      <a
+                        class="atom-button atom-button--dark atom-button--sm"
+                        id="incidencias-exportar"
+                        href="#"
+                        download
+                        ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-out"></use></svg
+                        ><span>Exportar CSV</span></a
+                      >
+                      <button
+                        class="atom-button atom-button--sm"
+                        type="button"
+                        id="incidencias-imprimir"
+                      >
+                        <svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-print"></use></svg
+                        ><span>Imprimir</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="molecule-panel-body">
+                  <div class="template-app-layout-stack">
+                    <p class="template-app-layout-report-description">
+                      Incidencias registradas en el parqueadero, por tipo y fecha.
+                    </p>
+                    <div class="molecule-filters">
+                      <div class="molecule-field">
+                        <label for="incidencias-desde">Desde</label
+                        ><input class="atom-input" type="date" id="incidencias-desde" />
+                      </div>
+                      <div class="molecule-field">
+                        <label for="incidencias-hasta">Hasta</label
+                        ><input class="atom-input" type="date" id="incidencias-hasta" />
+                      </div>
+                      <div class="molecule-field">
+                        <label for="incidencias-tipo">Tipo</label
+                        ><select class="atom-select" id="incidencias-tipo">
+                          <option value="">Todos</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div
+                      class="template-app-layout-stack"
+                      aria-live="polite"
+                      id="incidencias-resultado"
+                    >
+                      <div class="template-app-layout-report-loading" id="incidencias-cargando">
+                        <span class="atom-spinner" role="status"
+                          ><span class="visually-hidden">Generando reporte…</span></span
+                        >
+                      </div>
+                      <div class="molecule-empty-state hidden" id="incidencias-error">
+                        <strong>No se pudo generar el reporte</strong>
+                        <p></p>
+                      </div>
+                      <div class="template-app-layout-stack hidden" id="incidencias-datos">
+                        <section class="organism-kpis organism-kpis--2" aria-label="Resumen">
+                          <article
+                            class="molecule-kpi molecule-kpi--main"
+                            id="incidencias-kpi-1-tarjeta"
+                          >
+                            <p class="atom-label-caps" id="incidencias-kpi-1-titulo">Incidencias</p>
+                            <p class="molecule-kpi-value">
+                              <span id="incidencias-kpi-1">—</span
+                              ><small class="hidden" id="incidencias-kpi-1-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="incidencias-kpi-1-nota"></p>
+                          </article>
+                          <article class="molecule-kpi" id="incidencias-kpi-2-tarjeta">
+                            <p class="atom-label-caps" id="incidencias-kpi-2-titulo">Por semana</p>
+                            <p class="molecule-kpi-value">
+                              <span id="incidencias-kpi-2">—</span
+                              ><small class="hidden" id="incidencias-kpi-2-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="incidencias-kpi-2-nota"></p>
+                          </article>
+                        </section>
+                        <div class="organism-data-table" id="tabla-incidencias">
+                          <div
+                            class="organism-data-table-scroll"
+                            tabindex="0"
+                            role="region"
+                            aria-label="Incidencias"
+                          >
+                            <table
+                              class="organism-log-table organism-data-table-table organism-data-table-table--w960"
+                            >
+                              <caption class="visually-hidden">
+                                Incidencias
+                              </caption>
+                              <thead>
+                                <tr>
+                                  <th scope="col">Código</th>
+                                  <th scope="col">Tipo</th>
+                                  <th scope="col">Vehículo</th>
+                                  <th scope="col">Celda</th>
+                                  <th scope="col">Descripción</th>
+                                  <th scope="col">Registró</th>
+                                </tr>
+                              </thead>
+                              <tbody></tbody>
+                            </table>
+                          </div>
+                          <div class="molecule-empty-state hidden">
+                            <strong>Sin incidencias</strong>
+                            <p>No hay incidencias en el período.</p>
+                          </div>
+                          <nav class="molecule-pagination hidden" aria-label="Paginación">
+                            <button
+                              class="atom-button atom-button--ghost atom-button--sm"
+                              type="button"
+                            >
+                              <span>Anterior</span>
+                            </button>
+                            <p class="molecule-pagination-status" aria-live="polite"></p>
+                            <button
+                              class="atom-button atom-button--ghost atom-button--sm"
+                              type="button"
+                            >
+                              <span>Siguiente</span>
+                            </button>
+                          </nav>
+                          <div class="organism-data-table-loading hidden">
+                            <span class="atom-spinner" role="status"
+                              ><span class="visually-hidden">Cargando datos…</span></span
+                            >
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              <section
+                class="molecule-panel hidden"
+                id="reporte-activo-pico-placa"
+                role="tabpanel"
+                aria-labelledby="tab-reporte-activo-pico-placa"
+              >
+                <div class="molecule-panel-head">
+                  <h2>REP-06 · Pico y placa</h2>
+                  <div class="molecule-panel-actions">
+                    <div class="template-app-layout-report-actions">
+                      <a
+                        class="atom-button atom-button--dark atom-button--sm"
+                        id="pico-placa-exportar"
+                        href="#"
+                        download
+                        ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-out"></use></svg
+                        ><span>Exportar CSV</span></a
+                      >
+                      <button
+                        class="atom-button atom-button--sm"
+                        type="button"
+                        id="pico-placa-imprimir"
+                      >
+                        <svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-print"></use></svg
+                        ><span>Imprimir</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="molecule-panel-body">
+                  <div class="template-app-layout-stack">
+                    <p class="template-app-layout-report-description">
+                      Vehículos registrados que no pueden ingresar ese día según las reglas activas,
+                      y los accesos rechazados reales.
+                    </p>
+                    <div class="molecule-filters">
+                      <div class="molecule-field">
+                        <label for="pico-placa-fecha">Fecha</label
+                        ><input class="atom-input" type="date" id="pico-placa-fecha" />
+                      </div>
+                    </div>
+                    <div
+                      class="template-app-layout-stack"
+                      aria-live="polite"
+                      id="pico-placa-resultado"
+                    >
+                      <div class="template-app-layout-report-loading" id="pico-placa-cargando">
+                        <span class="atom-spinner" role="status"
+                          ><span class="visually-hidden">Generando reporte…</span></span
+                        >
+                      </div>
+                      <div class="molecule-empty-state hidden" id="pico-placa-error">
+                        <strong>No se pudo generar el reporte</strong>
+                        <p></p>
+                      </div>
+                      <div class="template-app-layout-stack hidden" id="pico-placa-datos">
+                        <section class="organism-kpis organism-kpis--4" aria-label="Resumen">
+                          <article
+                            class="molecule-kpi molecule-kpi--main"
+                            id="pico-placa-kpi-1-tarjeta"
+                          >
+                            <p class="atom-label-caps" id="pico-placa-kpi-1-titulo">
+                              No pueden ingresar
+                            </p>
+                            <p class="molecule-kpi-value">
+                              <span id="pico-placa-kpi-1">—</span
+                              ><small class="hidden" id="pico-placa-kpi-1-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="pico-placa-kpi-1-nota"></p>
+                          </article>
+                          <article class="molecule-kpi" id="pico-placa-kpi-2-tarjeta">
+                            <p class="atom-label-caps" id="pico-placa-kpi-2-titulo">Carros</p>
+                            <p class="molecule-kpi-value">
+                              <span id="pico-placa-kpi-2">—</span
+                              ><small class="hidden" id="pico-placa-kpi-2-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="pico-placa-kpi-2-nota"></p>
+                          </article>
+                          <article class="molecule-kpi" id="pico-placa-kpi-3-tarjeta">
+                            <p class="atom-label-caps" id="pico-placa-kpi-3-titulo">Motos</p>
+                            <p class="molecule-kpi-value">
+                              <span id="pico-placa-kpi-3">—</span
+                              ><small class="hidden" id="pico-placa-kpi-3-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="pico-placa-kpi-3-nota"></p>
+                          </article>
+                          <article class="molecule-kpi" id="pico-placa-kpi-4-tarjeta">
+                            <p class="atom-label-caps" id="pico-placa-kpi-4-titulo">
+                              Entradas rechazadas
+                            </p>
+                            <p class="molecule-kpi-value">
+                              <span id="pico-placa-kpi-4">—</span
+                              ><small class="hidden" id="pico-placa-kpi-4-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="pico-placa-kpi-4-nota"></p>
+                          </article>
+                        </section>
+                        <section class="template-app-layout-report-block">
+                          <p class="atom-label-caps">Reglas activas del día</p>
+                          <p class="template-app-layout-report-rules" id="pico-reglas"></p>
+                          <p class="molecule-field-hint hidden" id="pico-sin-reglas">
+                            Sin restricción ese día.
+                          </p>
+                        </section>
+                        <section class="template-app-layout-report-block">
+                          <p class="atom-label-caps">Vehículos registrados con restricción</p>
+                          <div class="organism-data-table" id="tabla-pico-vehiculos">
+                            <div
+                              class="organism-data-table-scroll"
+                              tabindex="0"
+                              role="region"
+                              aria-label="Vehículos con pico y placa"
+                            >
+                              <table
+                                class="organism-log-table organism-data-table-table organism-data-table-table--w640"
+                              >
+                                <caption class="visually-hidden">
+                                  Vehículos con pico y placa
+                                </caption>
+                                <thead>
+                                  <tr>
+                                    <th scope="col">Placa</th>
+                                    <th scope="col">Tipo</th>
+                                    <th scope="col">Marca y modelo</th>
+                                    <th scope="col">Propietario</th>
+                                    <th scope="col">Horario</th>
+                                  </tr>
+                                </thead>
+                                <tbody></tbody>
+                              </table>
+                            </div>
+                            <div class="molecule-empty-state hidden">
+                              <strong>Ninguno</strong>
+                              <p>Ningún vehículo registrado tiene restricción ese día.</p>
+                            </div>
+
+                            <div class="organism-data-table-loading hidden">
+                              <span class="atom-spinner" role="status"
+                                ><span class="visually-hidden">Cargando datos…</span></span
+                              >
+                            </div>
+                          </div>
+                        </section>
+                        <section class="template-app-layout-report-block">
+                          <p class="atom-label-caps">Accesos rechazados</p>
+                          <div class="organism-data-table" id="tabla-pico-denegados">
+                            <div
+                              class="organism-data-table-scroll"
+                              tabindex="0"
+                              role="region"
+                              aria-label="Accesos rechazados por pico y placa"
+                            >
+                              <table
+                                class="organism-log-table organism-data-table-table organism-data-table-table--w640"
+                              >
+                                <caption class="visually-hidden">
+                                  Accesos rechazados por pico y placa
+                                </caption>
+                                <thead>
+                                  <tr>
+                                    <th scope="col">Hora</th>
+                                    <th scope="col">Placa</th>
+                                    <th scope="col">Puerta</th>
+                                    <th scope="col">Motivo</th>
+                                  </tr>
+                                </thead>
+                                <tbody></tbody>
+                              </table>
+                            </div>
+                            <div class="molecule-empty-state hidden">
+                              <strong>Sin rechazos</strong>
+                              <p>Nadie intentó entrar con restricción ese día.</p>
+                            </div>
+
+                            <div class="organism-data-table-loading hidden">
+                              <span class="atom-spinner" role="status"
+                                ><span class="visually-hidden">Cargando datos…</span></span
+                              >
+                            </div>
+                          </div>
+                        </section>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              <section
+                class="molecule-panel hidden"
+                id="reporte-activo-celdas-ocupadas"
+                role="tabpanel"
+                aria-labelledby="tab-reporte-activo-celdas-ocupadas"
+              >
+                <div class="molecule-panel-head">
+                  <h2>REP-07 · Celdas ocupadas</h2>
+                  <div class="molecule-panel-actions">
+                    <div class="template-app-layout-report-actions">
+                      <a
+                        class="atom-button atom-button--dark atom-button--sm"
+                        id="celdas-ocupadas-exportar"
+                        href="#"
+                        download
+                        ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-out"></use></svg
+                        ><span>Exportar CSV</span></a
+                      >
+                      <button
+                        class="atom-button atom-button--sm"
+                        type="button"
+                        id="celdas-ocupadas-imprimir"
+                      >
+                        <svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-print"></use></svg
+                        ><span>Imprimir</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="molecule-panel-body">
+                  <div class="template-app-layout-stack">
+                    <p class="template-app-layout-report-description">
+                      Celdas distintas ocupadas en un día y la ocupación máxima simultánea.
+                    </p>
+                    <div class="molecule-filters">
+                      <div class="molecule-field">
+                        <label for="celdas-ocupadas-fecha">Fecha</label
+                        ><input class="atom-input" type="date" id="celdas-ocupadas-fecha" />
+                      </div>
+                    </div>
+                    <div
+                      class="template-app-layout-stack"
+                      aria-live="polite"
+                      id="celdas-ocupadas-resultado"
+                    >
+                      <div class="template-app-layout-report-loading" id="celdas-ocupadas-cargando">
+                        <span class="atom-spinner" role="status"
+                          ><span class="visually-hidden">Generando reporte…</span></span
+                        >
+                      </div>
+                      <div class="molecule-empty-state hidden" id="celdas-ocupadas-error">
+                        <strong>No se pudo generar el reporte</strong>
+                        <p></p>
+                      </div>
+                      <div class="template-app-layout-stack hidden" id="celdas-ocupadas-datos">
+                        <section class="organism-kpis organism-kpis--4" aria-label="Resumen">
+                          <article
+                            class="molecule-kpi molecule-kpi--main"
+                            id="celdas-ocupadas-kpi-1-tarjeta"
+                          >
+                            <p class="atom-label-caps" id="celdas-ocupadas-kpi-1-titulo">
+                              Celdas ocupadas
+                            </p>
+                            <p class="molecule-kpi-value">
+                              <span id="celdas-ocupadas-kpi-1">—</span
+                              ><small class="hidden" id="celdas-ocupadas-kpi-1-unidad"></small>
+                            </p>
+                            <div
+                              class="atom-meter"
+                              id="celdas-ocupadas-kpi-1-medidor"
+                              role="meter"
+                              aria-valuemin="0"
+                              aria-valuemax="100"
+                              aria-valuenow="0"
+                              aria-label="Celdas ocupadas"
+                            >
+                              <span></span>
+                            </div>
+                            <p class="molecule-kpi-note" id="celdas-ocupadas-kpi-1-nota"></p>
+                          </article>
+                          <article class="molecule-kpi" id="celdas-ocupadas-kpi-2-tarjeta">
+                            <p class="atom-label-caps" id="celdas-ocupadas-kpi-2-titulo">
+                              Estadías
+                            </p>
+                            <p class="molecule-kpi-value">
+                              <span id="celdas-ocupadas-kpi-2">—</span
+                              ><small class="hidden" id="celdas-ocupadas-kpi-2-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="celdas-ocupadas-kpi-2-nota"></p>
+                          </article>
+                          <article class="molecule-kpi" id="celdas-ocupadas-kpi-3-tarjeta">
+                            <p class="atom-label-caps" id="celdas-ocupadas-kpi-3-titulo">
+                              Máximo simultáneo
+                            </p>
+                            <p class="molecule-kpi-value">
+                              <span id="celdas-ocupadas-kpi-3">—</span
+                              ><small class="hidden" id="celdas-ocupadas-kpi-3-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="celdas-ocupadas-kpi-3-nota"></p>
+                          </article>
+                          <article class="molecule-kpi" id="celdas-ocupadas-kpi-4-tarjeta">
+                            <p class="atom-label-caps" id="celdas-ocupadas-kpi-4-titulo">
+                              Ocupación máxima
+                            </p>
+                            <p class="molecule-kpi-value">
+                              <span id="celdas-ocupadas-kpi-4">—</span
+                              ><small class="hidden" id="celdas-ocupadas-kpi-4-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="celdas-ocupadas-kpi-4-nota"></p>
+                          </article>
+                        </section>
+                        <section class="template-app-layout-report-block">
+                          <p class="atom-label-caps">Ocupación por hora</p>
+                          <div
+                            class="organism-col-chart"
+                            id="grafico-celdas-hora"
+                            role="img"
+                            aria-label=""
+                          >
+                            <div class="organism-col-chart-y-axis" aria-hidden="true"></div>
+                            <div class="organism-col-chart-plot" aria-hidden="true"></div>
+                            <div class="organism-col-chart-x-axis" aria-hidden="true"></div>
+                          </div>
+                        </section>
+                        <section class="template-app-layout-report-block">
+                          <p class="atom-label-caps">Detalle por celda</p>
+                          <div class="organism-data-table" id="tabla-celdas-dia">
+                            <div
+                              class="organism-data-table-scroll"
+                              tabindex="0"
+                              role="region"
+                              aria-label="Celdas ocupadas ese día"
+                            >
+                              <table
+                                class="organism-log-table organism-data-table-table organism-data-table-table--w560"
+                              >
+                                <caption class="visually-hidden">
+                                  Celdas ocupadas ese día
+                                </caption>
+                                <thead>
+                                  <tr>
+                                    <th scope="col">Celda</th>
+                                    <th scope="col">Piso</th>
+                                    <th scope="col">Tipo</th>
+                                    <th scope="col" class="organism-log-table-right">Estadías</th>
+                                    <th scope="col" class="organism-log-table-right">
+                                      Tiempo ocupada
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody></tbody>
+                              </table>
+                            </div>
+                            <div class="molecule-empty-state hidden">
+                              <strong>Sin ocupación</strong>
+                              <p>Ninguna celda se ocupó ese día.</p>
+                            </div>
+
+                            <div class="organism-data-table-loading hidden">
+                              <span class="atom-spinner" role="status"
+                                ><span class="visually-hidden">Cargando datos…</span></span
+                              >
+                            </div>
+                          </div>
+                        </section>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              <section
+                class="molecule-panel hidden"
+                id="reporte-activo-celdas-mas-usadas"
+                role="tabpanel"
+                aria-labelledby="tab-reporte-activo-celdas-mas-usadas"
+              >
+                <div class="molecule-panel-head">
+                  <h2>REP-08 · Celdas más usadas</h2>
+                  <div class="molecule-panel-actions">
+                    <div class="template-app-layout-report-actions">
+                      <a
+                        class="atom-button atom-button--dark atom-button--sm"
+                        id="celdas-mas-usadas-exportar"
+                        href="#"
+                        download
+                        ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-out"></use></svg
+                        ><span>Exportar CSV</span></a
+                      >
+                      <button
+                        class="atom-button atom-button--sm"
+                        type="button"
+                        id="celdas-mas-usadas-imprimir"
+                      >
+                        <svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-print"></use></svg
+                        ><span>Imprimir</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="molecule-panel-body">
+                  <div class="template-app-layout-stack">
+                    <p class="template-app-layout-report-description">
+                      Ranking de celdas por número de estadías y tiempo ocupadas en el período.
+                    </p>
+                    <div class="molecule-filters">
+                      <div class="molecule-field">
+                        <label for="celdas-mas-usadas-desde">Desde</label
+                        ><input class="atom-input" type="date" id="celdas-mas-usadas-desde" />
+                      </div>
+                      <div class="molecule-field">
+                        <label for="celdas-mas-usadas-hasta">Hasta</label
+                        ><input class="atom-input" type="date" id="celdas-mas-usadas-hasta" />
+                      </div>
+                      <div class="molecule-field">
+                        <label for="celdas-mas-usadas-tipo">Tipo</label
+                        ><select class="atom-select" id="celdas-mas-usadas-tipo">
+                          <option value="">Todos</option>
+                          <option value="carro">Carros</option>
+                          <option value="moto">Motos</option>
+                        </select>
+                      </div>
+                      <div class="molecule-field">
+                        <label for="celdas-mas-usadas-limite">Mostrar</label
+                        ><select class="atom-select" id="celdas-mas-usadas-limite">
+                          <option value="5">Top 5</option>
+                          <option value="10">Top 10</option>
+                          <option value="20">Top 20</option>
+                          <option value="50">Top 50</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div
+                      class="template-app-layout-stack"
+                      aria-live="polite"
+                      id="celdas-mas-usadas-resultado"
+                    >
+                      <div
+                        class="template-app-layout-report-loading"
+                        id="celdas-mas-usadas-cargando"
+                      >
+                        <span class="atom-spinner" role="status"
+                          ><span class="visually-hidden">Generando reporte…</span></span
+                        >
+                      </div>
+                      <div class="molecule-empty-state hidden" id="celdas-mas-usadas-error">
+                        <strong>No se pudo generar el reporte</strong>
+                        <p></p>
+                      </div>
+                      <div class="template-app-layout-stack hidden" id="celdas-mas-usadas-datos">
+                        <div class="template-app-layout-report-grid">
+                          <section class="template-app-layout-report-block">
+                            <p class="atom-label-caps" id="celdas-top-titulo">Top por estadías</p>
+                            <figure
+                              class="organism-hbar-chart"
+                              id="grafico-celdas-top"
+                              role="img"
+                              aria-label=""
+                            >
+                              <ol class="organism-hbar-chart-list" aria-hidden="true"></ol>
+                            </figure>
+                          </section>
+                          <section class="template-app-layout-report-block">
+                            <p class="atom-label-caps">Detalle</p>
+                            <div class="organism-data-table" id="tabla-celdas-top">
+                              <div
+                                class="organism-data-table-scroll"
+                                tabindex="0"
+                                role="region"
+                                aria-label="Celdas más usadas"
+                              >
+                                <table
+                                  class="organism-log-table organism-data-table-table organism-data-table-table--w520"
+                                >
+                                  <caption class="visually-hidden">
+                                    Celdas más usadas
+                                  </caption>
+                                  <thead>
+                                    <tr>
+                                      <th scope="col">#</th>
+                                      <th scope="col">Celda</th>
+                                      <th scope="col" class="organism-log-table-right">Estadías</th>
+                                      <th scope="col" class="organism-log-table-right">Tiempo</th>
+                                      <th scope="col" class="organism-log-table-right">
+                                        % del total
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody></tbody>
+                                </table>
+                              </div>
+                              <div class="molecule-empty-state hidden">
+                                <strong>Sin estadías</strong>
+                                <p>No hubo estadías en el período.</p>
+                              </div>
+
+                              <div class="organism-data-table-loading hidden">
+                                <span class="atom-spinner" role="status"
+                                  ><span class="visually-hidden">Cargando datos…</span></span
+                                >
+                              </div>
+                            </div>
+                          </section>
+                        </div>
+                        <p class="molecule-field-hint" id="celdas-top-nota"></p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              <section
+                class="molecule-panel hidden"
+                id="reporte-activo-vehiculos-frecuentes"
+                role="tabpanel"
+                aria-labelledby="tab-reporte-activo-vehiculos-frecuentes"
+              >
+                <div class="molecule-panel-head">
+                  <h2>REP-09 · Vehículos frecuentes</h2>
+                  <div class="molecule-panel-actions">
+                    <div class="template-app-layout-report-actions">
+                      <a
+                        class="atom-button atom-button--dark atom-button--sm"
+                        id="vehiculos-frecuentes-exportar"
+                        href="#"
+                        download
+                        ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-out"></use></svg
+                        ><span>Exportar CSV</span></a
+                      >
+                      <button
+                        class="atom-button atom-button--sm"
+                        type="button"
+                        id="vehiculos-frecuentes-imprimir"
+                      >
+                        <svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-print"></use></svg
+                        ><span>Imprimir</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="molecule-panel-body">
+                  <div class="template-app-layout-stack">
+                    <p class="template-app-layout-report-description">
+                      Vehículos que más usan el parqueadero: visitas, tiempo total y lo pagado.
+                    </p>
+                    <div class="molecule-filters">
+                      <div class="molecule-field">
+                        <label for="vehiculos-frecuentes-desde">Desde</label
+                        ><input class="atom-input" type="date" id="vehiculos-frecuentes-desde" />
+                      </div>
+                      <div class="molecule-field">
+                        <label for="vehiculos-frecuentes-hasta">Hasta</label
+                        ><input class="atom-input" type="date" id="vehiculos-frecuentes-hasta" />
+                      </div>
+                      <div class="molecule-field">
+                        <label for="vehiculos-frecuentes-tipo">Tipo</label
+                        ><select class="atom-select" id="vehiculos-frecuentes-tipo">
+                          <option value="">Todos</option>
+                          <option value="carro">Carros</option>
+                          <option value="moto">Motos</option>
+                        </select>
+                      </div>
+                      <div class="molecule-field">
+                        <label for="vehiculos-frecuentes-limite">Mostrar</label
+                        ><select class="atom-select" id="vehiculos-frecuentes-limite">
+                          <option value="5">Top 5</option>
+                          <option value="10">Top 10</option>
+                          <option value="20">Top 20</option>
+                          <option value="50">Top 50</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div
+                      class="template-app-layout-stack"
+                      aria-live="polite"
+                      id="vehiculos-frecuentes-resultado"
+                    >
+                      <div
+                        class="template-app-layout-report-loading"
+                        id="vehiculos-frecuentes-cargando"
+                      >
+                        <span class="atom-spinner" role="status"
+                          ><span class="visually-hidden">Generando reporte…</span></span
+                        >
+                      </div>
+                      <div class="molecule-empty-state hidden" id="vehiculos-frecuentes-error">
+                        <strong>No se pudo generar el reporte</strong>
+                        <p></p>
+                      </div>
+                      <div class="template-app-layout-stack hidden" id="vehiculos-frecuentes-datos">
+                        <div class="template-app-layout-report-grid">
+                          <section class="template-app-layout-report-block">
+                            <p class="atom-label-caps" id="frecuentes-titulo">Top por visitas</p>
+                            <figure
+                              class="organism-hbar-chart"
+                              id="grafico-frecuentes"
+                              role="img"
+                              aria-label=""
+                            >
+                              <ol class="organism-hbar-chart-list" aria-hidden="true"></ol>
+                            </figure>
+                          </section>
+                          <section class="template-app-layout-report-block">
+                            <p class="atom-label-caps">Detalle</p>
+                            <div class="organism-data-table" id="tabla-frecuentes">
+                              <div
+                                class="organism-data-table-scroll"
+                                tabindex="0"
+                                role="region"
+                                aria-label="Vehículos frecuentes"
+                              >
+                                <table
+                                  class="organism-log-table organism-data-table-table organism-data-table-table--w600"
+                                >
+                                  <caption class="visually-hidden">
+                                    Vehículos frecuentes
+                                  </caption>
+                                  <thead>
+                                    <tr>
+                                      <th scope="col">#</th>
+                                      <th scope="col">Vehículo</th>
+                                      <th scope="col" class="organism-log-table-right">Visitas</th>
+                                      <th scope="col" class="organism-log-table-right">
+                                        Tiempo total
+                                      </th>
+                                      <th scope="col" class="organism-log-table-right">Pagado</th>
+                                      <th scope="col">Última visita</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody></tbody>
+                                </table>
+                              </div>
+                              <div class="molecule-empty-state hidden">
+                                <strong>Sin visitas</strong>
+                                <p>No hubo estadías en el período.</p>
+                              </div>
+
+                              <div class="organism-data-table-loading hidden">
+                                <span class="atom-spinner" role="status"
+                                  ><span class="visually-hidden">Cargando datos…</span></span
+                                >
+                              </div>
+                            </div>
+                          </section>
+                        </div>
+                        <p class="molecule-field-hint" id="frecuentes-nota"></p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              <section
+                class="molecule-panel hidden"
+                id="reporte-activo-ocupacion"
+                role="tabpanel"
+                aria-labelledby="tab-reporte-activo-ocupacion"
+              >
+                <div class="molecule-panel-head">
+                  <h2>REP-10 · Horas y días pico</h2>
+                  <div class="molecule-panel-actions">
+                    <div class="template-app-layout-report-actions">
+                      <a
+                        class="atom-button atom-button--dark atom-button--sm"
+                        id="ocupacion-exportar"
+                        href="#"
+                        download
+                        ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-out"></use></svg
+                        ><span>Exportar CSV</span></a
+                      >
+                      <button
+                        class="atom-button atom-button--sm"
+                        type="button"
+                        id="ocupacion-imprimir"
+                      >
+                        <svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-print"></use></svg
+                        ><span>Imprimir</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="molecule-panel-body">
+                  <div class="template-app-layout-stack">
+                    <p class="template-app-layout-report-description">
+                      Ocupación promedio por día de la semana y hora, con la hora y el día de mayor
+                      ocupación.
+                    </p>
+                    <div class="molecule-filters">
+                      <div class="molecule-field">
+                        <label for="ocupacion-desde">Desde</label
+                        ><input class="atom-input" type="date" id="ocupacion-desde" />
+                      </div>
+                      <div class="molecule-field">
+                        <label for="ocupacion-hasta">Hasta</label
+                        ><input class="atom-input" type="date" id="ocupacion-hasta" />
+                      </div>
+                    </div>
+                    <div
+                      class="template-app-layout-stack"
+                      aria-live="polite"
+                      id="ocupacion-resultado"
+                    >
+                      <div class="template-app-layout-report-loading" id="ocupacion-cargando">
+                        <span class="atom-spinner" role="status"
+                          ><span class="visually-hidden">Generando reporte…</span></span
+                        >
+                      </div>
+                      <div class="molecule-empty-state hidden" id="ocupacion-error">
+                        <strong>No se pudo generar el reporte</strong>
+                        <p></p>
+                      </div>
+                      <div class="template-app-layout-stack hidden" id="ocupacion-datos">
+                        <section class="organism-kpis organism-kpis--4" aria-label="Resumen">
+                          <article
+                            class="molecule-kpi molecule-kpi--main"
+                            id="ocupacion-kpi-1-tarjeta"
+                          >
+                            <p class="atom-label-caps" id="ocupacion-kpi-1-titulo">Hora pico</p>
+                            <p class="molecule-kpi-value">
+                              <span id="ocupacion-kpi-1">—</span
+                              ><small class="hidden" id="ocupacion-kpi-1-unidad"></small>
+                            </p>
+                            <div
+                              class="atom-meter"
+                              id="ocupacion-kpi-1-medidor"
+                              role="meter"
+                              aria-valuemin="0"
+                              aria-valuemax="100"
+                              aria-valuenow="0"
+                              aria-label="Hora pico"
+                            >
+                              <span></span>
+                            </div>
+                            <p class="molecule-kpi-note" id="ocupacion-kpi-1-nota"></p>
+                          </article>
+                          <article class="molecule-kpi" id="ocupacion-kpi-2-tarjeta">
+                            <p class="atom-label-caps" id="ocupacion-kpi-2-titulo">Día pico</p>
+                            <p class="molecule-kpi-value">
+                              <span id="ocupacion-kpi-2">—</span
+                              ><small class="hidden" id="ocupacion-kpi-2-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="ocupacion-kpi-2-nota"></p>
+                          </article>
+                          <article class="molecule-kpi" id="ocupacion-kpi-3-tarjeta">
+                            <p class="atom-label-caps" id="ocupacion-kpi-3-titulo">Franja pico</p>
+                            <p class="molecule-kpi-value">
+                              <span id="ocupacion-kpi-3">—</span
+                              ><small class="hidden" id="ocupacion-kpi-3-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="ocupacion-kpi-3-nota"></p>
+                          </article>
+                          <article class="molecule-kpi" id="ocupacion-kpi-4-tarjeta">
+                            <p class="atom-label-caps" id="ocupacion-kpi-4-titulo">
+                              Celdas habilitadas
+                            </p>
+                            <p class="molecule-kpi-value">
+                              <span id="ocupacion-kpi-4">—</span
+                              ><small class="hidden" id="ocupacion-kpi-4-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="ocupacion-kpi-4-nota"></p>
+                          </article>
+                        </section>
+                        <section class="template-app-layout-report-block">
+                          <p class="atom-label-caps">Ocupación promedio · día × hora</p>
+                          <figure
+                            class="organism-heatmap"
+                            id="grafico-calor"
+                            role="img"
+                            aria-label=""
+                          >
+                            <div class="organism-heatmap-scroll">
+                              <div class="organism-heatmap-grid" aria-hidden="true"></div>
+                            </div>
+                            <div class="organism-heatmap-legend" aria-hidden="true">
+                              <span>Menos</span
+                              ><span class="organism-heatmap-cell organism-heatmap-heat-0"></span
+                              ><span class="organism-heatmap-cell organism-heatmap-heat-1"></span
+                              ><span class="organism-heatmap-cell organism-heatmap-heat-2"></span
+                              ><span class="organism-heatmap-cell organism-heatmap-heat-3"></span
+                              ><span class="organism-heatmap-cell organism-heatmap-heat-4"></span
+                              ><span class="organism-heatmap-cell organism-heatmap-heat-5"></span
+                              ><span>Más</span>
+                            </div>
+                          </figure>
+                        </section>
+                        <div class="template-app-layout-report-grid">
+                          <section class="template-app-layout-report-block">
+                            <p class="atom-label-caps">Promedio por hora (todos los días)</p>
+                            <div
+                              class="organism-col-chart"
+                              id="grafico-ocupacion-hora"
+                              role="img"
+                              aria-label=""
+                            >
+                              <div class="organism-col-chart-y-axis" aria-hidden="true"></div>
+                              <div class="organism-col-chart-plot" aria-hidden="true"></div>
+                              <div class="organism-col-chart-x-axis" aria-hidden="true"></div>
+                            </div>
+                          </section>
+                          <section class="template-app-layout-report-block">
+                            <p class="atom-label-caps">Promedio por día</p>
+                            <figure
+                              class="organism-hbar-chart"
+                              id="grafico-ocupacion-dia"
+                              role="img"
+                              aria-label=""
+                            >
+                              <ol class="organism-hbar-chart-list" aria-hidden="true"></ol>
+                            </figure>
+                          </section>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+              <section
+                class="molecule-panel hidden"
+                id="reporte-activo-financiero"
+                role="tabpanel"
+                aria-labelledby="tab-reporte-activo-financiero"
+              >
+                <div class="molecule-panel-head">
+                  <h2>REP-11 · Financiero</h2>
+                  <div class="molecule-panel-actions">
+                    <div class="template-app-layout-report-actions">
+                      <a
+                        class="atom-button atom-button--dark atom-button--sm"
+                        id="financiero-exportar"
+                        href="#"
+                        download
+                        ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-out"></use></svg
+                        ><span>Exportar CSV</span></a
+                      >
+                      <button
+                        class="atom-button atom-button--sm"
+                        type="button"
+                        id="financiero-imprimir"
+                      >
+                        <svg class="atom-icon" aria-hidden="true" focusable="false">
+                          <use href="/assets/icons.svg#i-print"></use></svg
+                        ><span>Imprimir</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="molecule-panel-body">
+                  <div class="template-app-layout-stack">
+                    <p class="template-app-layout-report-description">
+                      Ingresos por período, método de pago, tipo de vehículo y concepto; descuentos
+                      otorgados.
+                    </p>
+                    <div class="molecule-filters">
+                      <div class="molecule-field">
+                        <label for="financiero-desde">Desde</label
+                        ><input class="atom-input" type="date" id="financiero-desde" />
+                      </div>
+                      <div class="molecule-field">
+                        <label for="financiero-hasta">Hasta</label
+                        ><input class="atom-input" type="date" id="financiero-hasta" />
+                      </div>
+                      <div class="molecule-field">
+                        <label for="financiero-agrupar">Agrupar por</label
+                        ><select class="atom-select" id="financiero-agrupar">
+                          <option value="dia">Día</option>
+                          <option value="semana">Semana</option>
+                          <option value="mes">Mes</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div
+                      class="template-app-layout-stack"
+                      aria-live="polite"
+                      id="financiero-resultado"
+                    >
+                      <div class="template-app-layout-report-loading" id="financiero-cargando">
+                        <span class="atom-spinner" role="status"
+                          ><span class="visually-hidden">Generando reporte…</span></span
+                        >
+                      </div>
+                      <div class="molecule-empty-state hidden" id="financiero-error">
+                        <strong>No se pudo generar el reporte</strong>
+                        <p></p>
+                      </div>
+                      <div class="template-app-layout-stack hidden" id="financiero-datos">
+                        <section class="organism-kpis organism-kpis--4" aria-label="Resumen">
+                          <article
+                            class="molecule-kpi molecule-kpi--main"
+                            id="financiero-kpi-1-tarjeta"
+                          >
+                            <p class="atom-label-caps" id="financiero-kpi-1-titulo">
+                              Ingresos del período
+                            </p>
+                            <p class="molecule-kpi-value">
+                              <span id="financiero-kpi-1">—</span
+                              ><small class="hidden" id="financiero-kpi-1-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="financiero-kpi-1-nota"></p>
+                          </article>
+                          <article class="molecule-kpi" id="financiero-kpi-2-tarjeta">
+                            <p class="atom-label-caps" id="financiero-kpi-2-titulo">Facturas</p>
+                            <p class="molecule-kpi-value">
+                              <span id="financiero-kpi-2">—</span
+                              ><small class="hidden" id="financiero-kpi-2-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="financiero-kpi-2-nota"></p>
+                          </article>
+                          <article class="molecule-kpi" id="financiero-kpi-3-tarjeta">
+                            <p class="atom-label-caps" id="financiero-kpi-3-titulo">
+                              Ticket promedio
+                            </p>
+                            <p class="molecule-kpi-value">
+                              <span id="financiero-kpi-3">—</span
+                              ><small class="hidden" id="financiero-kpi-3-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="financiero-kpi-3-nota"></p>
+                          </article>
+                          <article class="molecule-kpi" id="financiero-kpi-4-tarjeta">
+                            <p class="atom-label-caps" id="financiero-kpi-4-titulo">Descuentos</p>
+                            <p class="molecule-kpi-value">
+                              <span id="financiero-kpi-4">—</span
+                              ><small class="hidden" id="financiero-kpi-4-unidad"></small>
+                            </p>
+
+                            <p class="molecule-kpi-note" id="financiero-kpi-4-nota"></p>
+                          </article>
+                        </section>
+                        <section class="template-app-layout-report-block">
+                          <p class="atom-label-caps" id="financiero-linea-titulo">
+                            Ingresos por día
+                          </p>
+                          <figure class="organism-line-chart" id="grafico-ingresos">
+                            <svg viewBox="0 0 640 240" role="img" aria-label="">
+                              <g class="organism-line-chart-rejilla"></g>
+                              <line class="organism-line-chart-base"></line>
+                              <g class="organism-line-chart-etiquetas"></g>
+                              <path class="organism-line-chart-path"></path>
+                              <g class="organism-line-chart-puntos"></g>
+                            </svg>
+                          </figure>
+                        </section>
+                        <div
+                          class="template-app-layout-report-grid template-app-layout-report-grid--3"
+                        >
+                          <section class="template-app-layout-report-block">
+                            <p class="atom-label-caps">Por método de pago</p>
+                            <figure class="organism-stacked-meter" id="grafico-metodo">
+                              <div
+                                class="organism-stacked-meter-bar"
+                                role="img"
+                                aria-label=""
+                              ></div>
+                              <ul class="organism-stacked-meter-legend"></ul>
+                            </figure>
+                          </section>
+                          <section class="template-app-layout-report-block">
+                            <p class="atom-label-caps">Por tipo de vehículo</p>
+                            <figure class="organism-stacked-meter" id="grafico-tipo">
+                              <div
+                                class="organism-stacked-meter-bar"
+                                role="img"
+                                aria-label=""
+                              ></div>
+                              <ul class="organism-stacked-meter-legend"></ul>
+                            </figure>
+                          </section>
+                          <section class="template-app-layout-report-block">
+                            <p class="atom-label-caps">Por concepto</p>
+                            <figure class="organism-stacked-meter" id="grafico-concepto">
+                              <div
+                                class="organism-stacked-meter-bar"
+                                role="img"
+                                aria-label=""
+                              ></div>
+                              <ul class="organism-stacked-meter-legend"></ul>
+                            </figure>
+                          </section>
+                        </div>
+                        <div class="template-app-layout-report-grid">
+                          <section class="template-app-layout-report-block">
+                            <p class="atom-label-caps">Detalle por período</p>
+                            <div class="organism-data-table" id="tabla-periodos">
+                              <div
+                                class="organism-data-table-scroll"
+                                tabindex="0"
+                                role="region"
+                                aria-label="Ingresos por período"
+                              >
+                                <table
+                                  class="organism-log-table organism-data-table-table organism-data-table-table--w480"
+                                >
+                                  <caption class="visually-hidden">
+                                    Ingresos por período
+                                  </caption>
+                                  <thead>
+                                    <tr>
+                                      <th scope="col">Período</th>
+                                      <th scope="col" class="organism-log-table-right">Facturas</th>
+                                      <th scope="col" class="organism-log-table-right">
+                                        Descuentos
+                                      </th>
+                                      <th scope="col" class="organism-log-table-right">Total</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody></tbody>
+                                </table>
+                              </div>
+                              <div class="molecule-empty-state hidden">
+                                <strong>Sin resultados</strong>
+                                <p>No hay registros que coincidan con los filtros.</p>
+                              </div>
+
+                              <div class="organism-data-table-loading hidden">
+                                <span class="atom-spinner" role="status"
+                                  ><span class="visually-hidden">Cargando datos…</span></span
+                                >
+                              </div>
+                            </div>
+                          </section>
+                          <section class="template-app-layout-report-block">
+                            <p class="atom-label-caps">Descuentos otorgados</p>
+                            <div class="organism-data-table" id="tabla-descuentos">
+                              <div
+                                class="organism-data-table-scroll"
+                                tabindex="0"
+                                role="region"
+                                aria-label="Descuentos otorgados"
+                              >
+                                <table
+                                  class="organism-log-table organism-data-table-table organism-data-table-table--w420"
+                                >
+                                  <caption class="visually-hidden">
+                                    Descuentos otorgados
+                                  </caption>
+                                  <thead>
+                                    <tr>
+                                      <th scope="col">Descuento</th>
+                                      <th scope="col" class="organism-log-table-right">Facturas</th>
+                                      <th scope="col" class="organism-log-table-right">
+                                        Descontado
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody></tbody>
+                                </table>
+                              </div>
+                              <div class="molecule-empty-state hidden">
+                                <strong>Sin descuentos</strong>
+                                <p>No se aplicaron descuentos en el período.</p>
+                              </div>
+
+                              <div class="organism-data-table-loading hidden">
+                                <span class="atom-spinner" role="status"
+                                  ><span class="visually-hidden">Cargando datos…</span></span
+                                >
+                              </div>
+                            </div>
+                          </section>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- organism-footer -->
+      <footer class="organism-footer">
+        <div class="organism-footer-inner">
+          <p class="organism-footer-brand">PARKO</p>
+          <p class="hidden" id="pie-sede"></p>
+          <p>© <span id="pie-anio"></span> PARKO · Sistema de gestión de parqueaderos</p>
+        </div>
+      </footer>
+    </div>
+
+    <!-- ====================== Modales ====================== -->
+
+    <div class="organism-modal-overlay hidden" id="modal-confirmar">
+      <section
+        class="organism-modal organism-modal--sm"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirmar-titulo"
+      >
+        <header class="organism-modal-head">
+          <div><h2 id="confirmar-titulo"></h2></div>
+          <button
+            class="atom-icon-button organism-modal-close"
+            type="button"
+            aria-label="Cerrar"
+            title="Cerrar"
+          >
+            <svg class="atom-icon" aria-hidden="true" focusable="false">
+              <use href="/assets/icons.svg#i-x"></use>
+            </svg>
+          </button>
+        </header>
+        <div class="organism-modal-body"><p id="confirmar-mensaje"></p></div>
+        <footer class="organism-modal-foot">
+          <button class="atom-button atom-button--ghost organism-modal-close" type="button">
+            <span>Cancelar</span>
+          </button>
+          <button class="atom-button atom-button--dark" id="confirmar-aceptar" type="button">
+            <span>Confirmar</span>
+          </button>
+        </footer>
+      </section>
+    </div>
+
+    <div class="molecule-toast-region" id="avisos" aria-live="polite"></div>
+    <a class="hidden" id="descarga" aria-hidden="true" tabindex="-1">Descargar</a>
+
+    <template id="tpl-aviso">
+      <div class="molecule-toast" role="status">
+        <svg class="atom-icon" aria-hidden="true" focusable="false">
+          <use href="/assets/icons.svg#i-info"></use>
+        </svg>
+        <p></p>
+        <button class="molecule-toast-close" type="button" aria-label="Cerrar aviso">
+          <svg class="atom-icon" aria-hidden="true" focusable="false">
+            <use href="/assets/icons.svg#i-x"></use>
+          </svg>
+        </button>
+      </div>
+    </template>
+    <template id="tpl-opcion"><option></option></template>
+    <template id="tpl-grupo"><optgroup></optgroup></template>
+
+    <template id="tpl-notificacion">
+      <li>
+        <button class="organism-notification-bell-item" type="button">
+          <strong></strong>
+          <span class="organism-notification-bell-item-text"></span>
+          <small></small>
+        </button>
+      </li>
+    </template>
+    <template id="tpl-notificacion-vacia"
+      ><li class="organism-notification-bell-empty"></li
+    ></template>
+
+    <!-- ====================== Plantillas de la pantalla ====================== -->
+    <template id="tpl-grafico-texto"><span></span></template>
+    <template id="tpl-grafico-barra"
+      ><div class="organism-col-chart-bar">
+        <span class="organism-col-chart-bar-value hidden"></span></div
+    ></template>
+    <template id="tpl-grafico-hbar">
+      <li class="organism-hbar-chart-row">
+        <span class="organism-hbar-chart-label"
+          ><strong></strong><small class="hidden"></small
+        ></span>
+        <span class="organism-hbar-chart-track"
+          ><span class="organism-hbar-chart-fill"></span
+        ></span>
+        <span class="organism-hbar-chart-value"></span>
+      </li>
+    </template>
+    <template id="tpl-grafico-segmento"><span class="organism-stacked-meter-seg"></span></template>
+    <template id="tpl-grafico-leyenda"
+      ><li>
+        <span class="organism-stacked-meter-key" aria-hidden="true"></span><strong></strong
+        ><span></span></li
+    ></template>
+    <template id="tpl-grafico-rejilla"
+      ><svg>
+        <g>
+          <line class="organism-line-chart-grid"></line>
+          <text class="organism-line-chart-axis" text-anchor="end"></text>
+        </g></svg
+    ></template>
+    <template id="tpl-grafico-rotulo"
+      ><svg><text class="organism-line-chart-axis" text-anchor="middle"></text></svg
+    ></template>
+    <template id="tpl-grafico-punto"
+      ><svg>
+        <rect class="organism-line-chart-point" width="8" height="8"><title></title></rect></svg
+    ></template>
+    <template id="tpl-chip"
+      ><span class="atom-status-chip atom-status-chip--occupied"></span
+    ></template>
+    <template id="tpl-usuarios"
+      ><tr>
+        <td></td>
+        <td>
+          <span><span></span><span class="organism-data-table-cell-sub"></span></span>
+        </td>
+        <td><span class="organism-data-table-cell-nowrap"></span></td>
+        <td></td>
+        <td></td>
+        <td><span class="atom-status-chip"></span></td>
+        <td class="organism-log-table-right"></td>
+        <td><span class="organism-data-table-cell-nowrap"></span></td></tr
+    ></template>
+    <template id="tpl-vehiculos"
+      ><tr>
+        <td><span class="atom-plate"></span></td>
+        <td></td>
+        <td>
+          <span><span></span><span class="organism-data-table-cell-sub"></span></span>
+        </td>
+        <td>
+          <span><span></span><span class="organism-data-table-cell-sub"></span></span>
+        </td>
+        <td class="organism-log-table-right"></td>
+        <td><span class="atom-status-chip"></span></td></tr
+    ></template>
+    <template id="tpl-entradas"
+      ><tr>
+        <td><span class="organism-data-table-cell-nowrap"></span></td>
+        <td><span class="organism-data-table-cell-nowrap"></span></td>
+        <td>
+          <span
+            ><span class="atom-plate"></span><span class="organism-data-table-cell-sub"></span
+          ></span>
+        </td>
+        <td></td>
+        <td></td>
+        <td>
+          <span><span></span><span class="organism-data-table-cell-sub"></span></span>
+        </td>
+        <td></td>
+        <td><span class="atom-status-chip"></span><span></span></td></tr
+    ></template>
+    <template id="tpl-salidas"
+      ><tr>
+        <td>
+          <span><span></span><span class="organism-data-table-cell-sub"></span></span>
+        </td>
+        <td><span class="organism-data-table-cell-nowrap"></span></td>
+        <td><span class="atom-plate"></span></td>
+        <td></td>
+        <td></td>
+        <td><span class="organism-data-table-cell-nowrap"></span></td>
+        <td class="organism-log-table-right">
+          <strong class="organism-data-table-cell-nowrap"></strong>
+        </td>
+        <td>
+          <span><span></span><span class="organism-data-table-cell-sub"></span></span>
+        </td></tr
+    ></template>
+    <template id="tpl-incidencias"
+      ><tr>
+        <td>
+          <span><span></span><span class="organism-data-table-cell-sub"></span></span>
+        </td>
+        <td><span class="atom-status-chip"></span></td>
+        <td>
+          <span
+            ><span class="atom-plate"></span><span class="organism-data-table-cell-sub"></span
+          ></span>
+        </td>
+        <td></td>
+        <td><span class="organism-data-table-cell-clamp"></span></td>
+        <td></td></tr
+    ></template>
+    <template id="tpl-pico-vehiculos"
+      ><tr>
+        <td><span class="atom-plate"></span></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td><span class="organism-data-table-cell-nowrap"></span></td></tr
+    ></template>
+    <template id="tpl-pico-denegados"
+      ><tr>
+        <td></td>
+        <td><span class="atom-plate"></span></td>
+        <td></td>
+        <td></td></tr
+    ></template>
+    <template id="tpl-celdas-dia"
+      ><tr>
+        <td><strong></strong></td>
+        <td></td>
+        <td></td>
+        <td class="organism-log-table-right"></td>
+        <td class="organism-log-table-right">
+          <span class="organism-data-table-cell-nowrap"></span>
+        </td></tr
+    ></template>
+    <template id="tpl-celdas-top"
+      ><tr>
+        <td></td>
+        <td>
+          <span><span></span><span class="organism-data-table-cell-sub"></span></span>
+        </td>
+        <td class="organism-log-table-right"></td>
+        <td class="organism-log-table-right">
+          <span class="organism-data-table-cell-nowrap"></span>
+        </td>
+        <td class="organism-log-table-right"></td></tr
+    ></template>
+    <template id="tpl-frecuentes"
+      ><tr>
+        <td></td>
+        <td>
+          <span
+            ><span class="atom-plate"></span><span class="organism-data-table-cell-sub"></span
+          ></span>
+        </td>
+        <td class="organism-log-table-right"></td>
+        <td class="organism-log-table-right">
+          <span class="organism-data-table-cell-nowrap"></span>
+        </td>
+        <td class="organism-log-table-right">
+          <span class="organism-data-table-cell-nowrap"></span>
+        </td>
+        <td><span class="organism-data-table-cell-nowrap"></span></td></tr
+    ></template>
+    <template id="tpl-periodos"
+      ><tr>
+        <td><span class="organism-data-table-cell-nowrap"></span></td>
+        <td class="organism-log-table-right"></td>
+        <td class="organism-log-table-right">
+          <span class="organism-data-table-cell-nowrap"></span>
+        </td>
+        <td class="organism-log-table-right">
+          <strong class="organism-data-table-cell-nowrap"></strong>
+        </td></tr
+    ></template>
+    <template id="tpl-descuentos"
+      ><tr>
+        <td>
+          <span><span></span><span class="organism-data-table-cell-sub"></span></span>
+        </td>
+        <td class="organism-log-table-right"></td>
+        <td class="organism-log-table-right">
+          <span class="organism-data-table-cell-nowrap"></span>
+        </td></tr
+    ></template>
   </body>
 </html>

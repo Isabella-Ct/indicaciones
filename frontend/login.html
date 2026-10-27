@@ -11,11 +11,112 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     />
-    <link rel="stylesheet" href="/styles/main.css" />
+    <link rel="stylesheet" href="/styles/atomic.css" />
     <script type="module" src="/js/pages/login.js"></script>
   </head>
   <body>
-    <noscript>PARKO necesita JavaScript activado para funcionar.</noscript>
-    <div id="app"></div>
+    <main class="template-auth-layout" id="contenido">
+      <section class="molecule-panel template-auth-layout-panel" aria-labelledby="auth-titulo">
+        <div class="molecule-panel-head template-auth-layout-head">
+          <a class="molecule-brand molecule-brand--link" href="/">
+            <span class="atom-brand-mark" aria-hidden="true">P</span>
+            <div>PARKO<small id="login-sede"></small></div>
+          </a>
+        </div>
+        <div class="atom-hazard-strip" aria-hidden="true"></div>
+
+        <div class="molecule-panel-body template-auth-layout-body">
+          <h1 class="template-auth-layout-title" id="auth-titulo">Iniciar sesión</h1>
+          <p class="template-auth-layout-subtitle">// Ingresa con tu documento y contraseña</p>
+
+          <form class="organism-login-form" id="login-form" novalidate>
+            <div
+              class="molecule-alert molecule-alert--error hidden"
+              id="login-alerta"
+              aria-live="assertive"
+            >
+              <svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-alert"></use>
+              </svg>
+              <p id="login-alerta-texto"></p>
+            </div>
+
+            <div class="molecule-field">
+              <label for="tipo-documento">
+                Tipo de documento<span class="molecule-field-required" aria-hidden="true"> *</span>
+              </label>
+              <select
+                class="atom-select"
+                id="tipo-documento"
+                name="tipo_documento"
+                required
+                aria-describedby="tipo-documento-error"
+              >
+                <option value="CC" selected>Cédula de ciudadanía (CC)</option>
+                <option value="CE">Cédula de extranjería (CE)</option>
+                <option value="TI">Tarjeta de identidad (TI)</option>
+                <option value="PAS">Pasaporte (PAS)</option>
+                <option value="NIT">NIT</option>
+              </select>
+              <p class="molecule-field-error" id="tipo-documento-error" aria-live="polite"></p>
+            </div>
+
+            <div class="molecule-field">
+              <label for="numero-documento">
+                Número de documento<span class="molecule-field-required" aria-hidden="true">
+                  *</span
+                >
+              </label>
+              <input
+                class="atom-input"
+                id="numero-documento"
+                name="numero_documento"
+                type="text"
+                autocomplete="username"
+                maxlength="20"
+                required
+                autofocus
+                aria-describedby="numero-documento-error"
+              />
+              <p class="molecule-field-error" id="numero-documento-error" aria-live="polite"></p>
+            </div>
+
+            <div class="molecule-field">
+              <label for="contrasena">
+                Contraseña<span class="molecule-field-required" aria-hidden="true"> *</span>
+              </label>
+              <input
+                class="atom-input"
+                id="contrasena"
+                name="contrasena"
+                type="password"
+                autocomplete="current-password"
+                maxlength="72"
+                required
+                aria-describedby="contrasena-error"
+              />
+              <p class="molecule-field-error" id="contrasena-error" aria-live="polite"></p>
+            </div>
+
+            <label class="molecule-check">
+              <input type="checkbox" id="mostrar-contrasena" />
+              Mostrar contraseña
+            </label>
+
+            <button class="atom-button atom-button--block" type="submit" id="login-boton">
+              <svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-in"></use>
+              </svg>
+              <span id="login-boton-texto">Ingresar</span>
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <div class="template-auth-layout-foot">
+        <p class="hidden" id="login-direccion"></p>
+        <p><a class="atom-link" href="/">← Volver a la página principal</a></p>
+      </div>
+    </main>
   </body>
 </html>

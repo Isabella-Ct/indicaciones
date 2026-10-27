@@ -1,33 +1,24 @@
 /**
- * Reportes del administrador — REQ-REP-01…11. Menú lateral (level-tabs vertical) con los
+ * Reportes del administrador — REQ-REP-01…11. Menú lateral (pestañas verticales) con los
  * 11 reportes; cada uno en un panel con filtros, tabla, gráfico, "Exportar CSV" e "Imprimir".
  * El reporte elegido queda en el hash (#ocupacion) para enlazarlo o recargar.
+ * HTML en app/reportes.html: los 11 paneles están escritos; aquí se cargan y rellenan.
  */
-import { el } from '../utils/dom.js';
-import { montarApp } from './comun/montar-app.js';
-import { createPanel } from '../components/molecules/panel/panel.js';
-import { createField } from '../components/molecules/field/field.js';
-import { createSearchBox } from '../components/molecules/search-box/search-box.js';
-import { createLevelTabs } from '../components/molecules/level-tabs/level-tabs.js';
-import { createEmptyState } from '../components/molecules/empty-state/empty-state.js';
-import { showToast } from '../components/molecules/toast/toast.js';
-import { createKpis } from '../components/organisms/kpis/kpis.js';
-import { createDataTable } from '../components/organisms/data-table/data-table.js';
-import { createColChart } from '../components/organisms/col-chart/col-chart.js';
-import { createHbarChart } from '../components/organisms/hbar-chart/hbar-chart.js';
-import { createLineChart } from '../components/organisms/line-chart/line-chart.js';
-import { createHeatmap } from '../components/organisms/heatmap/heatmap.js';
-import { createStackedMeter } from '../components/organisms/stacked-meter/stacked-meter.js';
-import { createButton } from '../components/atoms/button/button.js';
-import { createInput } from '../components/atoms/input/input.js';
-import { createSelect } from '../components/atoms/select/select.js';
-import { createPlate } from '../components/atoms/plate/plate.js';
-import { createStatusChip } from '../components/atoms/status-chip/status-chip.js';
-import { createLabelCaps } from '../components/atoms/label-caps/label-caps.js';
-import { createSpinner } from '../components/atoms/spinner/spinner.js';
+import { montarMarco } from './comun/marco-app.js';
+import { mostrarAviso } from './comun/dialogos.js';
+import { clonar, llenarSelect, ponerChip } from './comun/plantillas.js';
+import { conectarTabla, conectarBusqueda, ponerKpi } from './comun/tablas.js';
+import { conectarPestanas } from './comun/pestanas.js';
+import {
+  pintarColumnas,
+  pintarBarrasH,
+  pintarApilada,
+  pintarCalor,
+  pintarLinea,
+} from './comun/graficos.js';
 import { obtenerReporte, urlReporteCsv } from '../services/reportes.service.js';
 import { listarTiposIncidencia } from '../services/incidencias.service.js';
-import { normalizarPlaca } from '../utils/placa.js';
+import { normalizarPlaca, formatearPlaca } from '../utils/placa.js';
 import {
   formatearCOP,
   formatearFecha,
@@ -38,12 +29,7 @@ import {
 } from '../utils/formato.js';
 import { etiquetaRol } from '../utils/sesion.js';
 
-const ID_PANEL = 'reporte-activo';
-const TIPOS = [
-  { value: '', label: 'Todos' },
-  { value: 'carro', label: 'Carros' },
-  { value: 'moto', label: 'Motos' },
-];
+const $ = (id) => document.getElementById(id);
 const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const DIAS_CORTOS = ['', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
@@ -67,709 +53,366 @@ const copCorto = (v) =>
     : v >= 1e3
       ? `$ ${Math.round(v / 1e3)} mil`
       : cop(v);
-const sub = (texto) => el('span', { className: 'cell-sub', text: texto ?? '' });
-const conSub = (principal, secundario) =>
-  el('span', {}, [el('span', { text: principal ?? '—' }), sub(secundario)]);
-const nowrap = (texto) => el('span', { className: 'cell-nowrap', text: texto });
-const tabla = (props) => createDataTable({ minWidth: 760, ...props });
-const subPanel = (titulo, hijos) =>
-  el('section', { className: 'report-block' }, [createLabelCaps({ text: titulo }), ...hijos]);
+const estadoActivo = (activo) => [activo ? 'Activo' : 'Inactivo', activo ? 'free' : 'out'];
+
+function rangoTexto(meta) {
+  return meta.desde === meta.hasta
+    ? formatearFecha(meta.desde)
+    : `${formatearFecha(meta.desde)} – ${formatearFecha(meta.hasta)}`;
+}
+
+/**
+ * Rellena una fila según el marcado de cada celda (ver la plantilla de la página):
+ * chip → [texto, variante] (o un texto si la celda admite texto en lugar del chip);
+ * placa → placa o [placa, subtítulo]; texto + subtítulo → [principal, secundario];
+ * el resto → texto.
+ */
+function rellenarFila(fila, valores) {
+  [...fila.cells].forEach((celda, i) => {
+    const v = valores[i];
+    const chip = celda.querySelector('.atom-status-chip');
+    if (chip) {
+      if (Array.isArray(v)) return ponerChip(chip, v[0], v[1]);
+      chip.classList.add('hidden');
+      chip.nextElementSibling.textContent = v ?? '—';
+      return;
+    }
+    const placa = celda.querySelector('.atom-plate');
+    const sub = celda.querySelector('.organism-data-table-cell-sub');
+    const [principal, secundario] = Array.isArray(v) ? v : [v, ''];
+    if (placa) {
+      placa.textContent = formatearPlaca(principal);
+      if (sub) sub.textContent = secundario ?? '';
+      return;
+    }
+    if (sub) {
+      sub.previousElementSibling.textContent = principal ?? '—';
+      sub.textContent = secundario ?? '';
+      return;
+    }
+    (celda.firstElementChild ?? celda).textContent =
+      v === null || v === undefined || v === '' ? '—' : String(v);
+  });
+}
 
 // ---------------------------------------------------------------------------
-// Definición de los 11 reportes
+// Definición de los 11 reportes: filtros (ids en el HTML) y cómo pintar la respuesta
 // ---------------------------------------------------------------------------
 const REPORTES = [
   {
     id: 'usuarios',
-    req: 'REP-01',
-    titulo: 'Usuarios',
-    descripcion: 'Todos los usuarios con sus datos y su rol (nunca la contraseña).',
     paginado: true,
-    filtros: [
-      {
-        tipo: 'select',
-        clave: 'rol',
-        label: 'Rol',
-        opciones: [
-          { value: '', label: 'Todos' },
-          { value: 'administrador', label: 'Administradores' },
-          { value: 'operador', label: 'Operadores' },
-          { value: 'usuario', label: 'Clientes' },
-        ],
-      },
-      {
-        tipo: 'select',
-        clave: 'estado',
-        label: 'Estado',
-        opciones: [
-          { value: '', label: 'Todos' },
-          { value: 'activo', label: 'Activos' },
-          { value: 'inactivo', label: 'Inactivos' },
-        ],
-      },
-    ],
-    pintar: ({ data }, paginacion) => [
-      tabla({
-        caption: 'Usuarios',
-        minWidth: 980,
-        rows: data,
-        pagination: paginacion,
-        columns: [
-          { key: 'codigo', label: 'Código', render: (u) => String(u.id).padStart(5, '0') },
-          { key: 'nombre', label: 'Nombre', render: (u) => conSub(u.nombre_completo, u.correo) },
-          {
-            key: 'doc',
-            label: 'Documento',
-            render: (u) => nowrap(`${u.tipo_documento} ${u.numero_documento}`),
-          },
-          { key: 'celular', label: 'Celular', render: (u) => u.celular },
-          { key: 'rol', label: 'Rol', render: (u) => etiquetaRol(u.rol) },
-          {
-            key: 'estado',
-            label: 'Estado',
-            render: (u) =>
-              createStatusChip({
-                text: u.estado === 'activo' ? 'Activo' : 'Inactivo',
-                variant: u.estado === 'activo' ? 'free' : 'out',
-              }),
-          },
-          {
-            key: 'vehiculos',
-            label: 'Vehículos',
-            align: 'right',
-            render: (u) => String(u.vehiculos),
-          },
-          {
-            key: 'acceso',
-            label: 'Último acceso',
-            render: (u) => nowrap(u.ultimo_acceso ? formatearFechaHora(u.ultimo_acceso) : 'Nunca'),
-          },
-        ],
-      }),
-    ],
+    filtros: ['rol', 'estado'],
+    tablas: {
+      usuarios: (u) => [
+        String(u.id).padStart(5, '0'),
+        [u.nombre_completo, u.correo],
+        `${u.tipo_documento} ${u.numero_documento}`,
+        u.celular,
+        etiquetaRol(u.rol),
+        estadoActivo(u.estado === 'activo'),
+        String(u.vehiculos),
+        u.ultimo_acceso ? formatearFechaHora(u.ultimo_acceso) : 'Nunca',
+      ],
+    },
+    pintar: ({ data, meta }, t) => t.usuarios.pintar(data, { meta }),
   },
   {
     id: 'vehiculos',
-    req: 'REP-02',
-    titulo: 'Vehículos',
-    descripcion: 'Vehículos registrados con sus datos y el usuario propietario.',
     paginado: true,
-    filtros: [
-      { tipo: 'select', clave: 'tipo', label: 'Tipo', opciones: TIPOS },
-      {
-        tipo: 'select',
-        clave: 'propietario',
-        label: 'Propietario',
-        opciones: [
-          { value: '', label: 'Todos' },
-          { value: 'con', label: 'Con propietario' },
-          { value: 'sin', label: 'Visitantes' },
-        ],
-      },
-    ],
-    pintar: ({ data }, paginacion) => [
-      tabla({
-        caption: 'Vehículos',
-        rows: data,
-        pagination: paginacion,
-        columns: [
-          { key: 'placa', label: 'Placa', render: (v) => createPlate({ placa: v.placa }) },
-          { key: 'tipo', label: 'Tipo', render: (v) => (v.tipo === 'moto' ? 'Moto' : 'Carro') },
-          {
-            key: 'modelo',
-            label: 'Marca y modelo',
-            render: (v) => conSub(`${v.marca} ${v.modelo}`, v.color),
-          },
-          {
-            key: 'propietario',
-            label: 'Propietario',
-            render: (v) =>
-              v.propietario
-                ? conSub(
-                    v.propietario.nombre_completo,
-                    `${v.propietario.tipo_documento} ${v.propietario.numero_documento}`
-                  )
-                : 'Visitante',
-          },
-          { key: 'visitas', label: 'Visitas', align: 'right', render: (v) => String(v.visitas) },
-          {
-            key: 'activo',
-            label: 'Estado',
-            render: (v) =>
-              createStatusChip({
-                text: v.activo ? 'Activo' : 'Inactivo',
-                variant: v.activo ? 'free' : 'out',
-              }),
-          },
-        ],
-      }),
-    ],
+    filtros: ['tipo', 'propietario'],
+    tablas: {
+      vehiculos: (v) => [
+        v.placa,
+        v.tipo === 'moto' ? 'Moto' : 'Carro',
+        [`${v.marca} ${v.modelo}`, v.color],
+        v.propietario
+          ? [
+              v.propietario.nombre_completo,
+              `${v.propietario.tipo_documento} ${v.propietario.numero_documento}`,
+            ]
+          : ['Visitante', ''],
+        String(v.visitas),
+        estadoActivo(v.activo),
+      ],
+    },
+    pintar: ({ data, meta }, t) => t.vehiculos.pintar(data, { meta }),
   },
   {
     id: 'entradas',
-    req: 'REP-03',
-    titulo: 'Entradas',
-    descripcion: 'Entradas con fecha, hora, vehículo, puerta y celda.',
     paginado: true,
-    filtros: [
-      { tipo: 'rango' },
-      { tipo: 'select', clave: 'tipo', label: 'Tipo', opciones: TIPOS },
-      { tipo: 'puerta' },
-      { tipo: 'placa' },
-    ],
-    pintar: ({ data, meta }, paginacion) => [
-      createKpis({
-        label: 'Resumen de entradas',
-        items: [
-          { label: 'Entradas', value: meta.total, main: true, note: rangoTexto(meta) },
-          {
-            label: 'Promedio diario',
-            value: Math.round(meta.total / meta.dias),
-            note: `${meta.dias} días`,
-          },
-        ],
-      }),
-      tabla({
-        caption: 'Entradas',
-        minWidth: 960,
-        rows: data,
-        pagination: paginacion,
-        columns: [
-          {
-            key: 'fecha',
-            label: 'Fecha y hora',
-            render: (e) => nowrap(formatearFechaHora(e.fecha_hora_entrada)),
-          },
-          { key: 'ticket', label: 'Ticket', render: (e) => nowrap(e.codigo_ticket) },
-          {
-            key: 'placa',
-            label: 'Vehículo',
-            render: (e) =>
-              el('span', {}, [createPlate({ placa: e.placa }), sub(`${e.marca} ${e.modelo}`)]),
-          },
-          {
-            key: 'cliente',
-            label: 'Cliente',
-            render: (e) => (e.tipo_cliente === 'mensualidad' ? 'Mensualidad' : 'Visitante'),
-          },
-          { key: 'puerta', label: 'Puerta', render: (e) => e.puerta },
-          { key: 'celda', label: 'Celda', render: (e) => conSub(e.celda, e.piso) },
-          { key: 'registro', label: 'Registró', render: (e) => e.registro },
-          {
-            key: 'estado',
-            label: 'Estado',
-            render: (e) =>
-              e.estado === 'en_curso'
-                ? createStatusChip({ text: 'Dentro', variant: 'occupied' })
-                : 'Salió',
-          },
-        ],
-      }),
-    ],
+    filtros: ['rango', 'tipo', 'puerta_id', 'placa'],
+    tablas: {
+      entradas: (e) => [
+        formatearFechaHora(e.fecha_hora_entrada),
+        e.codigo_ticket,
+        [e.placa, `${e.marca} ${e.modelo}`],
+        e.tipo_cliente === 'mensualidad' ? 'Mensualidad' : 'Visitante',
+        e.puerta,
+        [e.celda, e.piso],
+        e.registro,
+        e.estado === 'en_curso' ? ['Dentro', 'occupied'] : 'Salió',
+      ],
+    },
+    pintar: ({ data, meta }, t) => {
+      ponerKpi('entradas-kpi-1', { valor: meta.total, nota: rangoTexto(meta) });
+      ponerKpi('entradas-kpi-2', {
+        valor: Math.round(meta.total / meta.dias),
+        nota: `${meta.dias} días`,
+      });
+      t.entradas.pintar(data, { meta });
+    },
   },
   {
     id: 'salidas',
-    req: 'REP-04',
-    titulo: 'Salidas',
-    descripcion: 'Salidas con fecha, hora, vehículo, puerta, duración y valor cobrado.',
     paginado: true,
-    filtros: [
-      { tipo: 'rango' },
-      { tipo: 'select', clave: 'tipo', label: 'Tipo', opciones: TIPOS },
-      { tipo: 'puerta' },
-      { tipo: 'placa' },
-    ],
-    pintar: ({ data, meta }, paginacion) => [
-      createKpis({
-        label: 'Resumen de salidas',
-        items: [
-          { label: 'Recaudado', value: cop(meta.recaudado), main: true, note: rangoTexto(meta) },
-          {
-            label: 'Salidas',
-            value: meta.total,
-            note: `${Math.round(meta.total / meta.dias)} por día`,
-          },
-          {
-            label: 'Permanencia prom.',
-            value: meta.permanencia_promedio_min,
-            unit: 'min',
-            note: minutosATexto(meta.permanencia_promedio_min),
-          },
-        ],
-      }),
-      tabla({
-        caption: 'Salidas',
-        minWidth: 980,
-        rows: data,
-        pagination: paginacion,
-        columns: [
-          {
-            key: 'fecha',
-            label: 'Salida',
-            render: (s) =>
-              conSub(
-                formatearFechaHora(s.fecha_hora_salida),
-                `Entró ${formatearHora(s.fecha_hora_entrada)}`
-              ),
-          },
-          { key: 'ticket', label: 'Ticket', render: (s) => nowrap(s.codigo_ticket) },
-          { key: 'placa', label: 'Vehículo', render: (s) => createPlate({ placa: s.placa }) },
-          { key: 'puerta', label: 'Puerta', render: (s) => s.puerta ?? '—' },
-          { key: 'celda', label: 'Celda', render: (s) => s.celda },
-          { key: 'tiempo', label: 'Duración', render: (s) => nowrap(s.tiempo) },
-          {
-            key: 'valor',
-            label: 'Valor',
-            align: 'right',
-            render: (s) =>
-              el('strong', {
-                className: 'cell-nowrap',
-                text: s.valor === null ? '—' : cop(s.valor),
-              }),
-          },
-          {
-            key: 'metodo',
-            label: 'Método',
-            render: (s) => conSub(METODOS_PAGO[s.metodo_pago] ?? '—', s.factura),
-          },
-        ],
-      }),
-    ],
+    filtros: ['rango', 'tipo', 'puerta_id', 'placa'],
+    tablas: {
+      salidas: (s) => [
+        [formatearFechaHora(s.fecha_hora_salida), `Entró ${formatearHora(s.fecha_hora_entrada)}`],
+        s.codigo_ticket,
+        s.placa,
+        s.puerta ?? '—',
+        s.celda,
+        s.tiempo,
+        s.valor === null ? '—' : cop(s.valor),
+        [METODOS_PAGO[s.metodo_pago] ?? '—', s.factura],
+      ],
+    },
+    pintar: ({ data, meta }, t) => {
+      ponerKpi('salidas-kpi-1', { valor: cop(meta.recaudado), nota: rangoTexto(meta) });
+      ponerKpi('salidas-kpi-2', {
+        valor: meta.total,
+        nota: `${Math.round(meta.total / meta.dias)} por día`,
+      });
+      ponerKpi('salidas-kpi-3', {
+        valor: meta.permanencia_promedio_min,
+        nota: minutosATexto(meta.permanencia_promedio_min),
+      });
+      t.salidas.pintar(data, { meta });
+    },
   },
   {
     id: 'incidencias',
-    req: 'REP-05',
-    titulo: 'Incidencias',
-    descripcion: 'Incidencias registradas en el parqueadero, por tipo y fecha.',
     paginado: true,
-    filtros: [{ tipo: 'rango' }, { tipo: 'tipo-incidencia' }],
-    pintar: ({ data, meta }, paginacion) => [
-      createKpis({
-        label: 'Resumen de incidencias',
-        items: [
-          { label: 'Incidencias', value: meta.total, main: true, note: rangoTexto(meta) },
-          {
-            label: 'Por semana',
-            value: String(Math.round((meta.total / meta.dias) * 70) / 10).replace('.', ','),
-            note: 'promedio del período',
-          },
-        ],
-      }),
-      tabla({
-        caption: 'Incidencias',
-        minWidth: 960,
-        rows: data,
-        pagination: paginacion,
-        empty: { title: 'Sin incidencias', text: 'No hay incidencias en el período.' },
-        columns: [
-          {
-            key: 'codigo',
-            label: 'Código',
-            render: (i) => conSub(i.codigo, formatearFechaHora(i.fecha_hora)),
-          },
-          {
-            key: 'tipo',
-            label: 'Tipo',
-            render: (i) => createStatusChip({ text: i.tipo, variant: 'occupied' }),
-          },
-          {
-            key: 'placa',
-            label: 'Vehículo',
-            render: (i) =>
-              el('span', {}, [createPlate({ placa: i.placa }), sub(i.propietario ?? 'Visitante')]),
-          },
-          { key: 'celda', label: 'Celda', render: (i) => i.celda ?? '—' },
-          {
-            key: 'descripcion',
-            label: 'Descripción',
-            render: (i) => el('span', { className: 'cell-clamp', text: i.descripcion }),
-          },
-          { key: 'registro', label: 'Registró', render: (i) => i.registro },
-        ],
-      }),
-    ],
+    filtros: ['rango', 'tipo'],
+    tablas: {
+      incidencias: (i) => [
+        [i.codigo, formatearFechaHora(i.fecha_hora)],
+        [i.tipo, 'occupied'],
+        [i.placa, i.propietario ?? 'Visitante'],
+        i.celda ?? '—',
+        i.descripcion,
+        i.registro,
+      ],
+    },
+    pintar: ({ data, meta }, t) => {
+      ponerKpi('incidencias-kpi-1', { valor: meta.total, nota: rangoTexto(meta) });
+      ponerKpi('incidencias-kpi-2', {
+        valor: String(Math.round((meta.total / meta.dias) * 70) / 10).replace('.', ','),
+        nota: 'promedio del período',
+      });
+      t.incidencias.pintar(data, { meta });
+    },
   },
   {
     id: 'pico-placa',
-    req: 'REP-06',
-    titulo: 'Pico y placa',
-    descripcion:
-      'Vehículos registrados que no pueden ingresar ese día según las reglas activas, y los accesos rechazados reales.',
-    filtros: [{ tipo: 'fecha' }],
-    pintar: ({ data, meta }) => [
-      createKpis({
-        label: 'Resumen de pico y placa',
-        items: [
-          {
-            label: 'No pueden ingresar',
-            value: meta.total_restringidos,
-            main: true,
-            note: `${meta.dia_nombre} ${formatearFecha(meta.fecha)}`,
-          },
-          {
-            label: 'Carros',
-            value: meta.por_tipo.carro.restringidos,
-            note: `de ${meta.por_tipo.carro.registrados} registrados`,
-          },
-          {
-            label: 'Motos',
-            value: meta.por_tipo.moto.restringidos,
-            note: `de ${meta.por_tipo.moto.registrados} registradas`,
-          },
-          {
-            label: 'Entradas rechazadas',
-            value: meta.total_denegados,
-            note: 'ese día, en las puertas',
-          },
-        ],
-      }),
-      subPanel('Reglas activas del día', [
-        data.reglas.length
-          ? el(
-              'p',
-              { className: 'report-rules' },
-              data.reglas.map((r) =>
-                createStatusChip({
-                  text: `${r.tipo_vehiculo === 'moto' ? 'Motos' : 'Carros'} · ${r.digito} · ${r.hora_inicio}–${r.hora_fin}`,
-                  variant: 'occupied',
-                })
-              )
-            )
-          : el('p', { className: 'field-hint', text: 'Sin restricción ese día.' }),
-      ]),
-      subPanel('Vehículos registrados con restricción', [
-        tabla({
-          caption: 'Vehículos con pico y placa',
-          minWidth: 640,
-          rows: data.vehiculos,
-          empty: {
-            title: 'Ninguno',
-            text: 'Ningún vehículo registrado tiene restricción ese día.',
-          },
-          columns: [
-            { key: 'placa', label: 'Placa', render: (v) => createPlate({ placa: v.placa }) },
-            { key: 'tipo', label: 'Tipo', render: (v) => (v.tipo === 'moto' ? 'Moto' : 'Carro') },
-            { key: 'modelo', label: 'Marca y modelo', render: (v) => `${v.marca} ${v.modelo}` },
-            {
-              key: 'propietario',
-              label: 'Propietario',
-              render: (v) => v.propietario ?? 'Visitante',
-            },
-            { key: 'horario', label: 'Horario', render: (v) => nowrap(v.horario) },
-          ],
-        }),
-      ]),
-      subPanel('Accesos rechazados', [
-        tabla({
-          caption: 'Accesos rechazados por pico y placa',
-          minWidth: 640,
-          rows: data.denegados,
-          empty: { title: 'Sin rechazos', text: 'Nadie intentó entrar con restricción ese día.' },
-          columns: [
-            { key: 'hora', label: 'Hora', render: (d) => formatearHora(d.fecha_hora) },
-            { key: 'placa', label: 'Placa', render: (d) => createPlate({ placa: d.placa }) },
-            { key: 'puerta', label: 'Puerta', render: (d) => d.puerta },
-            { key: 'motivo', label: 'Motivo', render: (d) => d.motivo },
-          ],
-        }),
-      ]),
-    ],
+    filtros: ['fecha'],
+    tablas: {
+      'pico-vehiculos': (v) => [
+        v.placa,
+        v.tipo === 'moto' ? 'Moto' : 'Carro',
+        `${v.marca} ${v.modelo}`,
+        v.propietario ?? 'Visitante',
+        v.horario,
+      ],
+      'pico-denegados': (d) => [formatearHora(d.fecha_hora), d.placa, d.puerta, d.motivo],
+    },
+    pintar: ({ data, meta }, t) => {
+      ponerKpi('pico-placa-kpi-1', {
+        valor: meta.total_restringidos,
+        nota: `${meta.dia_nombre} ${formatearFecha(meta.fecha)}`,
+      });
+      ponerKpi('pico-placa-kpi-2', {
+        valor: meta.por_tipo.carro.restringidos,
+        nota: `de ${meta.por_tipo.carro.registrados} registrados`,
+      });
+      ponerKpi('pico-placa-kpi-3', {
+        valor: meta.por_tipo.moto.restringidos,
+        nota: `de ${meta.por_tipo.moto.registrados} registradas`,
+      });
+      ponerKpi('pico-placa-kpi-4', {
+        valor: meta.total_denegados,
+        nota: 'ese día, en las puertas',
+      });
+      $('pico-reglas').replaceChildren(
+        ...data.reglas.map((r) => {
+          const chip = clonar('tpl-chip');
+          chip.textContent = `${r.tipo_vehiculo === 'moto' ? 'Motos' : 'Carros'} · ${r.digito} · ${r.hora_inicio}–${r.hora_fin}`;
+          return chip;
+        })
+      );
+      $('pico-reglas').classList.toggle('hidden', data.reglas.length === 0);
+      $('pico-sin-reglas').classList.toggle('hidden', data.reglas.length > 0);
+      t['pico-vehiculos'].pintar(data.vehiculos);
+      t['pico-denegados'].pintar(data.denegados);
+    },
   },
   {
     id: 'celdas-ocupadas',
-    req: 'REP-07',
-    titulo: 'Celdas ocupadas',
-    descripcion: 'Celdas distintas ocupadas en un día y la ocupación máxima simultánea.',
-    filtros: [{ tipo: 'fecha' }],
-    pintar: ({ data, meta }) => [
-      createKpis({
-        label: 'Resumen del día',
-        items: [
-          {
-            label: 'Celdas ocupadas',
-            value: meta.total_celdas_ocupadas,
-            main: true,
-            meter: meta.porcentaje,
-            note: `de ${meta.habilitadas} habilitadas · ${pct(meta.porcentaje)}`,
-          },
-          { label: 'Estadías', value: meta.estadias, note: formatearFecha(meta.fecha) },
-          {
-            label: 'Máximo simultáneo',
-            value: meta.maximo_simultaneo,
-            note: meta.momento_maximo ? `a las ${formatearHora(meta.momento_maximo)}` : '—',
-          },
-          {
-            label: 'Ocupación máxima',
-            value: pct(meta.porcentaje_maximo),
-            note: 'en ese momento',
-          },
-        ],
-      }),
-      subPanel('Ocupación por hora', [
-        createColChart({
-          label: `Celdas ocupadas por hora el ${formatearFecha(meta.fecha)}`,
-          items: data.por_hora.map((h) => ({
-            etiqueta: `${h.hora}h`,
-            valor: h.porcentaje,
-            estado: h.estado,
-            titulo: `${hora(h.hora)} · ${h.celdas} celdas · ${pct(h.porcentaje)}`,
-          })),
-        }),
-      ]),
-      subPanel('Detalle por celda', [
-        tabla({
-          caption: 'Celdas ocupadas ese día',
-          minWidth: 560,
-          rows: data.celdas,
-          empty: { title: 'Sin ocupación', text: 'Ninguna celda se ocupó ese día.' },
-          columns: [
-            { key: 'codigo', label: 'Celda', render: (c) => el('strong', { text: c.codigo }) },
-            { key: 'piso', label: 'Piso', render: (c) => c.piso },
-            { key: 'tipo', label: 'Tipo', render: (c) => (c.tipo === 'moto' ? 'Moto' : 'Carro') },
-            {
-              key: 'estadias',
-              label: 'Estadías',
-              align: 'right',
-              render: (c) => String(c.estadias),
-            },
-            {
-              key: 'tiempo',
-              label: 'Tiempo ocupada',
-              align: 'right',
-              render: (c) => nowrap(c.tiempo),
-            },
-          ],
-        }),
-      ]),
-    ],
+    filtros: ['fecha'],
+    tablas: {
+      'celdas-dia': (c) => [
+        c.codigo,
+        c.piso,
+        c.tipo === 'moto' ? 'Moto' : 'Carro',
+        String(c.estadias),
+        c.tiempo,
+      ],
+    },
+    pintar: ({ data, meta }, t) => {
+      ponerKpi('celdas-ocupadas-kpi-1', {
+        valor: meta.total_celdas_ocupadas,
+        medidor: meta.porcentaje,
+        nota: `de ${meta.habilitadas} habilitadas · ${pct(meta.porcentaje)}`,
+      });
+      ponerKpi('celdas-ocupadas-kpi-2', { valor: meta.estadias, nota: formatearFecha(meta.fecha) });
+      ponerKpi('celdas-ocupadas-kpi-3', {
+        valor: meta.maximo_simultaneo,
+        nota: meta.momento_maximo ? `a las ${formatearHora(meta.momento_maximo)}` : '—',
+      });
+      ponerKpi('celdas-ocupadas-kpi-4', {
+        valor: pct(meta.porcentaje_maximo),
+        nota: 'en ese momento',
+      });
+      pintarColumnas($('grafico-celdas-hora'), {
+        label: `Celdas ocupadas por hora el ${formatearFecha(meta.fecha)}`,
+        items: data.por_hora.map((h) => ({
+          etiqueta: `${h.hora}h`,
+          valor: h.porcentaje,
+          estado: h.estado,
+          titulo: `${hora(h.hora)} · ${h.celdas} celdas · ${pct(h.porcentaje)}`,
+        })),
+      });
+      t['celdas-dia'].pintar(data.celdas);
+    },
   },
   {
     id: 'celdas-mas-usadas',
-    req: 'REP-08',
-    titulo: 'Celdas más usadas',
-    descripcion: 'Ranking de celdas por número de estadías y tiempo ocupadas en el período.',
-    filtros: [
-      { tipo: 'rango' },
-      { tipo: 'select', clave: 'tipo', label: 'Tipo', opciones: TIPOS },
-      { tipo: 'limite' },
-    ],
-    pintar: ({ data, meta }) => [
-      el('div', { className: 'report-grid' }, [
-        subPanel(`Top ${data.length} por estadías`, [
-          createHbarChart({
-            label: 'Celdas más usadas por número de estadías',
-            items: data.map((c) => ({
-              etiqueta: c.codigo,
-              detalle: c.piso,
-              valor: c.estadias,
-              texto: `${c.estadias} · ${pct(c.participacion)}`,
-            })),
-          }),
-        ]),
-        subPanel('Detalle', [
-          tabla({
-            caption: 'Celdas más usadas',
-            minWidth: 520,
-            rows: data,
-            empty: { title: 'Sin estadías', text: 'No hubo estadías en el período.' },
-            columns: [
-              { key: 'puesto', label: '#', render: (c) => String(c.puesto) },
-              {
-                key: 'codigo',
-                label: 'Celda',
-                render: (c) => conSub(c.codigo, `${c.piso} · ${c.tipo}`),
-              },
-              {
-                key: 'estadias',
-                label: 'Estadías',
-                align: 'right',
-                render: (c) => String(c.estadias),
-              },
-              { key: 'tiempo', label: 'Tiempo', align: 'right', render: (c) => nowrap(c.tiempo) },
-              {
-                key: 'part',
-                label: '% del total',
-                align: 'right',
-                render: (c) => pct(c.participacion),
-              },
-            ],
-          }),
-        ]),
-      ]),
-      el('p', {
-        className: 'field-hint',
-        text: `${meta.total_estadias} estadías en el período (${rangoTexto(meta)}).`,
-      }),
-    ],
+    filtros: ['rango', 'tipo', 'limite'],
+    tablas: {
+      'celdas-top': (c) => [
+        String(c.puesto),
+        [c.codigo, `${c.piso} · ${c.tipo}`],
+        String(c.estadias),
+        c.tiempo,
+        pct(c.participacion),
+      ],
+    },
+    pintar: ({ data, meta }, t) => {
+      $('celdas-top-titulo').textContent = `Top ${data.length} por estadías`;
+      pintarBarrasH($('grafico-celdas-top'), {
+        label: 'Celdas más usadas por número de estadías',
+        items: data.map((c) => ({
+          etiqueta: c.codigo,
+          detalle: c.piso,
+          valor: c.estadias,
+          texto: `${c.estadias} · ${pct(c.participacion)}`,
+        })),
+      });
+      t['celdas-top'].pintar(data);
+      $('celdas-top-nota').textContent =
+        `${meta.total_estadias} estadías en el período (${rangoTexto(meta)}).`;
+    },
   },
   {
     id: 'vehiculos-frecuentes',
-    req: 'REP-09',
-    titulo: 'Vehículos frecuentes',
-    descripcion: 'Vehículos que más usan el parqueadero: visitas, tiempo total y lo pagado.',
-    filtros: [
-      { tipo: 'rango' },
-      { tipo: 'select', clave: 'tipo', label: 'Tipo', opciones: TIPOS },
-      { tipo: 'limite' },
-    ],
-    pintar: ({ data, meta }) => [
-      el('div', { className: 'report-grid' }, [
-        subPanel(`Top ${data.length} por visitas`, [
-          createHbarChart({
-            label: 'Vehículos con más visitas',
-            items: data.map((v) => ({
-              etiqueta: v.placa,
-              detalle: v.propietario ?? 'Visitante',
-              valor: v.visitas,
-              texto: `${v.visitas} visitas`,
-            })),
-          }),
-        ]),
-        subPanel('Detalle', [
-          tabla({
-            caption: 'Vehículos frecuentes',
-            minWidth: 600,
-            rows: data,
-            empty: { title: 'Sin visitas', text: 'No hubo estadías en el período.' },
-            columns: [
-              { key: 'puesto', label: '#', render: (v) => String(v.puesto) },
-              {
-                key: 'placa',
-                label: 'Vehículo',
-                render: (v) =>
-                  el('span', {}, [
-                    createPlate({ placa: v.placa }),
-                    sub(v.propietario ?? 'Visitante'),
-                  ]),
-              },
-              {
-                key: 'visitas',
-                label: 'Visitas',
-                align: 'right',
-                render: (v) => String(v.visitas),
-              },
-              {
-                key: 'tiempo',
-                label: 'Tiempo total',
-                align: 'right',
-                render: (v) => nowrap(v.tiempo),
-              },
-              {
-                key: 'pagado',
-                label: 'Pagado',
-                align: 'right',
-                render: (v) => nowrap(cop(v.pagado)),
-              },
-              {
-                key: 'ultima',
-                label: 'Última visita',
-                render: (v) => nowrap(formatearFechaHora(v.ultima_visita)),
-              },
-            ],
-          }),
-        ]),
-      ]),
-      el('p', {
-        className: 'field-hint',
-        text: `${meta.total_estadias} estadías en el período (${rangoTexto(meta)}).`,
-      }),
-    ],
+    filtros: ['rango', 'tipo', 'limite'],
+    tablas: {
+      frecuentes: (v) => [
+        String(v.puesto),
+        [v.placa, v.propietario ?? 'Visitante'],
+        String(v.visitas),
+        v.tiempo,
+        cop(v.pagado),
+        formatearFechaHora(v.ultima_visita),
+      ],
+    },
+    pintar: ({ data, meta }, t) => {
+      $('frecuentes-titulo').textContent = `Top ${data.length} por visitas`;
+      pintarBarrasH($('grafico-frecuentes'), {
+        label: 'Vehículos con más visitas',
+        items: data.map((v) => ({
+          etiqueta: v.placa,
+          detalle: v.propietario ?? 'Visitante',
+          valor: v.visitas,
+          texto: `${v.visitas} visitas`,
+        })),
+      });
+      t.frecuentes.pintar(data);
+      $('frecuentes-nota').textContent =
+        `${meta.total_estadias} estadías en el período (${rangoTexto(meta)}).`;
+    },
   },
   {
     id: 'ocupacion',
-    req: 'REP-10',
-    titulo: 'Horas y días pico',
-    descripcion:
-      'Ocupación promedio por día de la semana y hora, con la hora y el día de mayor ocupación.',
-    filtros: [{ tipo: 'rango' }],
-    pintar: ({ data, meta }) => [
-      createKpis({
-        label: 'Picos de ocupación',
-        items: [
-          {
-            label: 'Hora pico',
-            value: hora(meta.hora_pico.hora),
-            main: true,
-            meter: meta.hora_pico.porcentaje,
-            note: `${pct(meta.hora_pico.porcentaje)} en promedio`,
-          },
-          {
-            label: 'Día pico',
-            value: DIAS[meta.dia_pico.dia],
-            note: `${pct(meta.dia_pico.porcentaje)} promedio del día`,
-          },
-          {
-            label: 'Franja pico',
-            value: `${DIAS_CORTOS[meta.franja_pico.dia]} ${hora(meta.franja_pico.hora)}`,
-            note: `${pct(meta.franja_pico.porcentaje)} · ${meta.franja_pico.promedio} celdas`,
-          },
-          { label: 'Celdas habilitadas', value: meta.habilitadas, note: rangoTexto(meta) },
-        ],
-      }),
-      subPanel('Ocupación promedio · día × hora', [
-        createHeatmap({
-          label: 'Mapa de calor de la ocupación promedio por día de la semana y hora',
-          resumen: `Hora pico ${hora(meta.hora_pico.hora)}; día pico ${DIAS[meta.dia_pico.dia]}; franja pico ${DIAS[meta.franja_pico.dia]} ${hora(meta.franja_pico.hora)} con ${pct(meta.franja_pico.porcentaje)}.`,
-          columnas: Array.from({ length: 24 }, (_, h) => String(h)),
-          filas: [1, 2, 3, 4, 5, 6, 7].map((dia) => ({
-            etiqueta: DIAS_CORTOS[dia],
-            celdas: data.matriz
-              .filter((c) => c.dia === dia)
-              .map((c) => ({
-                valor: c.porcentaje,
-                texto: `${pct(c.porcentaje)} (${c.promedio} celdas)`,
-              })),
-          })),
-        }),
-      ]),
-      el('div', { className: 'report-grid' }, [
-        subPanel('Promedio por hora (todos los días)', [
-          createColChart({
-            label: 'Ocupación promedio por hora del día',
-            items: data.por_hora.map((h) => ({
-              etiqueta: `${h.hora}h`,
-              valor: h.porcentaje,
-              estado: h.hora === meta.hora_pico.hora ? 'actual' : 'pasada',
-              titulo: `${hora(h.hora)} · ${pct(h.porcentaje)}`,
+    filtros: ['rango'],
+    tablas: {},
+    pintar: ({ data, meta }) => {
+      ponerKpi('ocupacion-kpi-1', {
+        valor: hora(meta.hora_pico.hora),
+        medidor: meta.hora_pico.porcentaje,
+        nota: `${pct(meta.hora_pico.porcentaje)} en promedio`,
+      });
+      ponerKpi('ocupacion-kpi-2', {
+        valor: DIAS[meta.dia_pico.dia],
+        nota: `${pct(meta.dia_pico.porcentaje)} promedio del día`,
+      });
+      ponerKpi('ocupacion-kpi-3', {
+        valor: `${DIAS_CORTOS[meta.franja_pico.dia]} ${hora(meta.franja_pico.hora)}`,
+        nota: `${pct(meta.franja_pico.porcentaje)} · ${meta.franja_pico.promedio} celdas`,
+      });
+      ponerKpi('ocupacion-kpi-4', { valor: meta.habilitadas, nota: rangoTexto(meta) });
+      pintarCalor($('grafico-calor'), {
+        label: 'Mapa de calor de la ocupación promedio por día de la semana y hora',
+        resumen: `Hora pico ${hora(meta.hora_pico.hora)}; día pico ${DIAS[meta.dia_pico.dia]}; franja pico ${DIAS[meta.franja_pico.dia]} ${hora(meta.franja_pico.hora)} con ${pct(meta.franja_pico.porcentaje)}.`,
+        columnas: Array.from({ length: 24 }, (_, h) => String(h)),
+        filas: [1, 2, 3, 4, 5, 6, 7].map((dia) => ({
+          etiqueta: DIAS_CORTOS[dia],
+          celdas: data.matriz
+            .filter((c) => c.dia === dia)
+            .map((c) => ({
+              valor: c.porcentaje,
+              texto: `${pct(c.porcentaje)} (${c.promedio} celdas)`,
             })),
-          }),
-        ]),
-        subPanel('Promedio por día', [
-          createHbarChart({
-            label: 'Ocupación promedio por día de la semana',
-            max: 100,
-            items: [...data.por_dia]
-              .sort((a, b) => b.porcentaje - a.porcentaje)
-              .map((d) => ({
-                etiqueta: DIAS[d.dia],
-                valor: d.porcentaje,
-                texto: pct(d.porcentaje),
-              })),
-          }),
-        ]),
-      ]),
-    ],
+        })),
+      });
+      pintarColumnas($('grafico-ocupacion-hora'), {
+        label: 'Ocupación promedio por hora del día',
+        items: data.por_hora.map((h) => ({
+          etiqueta: `${h.hora}h`,
+          valor: h.porcentaje,
+          estado: h.hora === meta.hora_pico.hora ? 'actual' : 'pasada',
+          titulo: `${hora(h.hora)} · ${pct(h.porcentaje)}`,
+        })),
+      });
+      pintarBarrasH($('grafico-ocupacion-dia'), {
+        label: 'Ocupación promedio por día de la semana',
+        max: 100,
+        items: [...data.por_dia]
+          .sort((a, b) => b.porcentaje - a.porcentaje)
+          .map((d) => ({ etiqueta: DIAS[d.dia], valor: d.porcentaje, texto: pct(d.porcentaje) })),
+      });
+    },
   },
   {
     id: 'financiero',
-    req: 'REP-11',
-    titulo: 'Financiero',
-    descripcion:
-      'Ingresos por período, método de pago, tipo de vehículo y concepto; descuentos otorgados.',
-    filtros: [
-      { tipo: 'rango' },
-      {
-        tipo: 'select',
-        clave: 'agrupar',
-        label: 'Agrupar por',
-        opciones: [
-          { value: 'dia', label: 'Día' },
-          { value: 'semana', label: 'Semana' },
-          { value: 'mes', label: 'Mes' },
-        ],
-      },
-    ],
-    pintar: ({ data, meta }) => {
+    filtros: ['rango', 'agrupar'],
+    tablas: {
+      periodos: (p) => [p.periodoTexto, String(p.facturas), cop(p.descuentos), cop(p.total)],
+      descuentos: (d) => [[d.nombre, `${d.porcentaje} %`], String(d.facturas), cop(d.descuentos)],
+    },
+    pintar: ({ data, meta }, t) => {
       const etiquetaPeriodo = (p) =>
         meta.agrupar === 'mes'
           ? p
@@ -778,361 +421,185 @@ const REPORTES = [
             : formatearFecha(p).slice(0, 5);
       const segmentos = (lista) =>
         lista.map((x) => ({ etiqueta: x.etiqueta, valor: x.total, texto: cop(x.total) }));
-      return [
-        createKpis({
-          label: 'Resumen financiero',
-          items: [
-            {
-              label: 'Ingresos del período',
-              value: cop(meta.total),
-              main: true,
-              note: rangoTexto(meta),
-            },
-            {
-              label: 'Facturas',
-              value: meta.facturas,
-              note: `${meta.sin_cobro} en $ 0 (mensualidades)`,
-            },
-            {
-              label: 'Ticket promedio',
-              value: cop(meta.ticket_promedio),
-              note: 'parqueo con cobro',
-            },
-            {
-              label: 'Descuentos',
-              value: cop(meta.descuentos),
-              note: `sobre ${cop(meta.subtotal)}`,
-            },
-          ],
-        }),
-        subPanel(`Ingresos por ${meta.agrupar === 'dia' ? 'día' : meta.agrupar}`, [
-          createLineChart({
-            label: `Ingresos por ${meta.agrupar}`,
-            formato: cop,
-            formatoCorto: copCorto,
-            puntos: data.por_periodo.map((p) => ({
-              etiqueta: etiquetaPeriodo(p.periodo),
-              valor: p.total,
-              titulo: `${p.periodo} · ${cop(p.total)} · ${p.facturas} facturas`,
-            })),
-          }),
-        ]),
-        el('div', { className: 'report-grid report-grid--3' }, [
-          subPanel('Por método de pago', [
-            createStackedMeter({
-              label: 'Ingresos por método de pago',
-              segmentos: segmentos(data.por_metodo),
-            }),
-          ]),
-          subPanel('Por tipo de vehículo', [
-            createStackedMeter({
-              label: 'Ingresos por tipo de vehículo',
-              segmentos: segmentos(data.por_tipo_vehiculo),
-            }),
-          ]),
-          subPanel('Por concepto', [
-            createStackedMeter({
-              label: 'Ingresos por concepto',
-              segmentos: segmentos(data.por_concepto),
-            }),
-          ]),
-        ]),
-        el('div', { className: 'report-grid' }, [
-          subPanel('Detalle por período', [
-            tabla({
-              caption: 'Ingresos por período',
-              minWidth: 480,
-              rows: [...data.por_periodo].reverse(),
-              rowKey: (p) => p.periodo,
-              columns: [
-                {
-                  key: 'periodo',
-                  label: 'Período',
-                  render: (p) =>
-                    nowrap(meta.agrupar === 'mes' ? p.periodo : formatearFecha(p.periodo)),
-                },
-                {
-                  key: 'facturas',
-                  label: 'Facturas',
-                  align: 'right',
-                  render: (p) => String(p.facturas),
-                },
-                {
-                  key: 'desc',
-                  label: 'Descuentos',
-                  align: 'right',
-                  render: (p) => nowrap(cop(p.descuentos)),
-                },
-                {
-                  key: 'total',
-                  label: 'Total',
-                  align: 'right',
-                  render: (p) => el('strong', { className: 'cell-nowrap', text: cop(p.total) }),
-                },
-              ],
-            }),
-          ]),
-          subPanel('Descuentos otorgados', [
-            tabla({
-              caption: 'Descuentos otorgados',
-              minWidth: 420,
-              rows: data.descuentos,
-              empty: { title: 'Sin descuentos', text: 'No se aplicaron descuentos en el período.' },
-              columns: [
-                {
-                  key: 'nombre',
-                  label: 'Descuento',
-                  render: (d) => conSub(d.nombre, `${d.porcentaje} %`),
-                },
-                {
-                  key: 'facturas',
-                  label: 'Facturas',
-                  align: 'right',
-                  render: (d) => String(d.facturas),
-                },
-                {
-                  key: 'valor',
-                  label: 'Descontado',
-                  align: 'right',
-                  render: (d) => nowrap(cop(d.descuentos)),
-                },
-              ],
-            }),
-          ]),
-        ]),
-      ];
+      ponerKpi('financiero-kpi-1', { valor: cop(meta.total), nota: rangoTexto(meta) });
+      ponerKpi('financiero-kpi-2', {
+        valor: meta.facturas,
+        nota: `${meta.sin_cobro} en $ 0 (mensualidades)`,
+      });
+      ponerKpi('financiero-kpi-3', { valor: cop(meta.ticket_promedio), nota: 'parqueo con cobro' });
+      ponerKpi('financiero-kpi-4', {
+        valor: cop(meta.descuentos),
+        nota: `sobre ${cop(meta.subtotal)}`,
+      });
+      $('financiero-linea-titulo').textContent =
+        `Ingresos por ${meta.agrupar === 'dia' ? 'día' : meta.agrupar}`;
+      pintarLinea($('grafico-ingresos'), {
+        label: `Ingresos por ${meta.agrupar}`,
+        formato: cop,
+        formatoCorto: copCorto,
+        puntos: data.por_periodo.map((p) => ({
+          etiqueta: etiquetaPeriodo(p.periodo),
+          valor: p.total,
+          titulo: `${p.periodo} · ${cop(p.total)} · ${p.facturas} facturas`,
+        })),
+      });
+      pintarApilada($('grafico-metodo'), {
+        label: 'Ingresos por método de pago',
+        segmentos: segmentos(data.por_metodo),
+      });
+      pintarApilada($('grafico-tipo'), {
+        label: 'Ingresos por tipo de vehículo',
+        segmentos: segmentos(data.por_tipo_vehiculo),
+      });
+      pintarApilada($('grafico-concepto'), {
+        label: 'Ingresos por concepto',
+        segmentos: segmentos(data.por_concepto),
+      });
+      t.periodos.pintar(
+        [...data.por_periodo].reverse().map((p) => ({
+          ...p,
+          periodoTexto: meta.agrupar === 'mes' ? p.periodo : formatearFecha(p.periodo),
+        }))
+      );
+      t.descuentos.pintar(data.descuentos);
     },
   },
 ];
 
-function rangoTexto(meta) {
-  return meta.desde === meta.hasta
-    ? formatearFecha(meta.desde)
-    : `${formatearFecha(meta.desde)} – ${formatearFecha(meta.hasta)}`;
-}
-
 // ---------------------------------------------------------------------------
-// Estado, filtros y pintado
+// Estado, filtros y carga
 // ---------------------------------------------------------------------------
-const estado = {
-  activo: REPORTES[0].id,
-  filtros: Object.fromEntries(REPORTES.map((r) => [r.id, valoresIniciales(r)])),
-  puertas: [],
-  tipos: [],
-  peticion: 0,
-};
-const zonas = {
-  nav: el('div', { className: 'reports-nav' }),
-  contenido: el('div', { className: 'reports-main' }),
-};
+const estado = { activo: REPORTES[0].id, filtros: {}, tablas: {}, peticion: 0 };
 
 function valoresIniciales(reporte) {
   const v = reporte.paginado ? { pagina: 1, limite: 20 } : {};
-  for (const f of reporte.filtros) {
-    if (f.tipo === 'rango') Object.assign(v, RANGO);
-    if (f.tipo === 'fecha') v.fecha = hoy;
-    if (f.tipo === 'limite') v.limite = 10;
-    if (f.tipo === 'select') v[f.clave] = f.opciones[0].value;
+  for (const clave of reporte.filtros) {
+    if (clave === 'rango') Object.assign(v, RANGO);
+    else if (clave === 'fecha') v.fecha = hoy;
+    else if (clave === 'limite') v.limite = 10;
+    else if (clave !== 'placa') v[clave] = $(`${reporte.id}-${clave}`).value;
   }
   return v;
 }
 
-function controlesFiltro(reporte) {
+function conectarFiltros(reporte) {
   const valores = estado.filtros[reporte.id];
-  const aplicar = (clave) => (valor) => {
+  const aplicar = (clave, valor) => {
     valores[clave] = valor;
     if (reporte.paginado) valores.pagina = 1;
     cargar();
   };
-  const fecha = (clave, label) => {
-    const input = createInput({ type: 'date', value: valores[clave] });
+  const fecha = (clave) => {
+    const input = $(`${reporte.id}-${clave}`);
+    input.value = valores[clave];
     input.max = hoy;
-    input.addEventListener('change', () => input.value && aplicar(clave)(input.value));
-    return createField({ label, control: input });
+    input.addEventListener('change', () => input.value && aplicar(clave, input.value));
   };
-  const select = (clave, label, opciones) =>
-    createField({
-      label,
-      control: createSelect({
-        options: opciones,
-        value: valores[clave] ?? '',
-        onChange: (e) => aplicar(clave)(e.target.value),
-      }),
-    });
-  const controles = reporte.filtros.flatMap((f) => {
-    switch (f.tipo) {
-      case 'rango':
-        return [fecha('desde', 'Desde'), fecha('hasta', 'Hasta')];
-      case 'fecha':
-        return [fecha('fecha', 'Fecha')];
-      case 'select':
-        return [select(f.clave, f.label, f.opciones)];
-      case 'limite':
-        return [
-          select(
-            'limite',
-            'Mostrar',
-            [5, 10, 20, 50].map((n) => ({ value: String(n), label: `Top ${n}` }))
-          ),
-        ];
-      case 'puerta':
-        return [
-          select('puerta_id', 'Puerta', [
-            { value: '', label: 'Todas' },
-            ...estado.puertas.map((p) => ({ value: String(p.id), label: p.nombre })),
-          ]),
-        ];
-      case 'tipo-incidencia':
-        return [
-          select('tipo', 'Tipo', [
-            { value: '', label: 'Todos' },
-            ...estado.tipos.map((t) => ({ value: String(t.id), label: t.nombre })),
-          ]),
-        ];
-      case 'placa':
-        return [
-          createSearchBox({
-            label: 'Placa',
-            placeholder: 'Ej. MNP908',
-            value: valores.placa ?? '',
-            transform: normalizarPlaca,
-            onSearch: aplicar('placa'),
-          }),
-        ];
-      default:
-        return [];
+  for (const clave of reporte.filtros) {
+    if (clave === 'rango') {
+      fecha('desde');
+      fecha('hasta');
+    } else if (clave === 'fecha') {
+      fecha('fecha');
+    } else if (clave === 'placa') {
+      conectarBusqueda($(`${reporte.id}-placa`), (valor) => aplicar('placa', valor), {
+        transform: normalizarPlaca,
+      });
+    } else {
+      const select = $(`${reporte.id}-${clave}`);
+      select.value = String(valores[clave] ?? '');
+      select.addEventListener('change', () => aplicar(clave, select.value));
     }
-  });
-  return el('div', { className: 'filters' }, controles);
-}
-
-function pintarNav() {
-  zonas.nav.replaceChildren(
-    createLevelTabs({
-      niveles: REPORTES.map((r) => ({ id: r.id, nombre: `${r.req.slice(4)} · ${r.titulo}` })),
-      activoId: estado.activo,
-      idPanel: (id) => `${ID_PANEL}-${id}`,
-      label: 'Reportes',
-      vertical: true,
-      onChange: (id, { enfocar } = {}) => {
-        seleccionar(id);
-        if (enfocar) zonas.nav.querySelector('.level-tab.is-active')?.focus();
-      },
-    })
-  );
-}
-
-function seleccionar(id) {
-  estado.activo = id;
-  try {
-    history.replaceState(null, '', `#${id}`);
-  } catch {
-    /* sin historial: solo no se recuerda */
   }
-  pintarNav();
-  pintarReporte();
-}
-
-let resultado = el('div', { attrs: { 'aria-live': 'polite' } });
-let exportar = null;
-
-function pintarReporte() {
-  const reporte = REPORTES.find((r) => r.id === estado.activo);
-  resultado = el('div', {
-    className: 'stack',
-    attrs: { 'aria-live': 'polite', 'aria-busy': 'true' },
-  });
-  exportar = createButton({
-    label: 'Exportar CSV',
-    variant: 'dark',
-    size: 'sm',
-    icon: 'i-out',
-    href: '#',
-  });
-  exportar.setAttribute('download', '');
-  const panel = createPanel({
-    title: `${reporte.req} · ${reporte.titulo}`,
-    actions: [
-      el('div', { className: 'report-actions' }, [
-        exportar,
-        createButton({
-          label: 'Imprimir',
-          size: 'sm',
-          icon: 'i-print',
-          onClick: () => window.print(),
-        }),
-      ]),
-    ],
-    children: [
-      el('div', { className: 'stack' }, [
-        el('p', { className: 'report-description', text: reporte.descripcion }),
-        controlesFiltro(reporte),
-        resultado,
-      ]),
-    ],
-  });
-  panel.id = `${ID_PANEL}-${reporte.id}`;
-  panel.setAttribute('role', 'tabpanel');
-  panel.setAttribute('aria-labelledby', `tab-${panel.id}`);
-  zonas.contenido.replaceChildren(panel);
-  cargar();
 }
 
 async function cargar() {
   const reporte = REPORTES.find((r) => r.id === estado.activo);
   const filtros = estado.filtros[reporte.id];
-  exportar?.setAttribute('href', urlReporteCsv(reporte.id, filtros));
+  const id = reporte.id;
+  $(`${id}-exportar`).href = urlReporteCsv(id, filtros);
   const numero = ++estado.peticion;
-  resultado.setAttribute('aria-busy', 'true');
-  resultado.replaceChildren(
-    el('div', { className: 'report-loading' }, [createSpinner({ label: 'Generando reporte…' })])
-  );
+  $(`${id}-resultado`).setAttribute('aria-busy', 'true');
+  $(`${id}-cargando`).classList.remove('hidden');
+  $(`${id}-error`).classList.add('hidden');
+  $(`${id}-datos`).classList.add('hidden');
   try {
-    const respuesta = await obtenerReporte(reporte.id, filtros);
+    const respuesta = await obtenerReporte(id, filtros);
     if (numero !== estado.peticion) return; // llegó una respuesta más nueva
-    const paginacion = reporte.paginado
-      ? {
-          pagina: respuesta.meta.pagina,
-          totalPaginas: respuesta.meta.total_paginas,
-          total: respuesta.meta.total,
-          onChange: (pagina) => {
-            filtros.pagina = pagina;
-            cargar();
-          },
-        }
-      : undefined;
-    resultado.replaceChildren(...reporte.pintar(respuesta, paginacion).filter(Boolean));
+    reporte.pintar(respuesta, estado.tablas[id]);
+    $(`${id}-datos`).classList.remove('hidden');
   } catch (error) {
     if (numero !== estado.peticion) return;
-    resultado.replaceChildren(
-      createEmptyState({ title: 'No se pudo generar el reporte', text: error.message })
-    );
-    showToast(error.message, 'error');
+    $(`${id}-error`).querySelector('p').textContent = error.message;
+    $(`${id}-error`).classList.remove('hidden');
+    mostrarAviso(error.message, 'error');
   } finally {
-    if (numero === estado.peticion) resultado.setAttribute('aria-busy', 'false');
+    if (numero === estado.peticion) {
+      $(`${id}-cargando`).classList.add('hidden');
+      $(`${id}-resultado`).setAttribute('aria-busy', 'false');
+    }
   }
 }
 
+const pestanas = conectarPestanas($('reportes-nav'), {
+  vertical: true,
+  onChange: (id) => {
+    estado.activo = id;
+    try {
+      history.replaceState(null, '', `#${id}`);
+    } catch {
+      /* sin historial: solo no se recuerda */
+    }
+    cargar();
+  },
+});
+
 async function iniciar() {
-  const app = await montarApp({
-    paginaId: 'reportes',
-    cabecera: () => ({
-      titulo: 'Reportes',
-      subtitulo: 'los 11 reportes del administrador · exportar a CSV e imprimir',
-    }),
-  });
+  const app = await montarMarco({ paginaId: 'reportes' });
   if (!app) return;
-  estado.puertas = app.sede?.puertas ?? [];
+
+  // Opciones que vienen de la BD: puertas de la sede y tipos de incidencia.
+  const puertas = [
+    { value: '', label: 'Todas' },
+    ...(app.sede?.puertas ?? []).map((p) => ({ value: String(p.id), label: p.nombre })),
+  ];
+  llenarSelect($('entradas-puerta_id'), { opciones: puertas });
+  llenarSelect($('salidas-puerta_id'), { opciones: puertas });
   try {
-    estado.tipos = await listarTiposIncidencia();
+    const tipos = await listarTiposIncidencia();
+    llenarSelect($('incidencias-tipo'), {
+      opciones: [
+        { value: '', label: 'Todos' },
+        ...tipos.map((t) => ({ value: String(t.id), label: t.nombre })),
+      ],
+    });
   } catch {
     /* el filtro de tipo queda solo con "Todos" */
   }
+
+  for (const reporte of REPORTES) {
+    estado.filtros[reporte.id] = valoresIniciales(reporte);
+    conectarFiltros(reporte);
+    $(`${reporte.id}-imprimir`).addEventListener('click', () => window.print());
+    estado.tablas[reporte.id] = Object.fromEntries(
+      Object.entries(reporte.tablas).map(([tablaId, valores]) => [
+        tablaId,
+        conectarTabla($(`tabla-${tablaId}`), {
+          plantilla: `tpl-${tablaId}`,
+          rellenar: (fila, dato) => rellenarFila(fila, valores(dato)),
+          onPagina: (pagina) => {
+            estado.filtros[reporte.id].pagina = pagina;
+            cargar();
+          },
+        }),
+      ])
+    );
+  }
+
   const inicial = location.hash.slice(1);
   if (REPORTES.some((r) => r.id === inicial)) estado.activo = inicial;
-  app.main.append(el('div', { className: 'reports' }, [zonas.nav, zonas.contenido]));
-  pintarNav();
-  pintarReporte();
+  pestanas.activar(estado.activo);
+  await cargar();
 }
 
 iniciar();

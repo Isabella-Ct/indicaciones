@@ -1,0 +1,11 @@
+/* ==========================================================================
+   PARKO · Hoja principal de todas las páginas (HTML estático con clases Atomic
+   Design: atom-*, molecule-*, organism-*, template-*).
+   Orden: tokens → base → átomos → moléculas → organismos → plantillas.
+   ========================================================================== */
+@import url('./tokens.css');
+@import url('./base.css');
+@import url('./atomic/atoms.css');
+@import url('./atomic/molecules.css');
+@import url('./atomic/organisms.css');
+@import url('./atomic/templates.css');

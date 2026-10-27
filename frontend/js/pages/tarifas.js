@@ -2,425 +2,257 @@
  * Tarifas — REQ-TAR-1/2: tarifa vigente por tipo, nueva tarifa (admin) y simulador
  * "si un carro dura X minutos, paga $Y". El cálculo lo hace siempre el servidor.
  * El administrador edita además los parámetros del negocio (tabla configuracion).
+ * HTML en app/tarifas.html.
  */
-import { el } from '../utils/dom.js';
-import { montarApp } from './comun/montar-app.js';
-import { limpiarErrores, mostrarErrorApi, marcarError } from './comun/formularios.js';
-import { createPanel } from '../components/molecules/panel/panel.js';
-import { createField } from '../components/molecules/field/field.js';
-import { createTiles } from '../components/molecules/tiles/tiles.js';
-import { createAlert, setAlert } from '../components/molecules/alert/alert.js';
-import { createDataList } from '../components/molecules/data-list/data-list.js';
-import { createCharge } from '../components/molecules/charge/charge.js';
-import { showToast } from '../components/molecules/toast/toast.js';
-import { createDataTable } from '../components/organisms/data-table/data-table.js';
-import { confirmar } from './comun/confirmar.js';
-import { createButton, setButtonLoading } from '../components/atoms/button/button.js';
-import { createInput } from '../components/atoms/input/input.js';
-import { createIcon } from '../components/atoms/icon/icon.js';
-import { createLabelCaps } from '../components/atoms/label-caps/label-caps.js';
+import { montarMarco } from './comun/marco-app.js';
+import { confirmar, mostrarAviso } from './comun/dialogos.js';
+import { clonar, marcarCampo, mostrarAlerta, botonCargando } from './comun/plantillas.js';
+import { conectarTabla } from './comun/tablas.js';
 import { obtenerTarifas, crearTarifa, simularCobro } from '../services/facturacion.service.js';
 import { listarParametros, actualizarParametro } from '../services/configuracion.service.js';
 import { formatearCOP, formatearFechaHora } from '../utils/formato.js';
 import { tienePermiso } from '../utils/sesion.js';
 
+const $ = (id) => document.getElementById(id);
+const mostrar = (nodo, visible) => nodo.classList.toggle('hidden', !visible);
 const TIPOS = { carro: 'Carros', moto: 'Motos' };
-const estado = { sesion: null, vigentes: { carro: null, moto: null }, historial: [] };
-const zonas = {
-  vigentes: el('div', { className: 'page-grid' }),
-  historial: el('div'),
-  parametros: el('div'),
-};
+const CAMPOS = ['valor_fraccion', 'minutos_fraccion', 'minutos_gracia', 'valor_dia_maximo'];
+const estado = { sesion: null, vigentes: { carro: null, moto: null } };
 const puede = (codigo) => tienePermiso(estado.sesion, codigo);
+const gestiona = () => puede('tarifas.gestionar');
+const formulario = $('form-tarifa');
+const tipoActual = () => formulario.querySelector('input[name="tipo-tarifa"]:checked').value;
 
-function panelVigente(tipo) {
+// ---------------------------------------------------------------- vigentes e historial
+function pintarVigente(tipo) {
   const t = estado.vigentes[tipo];
-  return createPanel({
-    title: `Tarifa vigente · ${TIPOS[tipo]}`,
-    children: t
-      ? [
-          el('p', { className: 'tariff-headline' }, [
-            createIcon({ name: tipo === 'moto' ? 'i-moto' : 'i-car' }),
-            el('strong', { text: formatearCOP(t.valor_fraccion) }),
-            el('span', { text: ` / ${t.unidad}` }),
-          ]),
-          createDataList({
-            items: [
-              {
-                term: 'Fracción',
-                value: `${t.minutos_fraccion} min${t.minutos_fraccion === 1 ? ' (cobro por minuto)' : ''}`,
-              },
-              {
-                term: 'Gracia',
-                value: t.minutos_gracia ? `${t.minutos_gracia} min` : 'Sin gracia',
-              },
-              { term: 'Tope del día', value: formatearCOP(t.valor_dia_maximo) },
-              { term: 'Vigente desde', value: formatearFechaHora(t.vigente_desde) },
-            ],
-          }),
-        ]
-      : [el('p', { className: 'field-error', text: 'No hay tarifa vigente: no se puede cobrar.' })],
-  });
+  mostrar($(`vigente-${tipo}`), Boolean(t));
+  mostrar($(`vigente-${tipo}-sin`), !t);
+  if (!t) return;
+  $(`vigente-${tipo}-valor`).textContent = formatearCOP(t.valor_fraccion);
+  $(`vigente-${tipo}-unidad`).textContent = ` / ${t.unidad}`;
+  $(`vigente-${tipo}-fraccion`).textContent =
+    `${t.minutos_fraccion} min${t.minutos_fraccion === 1 ? ' (cobro por minuto)' : ''}`;
+  $(`vigente-${tipo}-gracia`).textContent = t.minutos_gracia
+    ? `${t.minutos_gracia} min`
+    : 'Sin gracia';
+  $(`vigente-${tipo}-tope`).textContent = formatearCOP(t.valor_dia_maximo);
+  $(`vigente-${tipo}-desde`).textContent = formatearFechaHora(t.vigente_desde);
 }
 
-function pintarVigentes() {
-  zonas.vigentes.replaceChildren(panelVigente('carro'), panelVigente('moto'));
-}
-
-function pintarHistorial() {
-  if (!puede('tarifas.gestionar')) return;
-  zonas.historial.replaceChildren(
-    createPanel({
-      title: 'Historial de tarifas',
-      children: [
-        el('p', {
-          className: 'field-hint',
-          text: 'Cada factura guarda la tarifa con la que se calculó: cambiar la tarifa no altera las facturas anteriores.',
-        }),
-        createDataTable({
-          caption: 'Historial de tarifas',
-          minWidth: 760,
-          rows: estado.historial,
-          rowClass: (t) => (t.activa ? 'is-highlighted' : ''),
-          empty: { title: 'Sin tarifas' },
-          columns: [
-            {
-              key: 'tipo',
-              label: 'Tipo',
-              render: (t) => (t.tipo_vehiculo === 'moto' ? 'Moto' : 'Carro'),
-            },
-            { key: 'descripcion', label: 'Tarifa', render: (t) => t.descripcion },
-            {
-              key: 'desde',
-              label: 'Vigente desde',
-              render: (t) =>
-                el('span', { className: 'cell-nowrap', text: formatearFechaHora(t.vigente_desde) }),
-            },
-            { key: 'estado', label: 'Estado', render: (t) => (t.activa ? 'Vigente' : 'Anterior') },
-          ],
-        }),
-      ],
-    })
-  );
-}
-
-/** Simulador + formulario de nueva tarifa (los valores del formulario se simulan en vivo). */
-function panelEditor() {
-  let tipo = 'carro';
-  const gestiona = puede('tarifas.gestionar');
-  const numero = (props) => createInput({ type: 'number', inputMode: 'numeric', ...props });
-  const control = {
-    valor_fraccion: numero({ placeholder: 'Ej. 120' }),
-    minutos_fraccion: numero({ placeholder: 'Ej. 1' }),
-    minutos_gracia: numero({ placeholder: 'Ej. 0' }),
-    valor_dia_maximo: numero({ placeholder: 'Ej. 28000' }),
-  };
-  const campos = {
-    valor_fraccion: createField({
-      label: 'Valor por fracción',
-      control: control.valor_fraccion,
-      required: true,
-      hint: 'Pesos por cada fracción.',
-    }),
-    minutos_fraccion: createField({
-      label: 'Minutos por fracción',
-      control: control.minutos_fraccion,
-      required: true,
-      hint: '1 = cobro por minuto; 15 = cada cuarto de hora.',
-    }),
-    minutos_gracia: createField({
-      label: 'Minutos de gracia',
-      control: control.minutos_gracia,
-      hint: 'Estadías hasta este tiempo no pagan.',
-    }),
-    valor_dia_maximo: createField({
-      label: 'Tope del día',
-      control: control.valor_dia_maximo,
-      required: true,
-      hint: 'Máximo por cada bloque de 24 h.',
-    }),
-  };
-  const minutos = numero({ value: '157' });
-  const campoMinutos = createField({
-    label: 'Si dura (minutos)',
-    control: minutos,
-    required: true,
-  });
-  const resultado = el('div', { className: 'charge-summary', attrs: { 'aria-live': 'polite' } });
-  const pasos = el('ol', {
-    className: 'charge-steps',
-    attrs: { 'aria-label': 'Detalle del cálculo' },
-  });
-  const alerta = createAlert();
-
-  function cargarVigente() {
-    const t = estado.vigentes[tipo];
-    for (const clave of Object.keys(control)) control[clave].value = t ? String(t[clave]) : '';
-  }
-
-  /** Valores del formulario (si son válidos) para simular la tarifa propuesta. */
-  function propuesta() {
-    const v = Object.fromEntries(
-      Object.entries(control).map(([k, input]) => [
-        k,
-        input.value === '' ? NaN : Number(input.value),
-      ])
-    );
-    if (Number.isNaN(v.minutos_gracia)) v.minutos_gracia = 0;
-    const ok =
-      v.valor_fraccion >= 0 &&
-      v.minutos_fraccion >= 1 &&
-      v.minutos_gracia >= 0 &&
-      v.valor_dia_maximo >= 0;
-    return ok ? v : null;
-  }
-
-  let temporizador = null;
-  function simularPronto() {
-    clearTimeout(temporizador);
-    temporizador = setTimeout(simular, 250);
-  }
-
-  async function simular() {
-    const m = Number(minutos.value);
-    if (!(m >= 0) || !Number.isInteger(m)) {
-      resultado.replaceChildren(el('p', { className: 'field-hint', text: 'Escribe los minutos.' }));
-      pasos.replaceChildren();
-      return;
-    }
-    try {
-      const { cobro } = await simularCobro({
-        tipo_vehiculo: tipo,
-        minutos: m,
-        tarifa: gestiona ? (propuesta() ?? undefined) : undefined,
-      });
-      resultado.replaceChildren(
-        createCharge({
-          etiqueta: `Un ${tipo} que dura ${m} min paga`,
-          total: cobro.total,
-          porcentajeTope: cobro.porcentajeTope,
-          nota: cobro.nota,
-        })
-      );
-      pasos.replaceChildren(
-        ...cobro.detalle.filter((d) => d.paso !== 'total').map((d) => el('li', { text: d.texto }))
-      );
-    } catch (error) {
-      resultado.replaceChildren(el('p', { className: 'field-error', text: error.message }));
-      pasos.replaceChildren();
-    }
-  }
-
-  const tiles = createTiles({
-    name: 'tipo-tarifa',
-    label: 'Tipo de vehículo',
-    value: tipo,
-    columns: 2,
-    options: [
-      { value: 'carro', label: 'Carro', icon: 'i-car' },
-      { value: 'moto', label: 'Moto', icon: 'i-moto' },
-    ],
-    onChange: (v) => {
-      tipo = v;
-      cargarVigente();
-      simular();
-    },
-  });
-
-  minutos.addEventListener('input', simularPronto);
-  Object.values(control).forEach((input) => input.addEventListener('input', simularPronto));
-
-  const simulador = el('div', { className: 'stack' }, [
-    createLabelCaps({ text: 'Simulador' }),
-    campoMinutos,
-    resultado,
-    pasos,
-  ]);
-
-  if (!gestiona) {
-    cargarVigente();
-    simular();
-    return createPanel({
-      title: 'Simulador de cobro',
-      children: [el('div', { className: 'stack' }, [tiles, simulador])],
-    });
-  }
-
-  const guardar = createButton({ label: 'Guardar nueva tarifa', type: 'submit', icon: 'i-check' });
-  const formulario = el('form', { className: 'stack', attrs: { novalidate: true } }, [
-    alerta,
-    tiles,
-    el('div', { className: 'form-grid' }, Object.values(campos)),
-    el('p', {
-      className: 'field-hint',
-      text: 'Al guardar, la tarifa anterior del mismo tipo deja de estar vigente. Los vehículos que ya están dentro pagan con la tarifa vigente al salir.',
-    }),
-    el('div', {}, [guardar]),
-  ]);
-
-  formulario.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    limpiarErrores(campos, alerta);
-    const v = propuesta();
-    if (!v) {
-      if (!(Number(control.valor_fraccion.value) >= 0) || control.valor_fraccion.value === '')
-        marcarError(campos.valor_fraccion, 'Escribe el valor.');
-      if (!(Number(control.minutos_fraccion.value) >= 1))
-        marcarError(campos.minutos_fraccion, 'Desde 1 minuto.');
-      if (!(Number(control.valor_dia_maximo.value) >= 0) || control.valor_dia_maximo.value === '')
-        marcarError(campos.valor_dia_maximo, 'Escribe el tope.');
-      return;
-    }
-    const ok = await confirmar({
-      titulo: `Nueva tarifa de ${TIPOS[tipo].toLowerCase()}`,
-      mensaje: `${formatearCOP(v.valor_fraccion)} cada ${v.minutos_fraccion} min, tope ${formatearCOP(v.valor_dia_maximo)} por día. Reemplaza la tarifa vigente desde ahora.`,
-      textoConfirmar: 'Guardar tarifa',
-      origen: guardar,
-    });
-    if (!ok) return;
-    setButtonLoading(guardar, true, 'Guardando…');
-    try {
-      const nueva = await crearTarifa({ tipo_vehiculo: tipo, ...v });
-      showToast(
-        `Tarifa de ${TIPOS[tipo].toLowerCase()} actualizada: ${nueva.descripcion}.`,
-        'success'
-      );
-      setAlert(alerta, '');
-      await recargar();
-    } catch (error) {
-      mostrarErrorApi(error, campos, alerta);
-    } finally {
-      setButtonLoading(guardar, false);
-    }
-  });
-
-  cargarVigente();
-  simular();
-  return createPanel({
-    title: 'Nueva tarifa y simulador',
-    children: [el('div', { className: 'tariff-editor' }, [formulario, simulador])],
-  });
-}
+const historial = conectarTabla($('tabla-historial'), {
+  plantilla: 'tpl-tarifa',
+  rellenar: (fila, t) => {
+    const [tipo, tarifa, desde, estadoTarifa] = fila.cells;
+    fila.classList.toggle('is-highlighted', t.activa);
+    tipo.textContent = t.tipo_vehiculo === 'moto' ? 'Moto' : 'Carro';
+    tarifa.textContent = t.descripcion;
+    desde.firstElementChild.textContent = formatearFechaHora(t.vigente_desde);
+    estadoTarifa.textContent = t.activa ? 'Vigente' : 'Anterior';
+  },
+});
 
 async function recargar() {
   try {
-    const datos = await obtenerTarifas({ historial: puede('tarifas.gestionar') });
+    const datos = await obtenerTarifas({ historial: gestiona() });
     estado.vigentes = datos.vigentes;
-    estado.historial = datos.historial ?? [];
-    pintarVigentes();
-    pintarHistorial();
+    pintarVigente('carro');
+    pintarVigente('moto');
+    if (gestiona()) historial.pintar(datos.historial ?? []);
   } catch (error) {
-    showToast(error.message, 'error');
+    mostrarAviso(error.message, 'error');
   }
 }
 
+// ---------------------------------------------------------------- simulador y nueva tarifa
+function cargarVigenteEnFormulario() {
+  const t = estado.vigentes[tipoActual()];
+  for (const clave of CAMPOS) $(clave).value = t ? String(t[clave]) : '';
+}
+
+/** Valores del formulario (si son válidos) para simular la tarifa propuesta. */
+function propuesta() {
+  const v = Object.fromEntries(
+    CAMPOS.map((k) => [k, $(k).value === '' ? NaN : Number($(k).value)])
+  );
+  if (Number.isNaN(v.minutos_gracia)) v.minutos_gracia = 0;
+  const ok =
+    v.valor_fraccion >= 0 &&
+    v.minutos_fraccion >= 1 &&
+    v.minutos_gracia >= 0 &&
+    v.valor_dia_maximo >= 0;
+  return ok ? v : null;
+}
+
+function ponerResultado({ sinMinutos = false, error = '', cobro = null, etiqueta = '' }) {
+  mostrar($('sim-sin-minutos'), sinMinutos);
+  $('sim-error').textContent = error;
+  mostrar($('sim-error'), Boolean(error));
+  mostrar($('sim-resultado'), Boolean(cobro));
+  $('sim-pasos').replaceChildren(
+    ...(cobro?.detalle ?? [])
+      .filter((d) => d.paso !== 'total')
+      .map((d) => {
+        const li = clonar('tpl-paso');
+        li.textContent = d.texto;
+        return li;
+      })
+  );
+  if (!cobro) return;
+  $('sim-etiqueta').textContent = etiqueta;
+  $('sim-total').textContent = formatearCOP(cobro.total);
+  const conTope = cobro.porcentajeTope !== null && cobro.porcentajeTope !== undefined;
+  $('sim-pct').textContent = conTope ? `${cobro.porcentajeTope} % del tope` : '';
+  mostrar($('sim-medidor'), conTope);
+  if (conTope) {
+    const v = Math.max(0, Math.min(100, Math.round(cobro.porcentajeTope)));
+    $('sim-medidor').setAttribute('aria-valuenow', String(v));
+    $('sim-medidor').firstElementChild.style.setProperty('--v', String(v));
+  }
+  $('sim-nota').textContent = cobro.nota ?? '';
+}
+
+async function simular() {
+  const m = Number($('sim-minutos').value);
+  if ($('sim-minutos').value === '' || !(m >= 0) || !Number.isInteger(m)) {
+    ponerResultado({ sinMinutos: true });
+    return;
+  }
+  const tipo = tipoActual();
+  try {
+    const { cobro } = await simularCobro({
+      tipo_vehiculo: tipo,
+      minutos: m,
+      tarifa: gestiona() ? (propuesta() ?? undefined) : undefined,
+    });
+    ponerResultado({ cobro, etiqueta: `Un ${tipo} que dura ${m} min paga` });
+  } catch (error) {
+    ponerResultado({ error: error.message });
+  }
+}
+
+let temporizador = null;
+function simularPronto() {
+  clearTimeout(temporizador);
+  temporizador = setTimeout(simular, 250);
+}
+
+$('sim-minutos').addEventListener('input', simularPronto);
+CAMPOS.forEach((k) => $(k).addEventListener('input', simularPronto));
+formulario.addEventListener('change', (e) => {
+  if (e.target.name !== 'tipo-tarifa') return;
+  cargarVigenteEnFormulario();
+  simular();
+});
+
+formulario.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!gestiona()) return;
+  const alerta = $('tarifa-alerta');
+  const guardar = $('tarifa-guardar');
+  mostrarAlerta(alerta, '');
+  CAMPOS.forEach((k) => marcarCampo($(k), ''));
+  const tipo = tipoActual();
+  const v = propuesta();
+  if (!v) {
+    if ($('valor_fraccion').value === '' || !(Number($('valor_fraccion').value) >= 0))
+      marcarCampo($('valor_fraccion'), 'Escribe el valor.');
+    if (!(Number($('minutos_fraccion').value) >= 1))
+      marcarCampo($('minutos_fraccion'), 'Desde 1 minuto.');
+    if ($('valor_dia_maximo').value === '' || !(Number($('valor_dia_maximo').value) >= 0))
+      marcarCampo($('valor_dia_maximo'), 'Escribe el tope.');
+    return;
+  }
+  const ok = await confirmar({
+    titulo: `Nueva tarifa de ${TIPOS[tipo].toLowerCase()}`,
+    mensaje: `${formatearCOP(v.valor_fraccion)} cada ${v.minutos_fraccion} min, tope ${formatearCOP(v.valor_dia_maximo)} por día. Reemplaza la tarifa vigente desde ahora.`,
+    textoConfirmar: 'Guardar tarifa',
+    origen: guardar,
+  });
+  if (!ok) return;
+  botonCargando(guardar, true, 'Guardando…');
+  try {
+    const nueva = await crearTarifa({ tipo_vehiculo: tipo, ...v });
+    mostrarAviso(
+      `Tarifa de ${TIPOS[tipo].toLowerCase()} actualizada: ${nueva.descripcion}.`,
+      'success'
+    );
+    await recargar();
+  } catch (error) {
+    for (const d of error.detalles ?? []) if ($(d.campo)) marcarCampo($(d.campo), d.mensaje);
+    mostrarAlerta(alerta, error.message);
+  } finally {
+    botonCargando(guardar, false);
+  }
+});
+
 // ---------------------------------------------------------------- parámetros (admin)
 /** Valores del negocio de la tabla configuracion (minutos de reserva, membresías, etc.). */
-function pintarParametros(parametros) {
-  const fila = (p) => {
+const parametros = conectarTabla($('tabla-parametros'), {
+  plantilla: 'tpl-parametro',
+  rellenar: (fila, p) => {
+    const [nombre, valor, cambio, accion] = fila.cells;
+    fila.dataset.id = p.clave;
+    nombre.querySelector('strong').textContent = p.descripcion;
+    nombre.querySelector('small').textContent = ` ${p.clave}`;
+    const input = valor.firstElementChild;
     const numerico = p.tipo === 'entero' || p.tipo === 'decimal';
-    const input = createInput({
-      name: p.clave,
-      type: numerico ? 'number' : 'text',
-      value: String(p.valor),
-      inputMode: p.tipo === 'entero' ? 'numeric' : p.tipo === 'decimal' ? 'decimal' : undefined,
-      maxLength: 255,
-    });
+    input.type = numerico ? 'number' : 'text';
+    input.name = p.clave;
+    input.value = String(p.valor);
     input.setAttribute('aria-label', p.descripcion);
-    if (numerico) input.setAttribute('min', p.tipo === 'entero' ? '1' : '0');
-    if (p.tipo === 'decimal') input.setAttribute('step', '0.01');
-    const guardar = createButton({
-      label: 'Guardar',
-      size: 'sm',
-      variant: 'dark',
-      icon: 'i-check',
-    });
+    if (p.tipo === 'entero') input.inputMode = 'numeric';
+    if (p.tipo === 'decimal') input.inputMode = 'decimal';
+    if (numerico) input.min = p.tipo === 'entero' ? '1' : '0';
+    if (p.tipo === 'decimal') input.step = '0.01';
+    const ponerCambio = () => {
+      cambio.textContent = p.actualizado_por
+        ? `${formatearFechaHora(p.actualizado_en)} · ${p.actualizado_por.nombre_completo}`
+        : 'Valor inicial';
+    };
+    ponerCambio();
+    const guardar = accion.firstElementChild;
     guardar.addEventListener('click', async () => {
-      setButtonLoading(guardar, true);
+      botonCargando(guardar, true);
       try {
         const actualizado = await actualizarParametro(p.clave, input.value);
         Object.assign(p, actualizado);
         input.value = String(actualizado.valor);
-        showToast(`Parámetro actualizado: ${p.descripcion}.`, 'success');
+        ponerCambio();
+        mostrarAviso(`Parámetro actualizado: ${p.descripcion}.`, 'success');
       } catch (error) {
-        showToast(error.message, 'error');
+        mostrarAviso(error.message, 'error');
       } finally {
-        setButtonLoading(guardar, false);
+        botonCargando(guardar, false);
       }
     });
-    return { ...p, input, guardar };
-  };
-  const filas = parametros.map(fila);
-  zonas.parametros.replaceChildren(
-    createPanel({
-      title: 'Parámetros del negocio',
-      children: [
-        el('p', {
-          className: 'field-hint',
-          text: 'Valores que usa el sistema al reservar, vender membresías, avisar vencimientos y cobrar con descuento. Los cambios aplican de inmediato.',
-        }),
-        createDataTable({
-          caption: 'Parámetros del negocio',
-          minWidth: 640,
-          rows: filas,
-          rowKey: (f) => f.clave,
-          columns: [
-            {
-              key: 'descripcion',
-              label: 'Parámetro',
-              render: (f) =>
-                el('div', {}, [
-                  el('strong', { text: f.descripcion }),
-                  el('small', { className: 'cell-muted', text: ` ${f.clave}` }),
-                ]),
-            },
-            { key: 'valor', label: 'Valor', render: (f) => f.input },
-            {
-              key: 'actualizado',
-              label: 'Último cambio',
-              render: (f) =>
-                f.actualizado_por
-                  ? `${formatearFechaHora(f.actualizado_en)} · ${f.actualizado_por.nombre_completo}`
-                  : 'Valor inicial',
-            },
-            { key: 'accion', label: 'Acción', render: (f) => f.guardar },
-          ],
-        }),
-      ],
-    })
-  );
-}
-
-async function cargarParametros() {
-  try {
-    pintarParametros(await listarParametros());
-  } catch (error) {
-    showToast(error.message, 'error');
-  }
-}
+  },
+});
 
 async function iniciar() {
-  const app = await montarApp({
-    paginaId: 'tarifas',
-    cabecera: (sesion) => ({
-      titulo: 'Tarifas',
-      subtitulo: tienePermiso(sesion, 'tarifas.gestionar')
-        ? 'cobro por fracción con tope diario · configura y simula'
-        : 'cobro por fracción con tope diario · solo consulta',
-    }),
-  });
+  const app = await montarMarco({ paginaId: 'tarifas' });
   if (!app) return;
   estado.sesion = app.sesion;
+  if (gestiona()) {
+    $('pagina-subtitulo').textContent =
+      '// cobro por fracción con tope diario · configura y simula';
+    $('panel-editor-titulo').textContent = 'Nueva tarifa y simulador';
+    $('editor').classList.replace('template-app-layout-stack', 'template-app-layout-tariff-editor');
+    ['tarifa-campos', 'tarifa-nota', 'tarifa-acciones', 'panel-historial'].forEach((id) =>
+      $(id).classList.remove('hidden')
+    );
+  }
   await recargar();
-  app.main.append(
-    el('div', { className: 'stack' }, [
-      zonas.vigentes,
-      panelEditor(),
-      zonas.historial,
-      puede('configuracion.gestionar') ? zonas.parametros : null,
-    ])
-  );
-  if (puede('configuracion.gestionar')) await cargarParametros();
+  cargarVigenteEnFormulario();
+  simular();
+  if (puede('configuracion.gestionar')) {
+    $('panel-parametros').classList.remove('hidden');
+    try {
+      parametros.pintar(await listarParametros());
+    } catch (error) {
+      mostrarAviso(error.message, 'error');
+    }
+  }
 }
 
 iniciar();

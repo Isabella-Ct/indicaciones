@@ -3,26 +3,20 @@
  * foto (notifica a los administradores) y cambiar mi contraseña. Los clientes
  * ven además "Mis vehículos"; todos, sus últimas notificaciones. Estadías, facturas, membresías,
  * reservas e incidencias del cliente están en Mis movimientos (Fase 7).
+ * HTML en app/mi-cuenta.html.
  */
-import { el } from '../utils/dom.js';
-import { montarApp } from './comun/montar-app.js';
+import { montarMarco } from './comun/marco-app.js';
+import { mostrarAviso } from './comun/dialogos.js';
 import {
-  limpiarErrores,
-  mostrarErrorApi,
-  marcarError,
-  PATRON_CELULAR,
-  PATRON_CORREO,
-} from './comun/formularios.js';
-import { createPanel } from '../components/molecules/panel/panel.js';
-import { createField } from '../components/molecules/field/field.js';
-import { createAlert, setAlert } from '../components/molecules/alert/alert.js';
-import { createPhotoInput } from '../components/molecules/photo-input/photo-input.js';
-import { createDataList } from '../components/molecules/data-list/data-list.js';
-import { showToast } from '../components/molecules/toast/toast.js';
-import { createDataTable } from '../components/organisms/data-table/data-table.js';
-import { createButton, setButtonLoading } from '../components/atoms/button/button.js';
-import { createInput } from '../components/atoms/input/input.js';
-import { createPlate } from '../components/atoms/plate/plate.js';
+  clonar,
+  ponerChip,
+  marcarCampo,
+  mostrarAlerta,
+  botonCargando,
+} from './comun/plantillas.js';
+import { conectarTabla, texto } from './comun/tablas.js';
+import { conectarFoto } from './comun/foto.js';
+import { PATRON_CELULAR, PATRON_CORREO } from './comun/formularios.js';
 import {
   obtenerMiPerfil,
   actualizarMiPerfil,
@@ -30,128 +24,76 @@ import {
 } from '../services/usuarios.service.js';
 import { cambiarContrasena } from '../services/auth.service.js';
 import { misNotificaciones } from '../services/notificaciones.service.js';
-import { createNotificationItem } from '../components/molecules/notification-item/notification-item.js';
-import { createEmptyState } from '../components/molecules/empty-state/empty-state.js';
 import { guardarAviso } from '../utils/almacen.js';
+import { formatearFechaHora } from '../utils/formato.js';
+import { formatearPlaca } from '../utils/placa.js';
 import { etiquetaRol, tienePermiso } from '../utils/sesion.js';
 
-function panelMisDatos(perfil, sesion) {
-  const control = {
-    primer_nombre: createInput({
-      name: 'primer_nombre',
-      value: perfil.primer_nombre,
-      maxLength: 60,
-      autocomplete: 'given-name',
-    }),
-    segundo_nombre: createInput({
-      name: 'segundo_nombre',
-      value: perfil.segundo_nombre,
-      maxLength: 60,
-    }),
-    primer_apellido: createInput({
-      name: 'primer_apellido',
-      value: perfil.primer_apellido,
-      maxLength: 60,
-      autocomplete: 'family-name',
-    }),
-    segundo_apellido: createInput({
-      name: 'segundo_apellido',
-      value: perfil.segundo_apellido,
-      maxLength: 60,
-    }),
-    correo: createInput({
-      name: 'correo',
-      type: 'email',
-      value: perfil.correo,
-      maxLength: 120,
-      autocomplete: 'email',
-    }),
-    celular: createInput({
-      name: 'celular',
-      type: 'tel',
-      inputMode: 'numeric',
-      value: perfil.celular,
-      maxLength: 10,
-      autocomplete: 'tel',
-    }),
-  };
-  const campos = {
-    primer_nombre: createField({
-      label: 'Primer nombre',
-      control: control.primer_nombre,
-      required: true,
-    }),
-    segundo_nombre: createField({ label: 'Segundo nombre', control: control.segundo_nombre }),
-    primer_apellido: createField({
-      label: 'Primer apellido',
-      control: control.primer_apellido,
-      required: true,
-    }),
-    segundo_apellido: createField({ label: 'Segundo apellido', control: control.segundo_apellido }),
-    correo: createField({ label: 'Correo electrónico', control: control.correo, required: true }),
-    celular: createField({
-      label: 'Celular',
-      control: control.celular,
-      required: true,
-      hint: '10 dígitos, empieza por 3.',
-    }),
-    foto: createPhotoInput({
-      label: 'Mi foto',
-      fotoUrl: perfil.foto_url,
-      nombre: perfil.nombre_completo,
-    }),
-  };
-  const alerta = createAlert();
-  const guardar = createButton({ label: 'Guardar mis datos', type: 'submit', icon: 'i-check' });
-  const formulario = el('form', { className: 'stack', attrs: { novalidate: true } }, [
-    createDataList({
-      items: [
-        { term: 'Código', value: String(perfil.id).padStart(5, '0') },
-        { term: 'Documento', value: `${perfil.tipo_documento} ${perfil.numero_documento}` },
-        { term: 'Tipo de usuario', value: etiquetaRol(perfil.rol) },
-        { term: 'Estado', value: perfil.estado === 'activo' ? 'Activo' : 'Inactivo' },
-      ],
-    }),
-    el('p', {
-      className: 'field-hint',
-      text:
-        sesion.rol === 'administrador'
-          ? 'El documento y el rol se cambian desde Usuarios.'
-          : 'El documento, el rol y el estado solo los cambia el administrador. Al guardar, se le notificará el cambio.',
-    }),
-    alerta,
-    el('div', { className: 'form-grid' }, Object.values(campos)),
-    el('div', {}, [guardar]),
-  ]);
+const $ = (id) => document.getElementById(id);
+const TIPOS = {
+  incidencia: 'Incidencia',
+  pico_placa: 'Pico y placa',
+  perfil_actualizado: 'Datos actualizados',
+  membresia_por_vencer: 'Mensualidad',
+  reserva_expirada: 'Reserva',
+  manual: 'Mensaje',
+};
+
+// ---------------------------------------------------------------- mis datos
+const NOMBRES = [
+  'primer_nombre',
+  'segundo_nombre',
+  'primer_apellido',
+  'segundo_apellido',
+  'correo',
+  'celular',
+];
+const foto = conectarFoto('mi-foto');
+
+function prepararDatos(perfil, sesion) {
+  $('dato-codigo').textContent = String(perfil.id).padStart(5, '0');
+  $('dato-documento').textContent = `${perfil.tipo_documento} ${perfil.numero_documento}`;
+  $('dato-rol').textContent = etiquetaRol(perfil.rol);
+  $('dato-estado').textContent = perfil.estado === 'activo' ? 'Activo' : 'Inactivo';
+  $('datos-nota').textContent =
+    sesion.rol === 'administrador'
+      ? 'El documento y el rol se cambian desde Usuarios.'
+      : 'El documento, el rol y el estado solo los cambia el administrador. Al guardar, se le notificará el cambio.';
+  for (const nombre of NOMBRES) $(nombre).value = perfil[nombre] ?? '';
+  foto.reiniciar({ fotoUrl: perfil.foto_url, nombre: perfil.nombre_completo });
+
+  const formulario = $('form-datos');
+  const alerta = $('datos-alerta');
+  const guardar = $('datos-guardar');
 
   function validar() {
     let ok = true;
     for (const nombre of ['primer_nombre', 'primer_apellido', 'correo', 'celular']) {
-      if (!control[nombre].value.trim())
-        ok = marcarError(campos[nombre], 'Este campo es obligatorio.');
+      if (!$(nombre).value.trim()) ok = marcarCampo($(nombre), 'Este campo es obligatorio.');
     }
-    if (control.correo.value.trim() && !PATRON_CORREO.test(control.correo.value.trim())) {
-      ok = marcarError(campos.correo, 'Escribe un correo válido.');
-    }
-    if (control.celular.value.trim() && !PATRON_CELULAR.test(control.celular.value.trim())) {
-      ok = marcarError(campos.celular, 'Celular de 10 dígitos que empieza por 3.');
-    }
+    const correo = $('correo').value.trim();
+    if (correo && !PATRON_CORREO.test(correo))
+      ok = marcarCampo($('correo'), 'Escribe un correo válido.');
+    const celular = $('celular').value.trim();
+    if (celular && !PATRON_CELULAR.test(celular))
+      ok = marcarCampo($('celular'), 'Celular de 10 dígitos que empieza por 3.');
     return ok;
   }
 
   formulario.addEventListener('submit', async (evento) => {
     evento.preventDefault();
-    limpiarErrores(campos, alerta);
+    mostrarAlerta(alerta, '');
+    NOMBRES.forEach((n) => marcarCampo($(n), ''));
     if (!validar()) {
       formulario.querySelector('[aria-invalid="true"]')?.focus();
       return;
     }
-    setButtonLoading(guardar, true, 'Guardando…');
+    botonCargando(guardar, true, 'Guardando…');
     try {
       const { meta } = await actualizarMiPerfil(new FormData(formulario));
       if (meta.campos_cambiados.length === 0) {
-        setButtonLoading(guardar, false);
-        setAlert(alerta, 'No hiciste cambios.', 'info');
+        botonCargando(guardar, false);
+        mostrarAlerta(alerta, 'No hiciste cambios.', 'info');
         return;
       }
       // Se recarga para que el header muestre el nombre y la foto nuevos.
@@ -163,164 +105,113 @@ function panelMisDatos(perfil, sesion) {
       );
       location.reload();
     } catch (error) {
-      setButtonLoading(guardar, false);
-      mostrarErrorApi(error, campos, alerta);
+      botonCargando(guardar, false);
+      for (const d of error.detalles ?? []) if ($(d.campo)) marcarCampo($(d.campo), d.mensaje);
+      mostrarAlerta(alerta, error.message);
     }
   });
-
-  return createPanel({ title: 'Mis datos', children: [formulario] });
 }
 
-function panelContrasena() {
-  const control = {
-    contrasena_actual: createInput({
-      type: 'password',
-      autocomplete: 'current-password',
-      maxLength: 72,
-    }),
-    contrasena_nueva: createInput({
-      type: 'password',
-      autocomplete: 'new-password',
-      maxLength: 72,
-    }),
-    confirmacion: createInput({ type: 'password', autocomplete: 'new-password', maxLength: 72 }),
-  };
-  const campos = {
-    contrasena_actual: createField({
-      label: 'Contraseña actual',
-      control: control.contrasena_actual,
-      required: true,
-    }),
-    contrasena_nueva: createField({
-      label: 'Nueva contraseña',
-      control: control.contrasena_nueva,
-      required: true,
-      hint: 'Mínimo 8 caracteres.',
-    }),
-    confirmacion: createField({
-      label: 'Repite la nueva contraseña',
-      control: control.confirmacion,
-      required: true,
-    }),
-  };
-  const alerta = createAlert();
-  const guardar = createButton({ label: 'Cambiar contraseña', type: 'submit', icon: 'i-key' });
-  const formulario = el('form', { className: 'stack', attrs: { novalidate: true } }, [
-    alerta,
-    ...Object.values(campos),
-    el('div', {}, [guardar]),
-  ]);
+// ---------------------------------------------------------------- contraseña
+function prepararContrasena() {
+  const formulario = $('form-contrasena');
+  const actual = $('contrasena-actual');
+  const nueva = $('contrasena-nueva');
+  const confirmacion = $('contrasena-confirmacion');
+  const alerta = $('contrasena-alerta');
+  const guardar = $('contrasena-guardar');
+  const campos = { contrasena_actual: actual, contrasena_nueva: nueva, confirmacion };
 
   formulario.addEventListener('submit', async (evento) => {
     evento.preventDefault();
-    limpiarErrores(campos, alerta);
+    mostrarAlerta(alerta, '');
+    Object.values(campos).forEach((c) => marcarCampo(c, ''));
     let ok = true;
-    if (!control.contrasena_actual.value)
-      ok = marcarError(campos.contrasena_actual, 'Escribe tu contraseña actual.');
-    if (control.contrasena_nueva.value.length < 8)
-      ok = marcarError(campos.contrasena_nueva, 'Mínimo 8 caracteres.');
-    if (control.confirmacion.value !== control.contrasena_nueva.value)
-      ok = marcarError(campos.confirmacion, 'Las contraseñas no coinciden.');
+    if (!actual.value) ok = marcarCampo(actual, 'Escribe tu contraseña actual.');
+    if (nueva.value.length < 8) ok = marcarCampo(nueva, 'Mínimo 8 caracteres.');
+    if (confirmacion.value !== nueva.value)
+      ok = marcarCampo(confirmacion, 'Las contraseñas no coinciden.');
     if (!ok) return formulario.querySelector('[aria-invalid="true"]')?.focus();
 
-    setButtonLoading(guardar, true, 'Guardando…');
+    botonCargando(guardar, true, 'Guardando…');
     try {
-      await cambiarContrasena({
-        contrasena_actual: control.contrasena_actual.value,
-        contrasena_nueva: control.contrasena_nueva.value,
-      });
+      await cambiarContrasena({ contrasena_actual: actual.value, contrasena_nueva: nueva.value });
       formulario.reset();
-      setAlert(alerta, 'Tu contraseña se cambió correctamente.', 'success');
-      showToast('Contraseña actualizada.', 'success');
+      mostrarAlerta(alerta, 'Tu contraseña se cambió correctamente.', 'success');
+      mostrarAviso('Contraseña actualizada.', 'success');
     } catch (error) {
-      mostrarErrorApi(error, campos, alerta);
+      for (const d of error.detalles ?? [])
+        if (campos[d.campo]) marcarCampo(campos[d.campo], d.mensaje);
+      mostrarAlerta(alerta, error.message);
     } finally {
-      setButtonLoading(guardar, false);
+      botonCargando(guardar, false);
     }
   });
-
-  return createPanel({ title: 'Cambiar contraseña', children: [formulario] });
 }
 
-async function panelMisVehiculos() {
-  let vehiculos = [];
+// ---------------------------------------------------------------- vehículos y avisos
+async function cargarVehiculos() {
+  $('bloque-vehiculos').classList.remove('hidden');
+  const tabla = conectarTabla($('tabla-vehiculos'), {
+    plantilla: 'tpl-vehiculo',
+    rellenar: (fila, v) => {
+      const [placa, tipo, marca, color] = fila.cells;
+      placa.firstElementChild.textContent = formatearPlaca(v.placa);
+      tipo.textContent = v.tipo === 'moto' ? 'Moto' : 'Carro';
+      marca.textContent = texto(`${v.marca ?? ''} ${v.modelo ?? ''}`.trim());
+      color.textContent = texto(v.color);
+    },
+  });
   try {
-    vehiculos = await listarMisVehiculos();
+    tabla.pintar(await listarMisVehiculos());
   } catch (error) {
-    showToast(error.message, 'error');
+    tabla.pintar([]);
+    mostrarAviso(error.message, 'error');
   }
-  return el('div', { className: 'page-grid-full' }, [
-    createPanel({
-      title: 'Mis vehículos',
-      children: [
-        createDataTable({
-          caption: 'Mis vehículos',
-          minWidth: 520,
-          rows: vehiculos,
-          empty: {
-            title: 'Sin vehículos',
-            text: 'No tienes vehículos registrados. Acércate a la caseta para registrarlos.',
-          },
-          columns: [
-            { key: 'placa', label: 'Placa', render: (v) => createPlate({ placa: v.placa }) },
-            { key: 'tipo', label: 'Tipo', render: (v) => (v.tipo === 'moto' ? 'Moto' : 'Carro') },
-            {
-              key: 'marca',
-              label: 'Marca y modelo',
-              render: (v) => `${v.marca ?? ''} ${v.modelo ?? ''}`.trim(),
-            },
-            { key: 'color', label: 'Color' },
-          ],
-        }),
-      ],
-    }),
-  ]);
 }
 
 /** Últimas notificaciones (la bandeja completa está en Notificaciones). */
-async function panelNotificaciones() {
+async function cargarAvisos() {
   let datos = { data: [], meta: { no_leidas: 0 } };
   try {
     datos = await misNotificaciones({ limite: 5 });
   } catch (error) {
-    showToast(error.message, 'error');
+    mostrarAviso(error.message, 'error');
   }
-  return createPanel({
-    title: 'Mis notificaciones',
-    actions: [createButton({ label: 'Ver todas', size: 'sm', href: '/app/notificaciones.html' })],
-    children: [
-      datos.data.length
-        ? el(
-            'ul',
-            { className: 'notice-list' },
-            datos.data.map((n) => createNotificationItem({ notificacion: n }))
-          )
-        : createEmptyState({ title: 'Sin notificaciones', text: 'Aquí verás los avisos del parqueadero.' }),
-      el('p', {
-        className: 'field-hint',
-        text: datos.meta.no_leidas
-          ? `Tienes ${datos.meta.no_leidas} sin leer.`
-          : 'Estás al día.',
-      }),
-    ],
-  });
+  $('avisos-lista').replaceChildren(
+    ...datos.data.map((n) => {
+      const item = clonar('tpl-aviso-cuenta');
+      item.classList.toggle('is-unread', !n.leida);
+      const [chip, meta] = item.querySelector('.molecule-notification-item-meta').children;
+      const tipo = TIPOS[n.tipo] ?? n.tipo;
+      ponerChip(chip, n.leida ? tipo : `Nueva · ${tipo}`, n.leida ? 'neutral' : 'reserved');
+      meta.textContent = `${formatearFechaHora(n.fecha)}${n.enviada_por ? ` · de ${n.enviada_por.nombre}` : ' · sistema'}`;
+      item.querySelector('.molecule-notification-item-title').textContent = n.titulo;
+      item.querySelector('.molecule-notification-item-text').textContent = n.mensaje;
+      return item;
+    })
+  );
+  $('avisos-lista').classList.toggle('hidden', datos.data.length === 0);
+  $('avisos-vacia').classList.toggle('hidden', datos.data.length > 0);
+  $('avisos-resumen').textContent = datos.meta.no_leidas
+    ? `Tienes ${datos.meta.no_leidas} sin leer.`
+    : 'Estás al día.';
 }
 
 async function iniciar() {
-  const app = await montarApp({
-    paginaId: 'mi-cuenta',
-    abiertaATodos: true,
-    cabecera: (sesion) => ({
-      titulo: 'Mi cuenta',
-      subtitulo: `${etiquetaRol(sesion.rol)} · ${sesion.tipo_documento} ${sesion.numero_documento}`,
-    }),
-  });
+  const app = await montarMarco({ paginaId: 'mi-cuenta', abiertaATodos: true });
   if (!app) return;
-  const perfil = await obtenerMiPerfil();
-  const paneles = [panelMisDatos(perfil, app.sesion), panelContrasena()];
-  if (tienePermiso(app.sesion, 'portal.ver')) paneles.push(await panelMisVehiculos());
-  paneles.push(await panelNotificaciones());
-  app.main.append(el('div', { className: 'page-grid' }, paneles));
+  const { sesion } = app;
+  $('pagina-subtitulo').textContent =
+    `// ${etiquetaRol(sesion.rol)} · ${sesion.tipo_documento} ${sesion.numero_documento}`;
+  prepararContrasena();
+  try {
+    prepararDatos(await obtenerMiPerfil(), sesion);
+  } catch (error) {
+    mostrarAviso(error.message, 'error');
+  }
+  if (tienePermiso(sesion, 'portal.ver')) await cargarVehiculos();
+  await cargarAvisos();
 }
 
 iniciar();

@@ -115,7 +115,7 @@ Todos entran con **tipo de documento + número + contraseña**.
 
 | Rol | Tipo | Documento | Contraseña | Nombre | Observación |
 |---|---|---|---|---|---|
-| Administrador | CC | `1000000001` | `Admin2026*` | Laura Gómez | |
+| Administrador | CC | `<1000000001>` | `Admin2026*` | Laura Gómez | |
 | Operador | CC | `1000000002` | `Operador2026*` | Juan Pérez | |
 | Operador | CC | `1000000003` | `Operador2026*` | Sebastián Duque | |
 | Cliente | CC | `1000000004` | `Cliente2026*` | Andrea Salcedo | Mensualidad con celda fija A-04 |
@@ -196,15 +196,25 @@ npm test
 │   └── uploads/              fotos (ignorado por git)
 └── frontend/
     ├── index.html · login.html · 404.html · error.html
-    ├── app/                  una página por pantalla
+    ├── app/                  una página por pantalla, con TODO su marcado escrito en HTML
     ├── assets/               icons.svg (sprite), favicon.svg
-    ├── styles/               tokens.css, base.css, main.css
+    ├── styles/
+    │   ├── atomic.css        hoja principal: importa tokens, base y los cuatro niveles
+    │   ├── tokens.css · base.css
+    │   └── atomic/           atoms.css · molecules.css · organisms.css · templates.css
     └── js/
-        ├── components/       atoms · molecules · organisms · templates (ver su README.md)
-        ├── pages/            un controlador por página (+ comun/: montar-app, campana, formularios…)
+        ├── pages/            un controlador por página: solo eventos del DOM y texto
+        │   └── comun/        marco (header, menú, campana), modales, tablas, mapa, gráficos…
         ├── services/         api.js (fetch) + un servicio por módulo
-        └── utils/            dom, formato (COP, fechas Bogotá), placa, sesión/rol, navegación, almacén
+        └── utils/            formato (COP, fechas Bogotá), placa, sesión/rol, navegación, almacén
 ```
+
+### Frontend: HTML + CSS con Atomic Design, JS solo para eventos
+
+- **El HTML de cada pantalla está escrito completo** en su archivo `.html` (encabezado, menú, paneles, formularios, modales). El JavaScript **no crea componentes**: maneja eventos (clics, teclado, envíos), llama a la API y rellena textos con `textContent`, y muestra u oculta partes con la clase `hidden`.
+- Lo que se repite según los datos de la BD (celdas del mapa, filas de tablas, opciones, notificaciones) está escrito una vez en una etiqueta `<template>` de la página; el JS la copia (`cloneNode`) y le pone el texto.
+- **Clases con el nivel de Atomic Design como prefijo:** `atom-button`, `atom-plate`, `molecule-field`, `molecule-space`, `organism-navbar`, `organism-parking-map-lane`, `template-app-layout-page`… Modificadores con `--` (`atom-button--dark`) y estados con `is-` (`is-active`, `is-selected`). Los valores visuales son los de `docs/diseno-parko/styles.css`, sin cambios.
+- `/app/_catalogo.html` (solo desarrollo) muestra un ejemplo de cada clase.
 
 ## Pantallas
 

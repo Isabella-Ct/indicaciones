@@ -2,31 +2,13 @@
  * Vehículos — REQ-CAR-1 (crear: admin/operador), REQ-CAR-2 (editar: admin),
  * REQ-USR-6 (asignar propietario a un vehículo sin dueño: admin/operador),
  * REQ-CAR-3 (cambiar propietario: admin). Wireframe 02 corregido.
+ * HTML en app/vehiculos.html.
  */
-import { el } from '../utils/dom.js';
-import { montarApp } from './comun/montar-app.js';
-import { limpiarErrores, mostrarErrorApi, marcarError } from './comun/formularios.js';
-import { createPanel } from '../components/molecules/panel/panel.js';
-import { createField } from '../components/molecules/field/field.js';
-import { createTiles } from '../components/molecules/tiles/tiles.js';
-import { createCheck } from '../components/molecules/check/check.js';
-import { createAlert } from '../components/molecules/alert/alert.js';
-import { createSearchBox } from '../components/molecules/search-box/search-box.js';
-import {
-  createUserPicker,
-  setUserPickerError,
-} from '../components/molecules/user-picker/user-picker.js';
-import { createDataList } from '../components/molecules/data-list/data-list.js';
-import { showToast } from '../components/molecules/toast/toast.js';
-import { createDataTable } from '../components/organisms/data-table/data-table.js';
-import { createModal, openModal, closeModal } from '../components/organisms/modal/modal.js';
-import { createButton, setButtonLoading } from '../components/atoms/button/button.js';
-import { createInput } from '../components/atoms/input/input.js';
-import { createSelect } from '../components/atoms/select/select.js';
-import { createTextarea } from '../components/atoms/textarea/textarea.js';
-import { createPlate } from '../components/atoms/plate/plate.js';
-import { createIcon } from '../components/atoms/icon/icon.js';
-import { createStatusChip } from '../components/atoms/status-chip/status-chip.js';
+import { montarMarco } from './comun/marco-app.js';
+import { abrirModal, cerrarModal, mostrarAviso } from './comun/dialogos.js';
+import { ponerChip, marcarCampo, mostrarAlerta, botonCargando } from './comun/plantillas.js';
+import { conectarTabla, conectarBusqueda, texto } from './comun/tablas.js';
+import { conectarSelectorUsuario } from './comun/selector-usuario.js';
 import {
   listarVehiculos,
   crearVehiculo,
@@ -35,10 +17,12 @@ import {
   historialPropietarios,
 } from '../services/vehiculos.service.js';
 import { buscarClientes } from '../services/usuarios.service.js';
-import { normalizarPlaca, esPlacaValida } from '../utils/placa.js';
+import { normalizarPlaca, esPlacaValida, formatearPlaca } from '../utils/placa.js';
 import { formatearFechaHora } from '../utils/formato.js';
 import { tienePermiso } from '../utils/sesion.js';
 
+const $ = (id) => document.getElementById(id);
+const mostrar = (nodo, visible) => nodo.classList.toggle('hidden', !visible);
 const estado = {
   sesion: null,
   filtros: {
@@ -51,535 +35,325 @@ const estado = {
     orden: 'placa',
     dir: 'asc',
   },
-  resultado: { data: [], meta: null },
-  cargando: false,
   enfocarOrden: false,
 };
-
 const puede = (codigo) => tienePermiso(estado.sesion, codigo);
-const TIPOS = [
-  { value: 'carro', label: 'Carro', icon: 'i-car' },
-  { value: 'moto', label: 'Moto', icon: 'i-moto' },
-];
 const MENSAJE_PLACA = {
   carro: 'Carro: 3 letras y 3 números (ej. ABC123).',
   moto: 'Moto: 3 letras, 2 números y una letra opcional (ej. ABC12D).',
 };
 const describirPersona = (p) => `${p.nombre_completo} · ${p.tipo_documento} ${p.numero_documento}`;
 
-function modalBase({ titulo, subtitulo, formulario, idFormulario, textoGuardar }) {
-  const guardar = createButton({ label: textoGuardar, type: 'submit', icon: 'i-check' });
-  guardar.setAttribute('form', idFormulario);
-  const modal = createModal({
-    title: titulo,
-    subtitle: subtitulo,
-    body: [formulario],
-    footer: [
-      createButton({ label: 'Cancelar', variant: 'ghost', onClick: () => closeModal(modal) }),
-      guardar,
-    ],
-    onClose: () => modal.remove(),
-  });
-  return { modal, guardar };
+// ---------------------------------------------------------------------------
+// Listado
+// ---------------------------------------------------------------------------
+const tabla = conectarTabla($('tabla-vehiculos'), {
+  plantilla: 'tpl-vehiculo',
+  rellenar: (fila, v) => {
+    const [placa, tipo, marca, color, propietario, chip, acciones] = fila.cells;
+    placa.firstElementChild.textContent = formatearPlaca(v.placa);
+    const moto = v.tipo === 'moto';
+    tipo
+      .querySelector('use')
+      .setAttribute('href', `/assets/icons.svg#${moto ? 'i-moto' : 'i-car'}`);
+    tipo.querySelector('span > span').textContent = moto ? 'Moto' : 'Carro';
+    marca.textContent = texto(`${v.marca ?? ''} ${v.modelo ?? ''}`.trim());
+    color.textContent = texto(v.color);
+    const [conDueno, sinDueno] = propietario.children;
+    mostrar(conDueno, Boolean(v.propietario));
+    mostrar(sinDueno, !v.propietario);
+    if (v.propietario) {
+      conDueno.firstElementChild.textContent = v.propietario.nombre_completo;
+      conDueno.lastElementChild.textContent = `${v.propietario.tipo_documento} ${v.propietario.numero_documento}`;
+    }
+    ponerChip(
+      chip.firstElementChild,
+      v.activo ? 'Activo' : 'Inactivo',
+      v.activo ? 'free' : 'neutral'
+    );
+
+    const [editar, dueno, historial] = acciones.firstElementChild.children;
+    if (puede('vehiculos.editar')) {
+      mostrar(editar, true);
+      editar.setAttribute('aria-label', `Editar ${v.placa}`);
+      editar.addEventListener('click', () => abrirFormulario(v, editar));
+    }
+    const asignar = !v.propietario && puede('vehiculos.crear');
+    const cambiar = v.propietario && puede('vehiculos.reasignar');
+    if (asignar || cambiar) {
+      mostrar(dueno, true);
+      dueno.querySelector('span').textContent = asignar ? 'Asignar dueño' : 'Cambiar dueño';
+      dueno.setAttribute(
+        'aria-label',
+        asignar ? `Asignar propietario a ${v.placa}` : `Cambiar propietario de ${v.placa}`
+      );
+      dueno.addEventListener('click', () => abrirPropietario(v, dueno));
+    }
+    historial.setAttribute('aria-label', `Historial de ${v.placa}`);
+    historial.addEventListener('click', () => abrirHistorial(v, historial));
+  },
+  onOrden: (clave) => {
+    const f = estado.filtros;
+    f.dir = f.orden === clave && f.dir === 'asc' ? 'desc' : 'asc';
+    f.orden = clave;
+    f.pagina = 1;
+    estado.enfocarOrden = true;
+    recargar();
+  },
+  onPagina: (pagina) => {
+    estado.filtros.pagina = pagina;
+    recargar();
+  },
+});
+
+async function recargar() {
+  tabla.cargando(true);
+  try {
+    const { data, meta } = await listarVehiculos(estado.filtros);
+    tabla.pintar(data, { meta, orden: { clave: estado.filtros.orden, dir: estado.filtros.dir } });
+    if (estado.enfocarOrden) {
+      $('tabla-vehiculos')
+        .querySelector('th[aria-sort="ascending"] button, th[aria-sort="descending"] button')
+        ?.focus();
+      estado.enfocarOrden = false;
+    }
+  } catch (error) {
+    mostrarAviso(error.message, 'error');
+  } finally {
+    tabla.cargando(false);
+  }
+}
+
+function aplicar(clave, valor) {
+  estado.filtros[clave] = valor;
+  estado.filtros.pagina = 1;
+  recargar();
 }
 
 // ---------------------------------------------------------------------------
 // Registrar (admin/operador) y editar (admin)
 // ---------------------------------------------------------------------------
+const f = {
+  formulario: $('form-vehiculo'),
+  placa: $('vehiculo-placa'),
+  marca: $('vehiculo-marca'),
+  modelo: $('vehiculo-modelo'),
+  color: $('vehiculo-color'),
+  activo: $('vehiculo-activo'),
+  alerta: $('vehiculo-alerta'),
+  guardar: $('vehiculo-guardar'),
+  editando: null,
+};
+const tipoVehiculo = () => f.formulario.querySelector('input[name="tipo"]:checked').value;
+const propietarioNuevo = conectarSelectorUsuario('vehiculo-propietario', {
+  buscar: buscarClientes,
+});
+
+f.placa.addEventListener('input', () => {
+  f.placa.value = normalizarPlaca(f.placa.value);
+});
+f.formulario.addEventListener('change', (e) => {
+  if (e.target.name === 'tipo')
+    $('vehiculo-placa-ayuda').textContent = MENSAJE_PLACA[e.target.value];
+});
+
 function abrirFormulario(vehiculo, origen) {
-  const editando = Boolean(vehiculo);
-  let tipo = vehiculo?.tipo ?? 'carro';
-
-  const placa = createInput({
-    name: 'placa',
-    plate: true,
-    placeholder: 'ABC 123',
-    maxLength: 8,
-    value: vehiculo?.placa,
-    onInput: (e) => (e.target.value = normalizarPlaca(e.target.value)),
-  });
-  const marca = createInput({
-    name: 'marca',
-    maxLength: 40,
-    value: vehiculo?.marca,
-    placeholder: 'Ej. Mazda',
-  });
-  const modelo = createInput({
-    name: 'modelo',
-    maxLength: 40,
-    value: vehiculo?.modelo,
-    placeholder: 'Ej. CX-30',
-  });
-  const color = createInput({
-    name: 'color',
-    maxLength: 30,
-    value: vehiculo?.color,
-    placeholder: 'Ej. Gris',
-  });
-  const campos = {
-    placa: createField({
-      label: 'Placa',
-      control: placa,
-      required: true,
-      full: true,
-      hint: MENSAJE_PLACA[tipo],
-    }),
-    tipo: createTiles({
-      name: 'tipo',
-      label: 'Tipo de vehículo',
-      options: TIPOS,
-      value: tipo,
-      onChange: (v) => {
-        tipo = v;
-        campos.placa.querySelector('.field-hint').textContent = MENSAJE_PLACA[v];
-      },
-    }),
-    marca: createField({ label: 'Marca', control: marca, required: true }),
-    modelo: createField({ label: 'Modelo', control: modelo, required: true }),
-    color: createField({ label: 'Color', control: color, required: true }),
-  };
-  let activo = null;
-  if (editando) {
-    activo = createCheck({ label: 'Vehículo activo', name: 'activo', checked: vehiculo.activo });
-    campos.activo = el('div', { className: 'field--full' }, [activo]);
-  } else {
-    campos.usuario_id = createUserPicker({
-      label: 'Propietario (opcional)',
-      hint: 'Busca al cliente por documento. Déjalo vacío si es el vehículo de un visitante.',
-      buscar: buscarClientes,
-    });
-  }
-
-  const alerta = createAlert();
-  const formulario = el('form', { attrs: { novalidate: true, id: 'form-vehiculo' } }, [
-    alerta,
-    el('div', { className: 'form-grid' }, Object.values(campos)),
-  ]);
-  const { modal, guardar } = modalBase({
-    titulo: editando ? 'Editar vehículo' : 'Registrar vehículo',
-    subtitulo: editando
-      ? `placa ${vehiculo.placa}`
-      : 'placa, tipo, marca, modelo, color y propietario',
-    formulario,
-    idFormulario: 'form-vehiculo',
-    textoGuardar: editando ? 'Guardar cambios' : 'Registrar vehículo',
-  });
-
-  function validar() {
-    let ok = true;
-    if (!placa.value) ok = marcarError(campos.placa, 'La placa es obligatoria.');
-    else if (!esPlacaValida(placa.value, tipo)) ok = marcarError(campos.placa, MENSAJE_PLACA[tipo]);
-    for (const [nombre, control] of Object.entries({ marca, modelo, color })) {
-      if (!control.value.trim()) ok = marcarError(campos[nombre], 'Este campo es obligatorio.');
-    }
-    return ok;
-  }
-
-  formulario.addEventListener('submit', async (evento) => {
-    evento.preventDefault();
-    limpiarErrores(campos, alerta);
-    if (campos.usuario_id) setUserPickerError(campos.usuario_id, '');
-    if (!validar()) {
-      formulario.querySelector('[aria-invalid="true"]')?.focus();
-      return;
-    }
-    const datos = {
-      placa: placa.value,
-      tipo,
-      marca: marca.value.trim(),
-      modelo: modelo.value.trim(),
-      color: color.value.trim(),
-    };
-    setButtonLoading(guardar, true, 'Guardando…');
-    try {
-      if (editando) {
-        await actualizarVehiculo(vehiculo.id, {
-          ...datos,
-          activo: activo.querySelector('input').checked,
-        });
-        showToast(`Vehículo ${datos.placa} actualizado.`, 'success');
-      } else {
-        const propietario = formulario.querySelector('input[name="usuario_id"]').value;
-        await crearVehiculo({ ...datos, usuario_id: propietario ? Number(propietario) : null });
-        showToast(`Vehículo ${datos.placa} registrado.`, 'success');
-      }
-      closeModal(modal);
-      await recargar();
-    } catch (error) {
-      setButtonLoading(guardar, false);
-      if (campos.usuario_id) {
-        const detalle = error.detalles?.find((d) => d.campo === 'usuario_id');
-        if (detalle) setUserPickerError(campos.usuario_id, detalle.mensaje);
-      }
-      mostrarErrorApi(error, campos, alerta);
-    }
-  });
-
-  openModal(modal, origen);
+  f.editando = vehiculo;
+  const tipo = vehiculo?.tipo ?? 'carro';
+  $('modal-vehiculo-titulo').textContent = vehiculo ? 'Editar vehículo' : 'Registrar vehículo';
+  $('modal-vehiculo-subtitulo').textContent = vehiculo
+    ? `// placa ${vehiculo.placa}`
+    : '// placa, tipo, marca, modelo, color y propietario';
+  f.guardar.querySelector('span').textContent = vehiculo ? 'Guardar cambios' : 'Registrar vehículo';
+  f.placa.value = vehiculo?.placa ?? '';
+  f.marca.value = vehiculo?.marca ?? '';
+  f.modelo.value = vehiculo?.modelo ?? '';
+  f.color.value = vehiculo?.color ?? '';
+  f.formulario.querySelector(`input[name="tipo"][value="${tipo}"]`).checked = true;
+  $('vehiculo-placa-ayuda').textContent = MENSAJE_PLACA[tipo];
+  // Al editar se cambia el estado; al registrar se elige el propietario.
+  mostrar($('vehiculo-activo-campo'), Boolean(vehiculo));
+  f.activo.checked = Boolean(vehiculo?.activo);
+  mostrar($('vehiculo-propietario'), !vehiculo);
+  propietarioNuevo.poner(null);
+  [f.placa, f.marca, f.modelo, f.color].forEach((c) => marcarCampo(c, ''));
+  mostrarAlerta(f.alerta, '');
+  abrirModal($('modal-vehiculo'), { origen });
 }
+
+function validarVehiculo() {
+  let ok = true;
+  const tipo = tipoVehiculo();
+  if (!f.placa.value) ok = marcarCampo(f.placa, 'La placa es obligatoria.');
+  else if (!esPlacaValida(f.placa.value, tipo)) ok = marcarCampo(f.placa, MENSAJE_PLACA[tipo]);
+  for (const control of [f.marca, f.modelo, f.color]) {
+    if (!control.value.trim()) ok = marcarCampo(control, 'Este campo es obligatorio.');
+  }
+  return ok;
+}
+
+f.formulario.addEventListener('submit', async (evento) => {
+  evento.preventDefault();
+  mostrarAlerta(f.alerta, '');
+  [f.placa, f.marca, f.modelo, f.color].forEach((c) => marcarCampo(c, ''));
+  propietarioNuevo.error('');
+  if (!validarVehiculo()) {
+    f.formulario.querySelector('[aria-invalid="true"]')?.focus();
+    return;
+  }
+  const datos = {
+    placa: f.placa.value,
+    tipo: tipoVehiculo(),
+    marca: f.marca.value.trim(),
+    modelo: f.modelo.value.trim(),
+    color: f.color.value.trim(),
+  };
+  botonCargando(f.guardar, true, 'Guardando…');
+  try {
+    if (f.editando) {
+      await actualizarVehiculo(f.editando.id, { ...datos, activo: f.activo.checked });
+      mostrarAviso(`Vehículo ${datos.placa} actualizado.`, 'success');
+    } else {
+      const propietario = propietarioNuevo.valor();
+      await crearVehiculo({ ...datos, usuario_id: propietario ? propietario.id : null });
+      mostrarAviso(`Vehículo ${datos.placa} registrado.`, 'success');
+    }
+    cerrarModal($('modal-vehiculo'));
+    await recargar();
+  } catch (error) {
+    const campos = { placa: f.placa, marca: f.marca, modelo: f.modelo, color: f.color };
+    for (const d of error.detalles ?? []) {
+      if (campos[d.campo]) marcarCampo(campos[d.campo], d.mensaje);
+      if (d.campo === 'usuario_id') propietarioNuevo.error(d.mensaje);
+    }
+    mostrarAlerta(f.alerta, error.message);
+  } finally {
+    botonCargando(f.guardar, false);
+  }
+});
 
 // ---------------------------------------------------------------------------
 // Asignar (sin dueño: admin/operador) o cambiar propietario (con dueño: admin)
 // ---------------------------------------------------------------------------
+const p = { vehiculo: null, motivo: $('propietario-motivo'), alerta: $('propietario-alerta') };
+const nuevoDueno = conectarSelectorUsuario('propietario-nuevo', { buscar: buscarClientes });
+
 function abrirPropietario(vehiculo, origen) {
+  p.vehiculo = vehiculo;
   const tieneDueno = Boolean(vehiculo.propietario);
-  const picker = createUserPicker({
-    label: tieneDueno ? 'Nuevo propietario' : 'Propietario',
-    buscar: buscarClientes,
-  });
-  const motivo = createTextarea({
-    name: 'motivo',
-    maxLength: 255,
-    placeholder: 'Ej. venta del vehículo',
-  });
-  const campos = {
-    usuario_id: picker,
-    motivo: createField({ label: 'Motivo (opcional)', control: motivo, full: true }),
-  };
-  const alerta = createAlert();
-
-  const formulario = el('form', { attrs: { novalidate: true, id: 'form-propietario' } }, [
-    alerta,
-    el('div', { className: 'form-grid' }, [
-      el('div', { className: 'field field--full' }, [
-        createDataList({
-          items: [
-            { term: 'Vehículo', value: createPlate({ placa: vehiculo.placa }) },
-            {
-              term: 'Propietario actual',
-              value: tieneDueno ? describirPersona(vehiculo.propietario) : 'Sin propietario',
-            },
-          ],
-        }),
-      ]),
-      picker,
-      campos.motivo,
-    ]),
-  ]);
-  const { modal, guardar } = modalBase({
-    titulo: tieneDueno ? 'Cambiar propietario' : 'Asignar propietario',
-    subtitulo: tieneDueno
-      ? 'el cambio queda en el historial del vehículo'
-      : 'solo clientes activos',
-    formulario,
-    idFormulario: 'form-propietario',
-    textoGuardar: tieneDueno ? 'Cambiar propietario' : 'Asignar',
-  });
-
-  async function enviar(usuarioId, boton) {
-    limpiarErrores(campos, alerta);
-    setButtonLoading(boton, true, 'Guardando…');
-    try {
-      const actualizado = await cambiarPropietario(vehiculo.id, {
-        usuario_id: usuarioId,
-        motivo: motivo.value,
-      });
-      showToast(
-        actualizado.propietario
-          ? `${vehiculo.placa} ahora pertenece a ${actualizado.propietario.nombre_completo}.`
-          : `${vehiculo.placa} quedó sin propietario.`,
-        'success'
-      );
-      closeModal(modal);
-      await recargar();
-    } catch (error) {
-      setButtonLoading(boton, false);
-      mostrarErrorApi(error, campos, alerta);
-    }
-  }
-
+  $('modal-propietario-titulo').textContent = tieneDueno
+    ? 'Cambiar propietario'
+    : 'Asignar propietario';
+  $('modal-propietario-subtitulo').textContent = tieneDueno
+    ? '// el cambio queda en el historial del vehículo'
+    : '// solo clientes activos';
+  document.querySelector('label[for="propietario-nuevo-documento"]').firstChild.textContent =
+    tieneDueno ? 'Nuevo propietario' : 'Propietario';
+  $('propietario-guardar').querySelector('span').textContent = tieneDueno
+    ? 'Cambiar propietario'
+    : 'Asignar';
+  $('propietario-placa').textContent = formatearPlaca(vehiculo.placa);
+  $('propietario-actual').textContent = tieneDueno
+    ? describirPersona(vehiculo.propietario)
+    : 'Sin propietario';
   // El administrador también puede dejar el vehículo sin propietario.
-  if (tieneDueno && puede('vehiculos.reasignar')) {
-    const quitar = createButton({
-      label: 'Dejar sin propietario',
-      variant: 'dark',
-      onClick: () => enviar(null, quitar),
-    });
-    guardar.before(quitar);
-  }
-
-  formulario.addEventListener('submit', (evento) => {
-    evento.preventDefault();
-    const id = formulario.querySelector('input[name="usuario_id"]').value;
-    if (!id) {
-      setUserPickerError(picker, 'Busca y elige un cliente.');
-      picker.querySelector('input:not([type="hidden"])')?.focus();
-      return;
-    }
-    enviar(Number(id), guardar);
-  });
-
-  openModal(modal, origen);
+  mostrar($('propietario-quitar'), tieneDueno && puede('vehiculos.reasignar'));
+  p.motivo.value = '';
+  marcarCampo(p.motivo, '');
+  nuevoDueno.poner(null);
+  mostrarAlerta(p.alerta, '');
+  abrirModal($('modal-propietario'), { origen });
 }
+
+async function enviarPropietario(usuarioId, boton) {
+  mostrarAlerta(p.alerta, '');
+  marcarCampo(p.motivo, '');
+  botonCargando(boton, true, 'Guardando…');
+  try {
+    const actualizado = await cambiarPropietario(p.vehiculo.id, {
+      usuario_id: usuarioId,
+      motivo: p.motivo.value,
+    });
+    mostrarAviso(
+      actualizado.propietario
+        ? `${p.vehiculo.placa} ahora pertenece a ${actualizado.propietario.nombre_completo}.`
+        : `${p.vehiculo.placa} quedó sin propietario.`,
+      'success'
+    );
+    cerrarModal($('modal-propietario'));
+    await recargar();
+  } catch (error) {
+    for (const d of error.detalles ?? []) {
+      if (d.campo === 'motivo') marcarCampo(p.motivo, d.mensaje);
+      if (d.campo === 'usuario_id') nuevoDueno.error(d.mensaje);
+    }
+    mostrarAlerta(p.alerta, error.message);
+  } finally {
+    botonCargando(boton, false);
+  }
+}
+
+$('propietario-quitar').addEventListener('click', (e) => enviarPropietario(null, e.currentTarget));
+$('form-propietario').addEventListener('submit', (evento) => {
+  evento.preventDefault();
+  const elegido = nuevoDueno.valor();
+  if (!elegido) {
+    nuevoDueno.error('Busca y elige un cliente.');
+    $('propietario-nuevo-documento').focus();
+    return;
+  }
+  enviarPropietario(elegido.id, $('propietario-guardar'));
+});
 
 // ---------------------------------------------------------------------------
 // Historial de propietarios
 // ---------------------------------------------------------------------------
+const tablaHistorial = conectarTabla($('tabla-historial'), {
+  plantilla: 'tpl-historial',
+  rellenar: (fila, h) => {
+    const [fecha, de, a, registro, motivo] = fila.cells;
+    fecha.textContent = formatearFechaHora(h.fecha);
+    de.textContent = h.anterior ? h.anterior.nombre_completo : 'Sin propietario';
+    a.textContent = h.nuevo ? h.nuevo.nombre_completo : 'Sin propietario';
+    registro.textContent = texto(h.cambiado_por);
+    motivo.textContent = texto(h.motivo);
+  },
+});
+
 async function abrirHistorial(vehiculo, origen) {
-  const cuerpo = el('div', {}, [el('p', { text: 'Cargando…' })]);
-  const modal = createModal({
-    title: 'Historial de propietarios',
-    subtitle: `placa ${vehiculo.placa}`,
-    body: [cuerpo],
-    footer: [createButton({ label: 'Cerrar', variant: 'ghost', onClick: () => closeModal(modal) })],
-    onClose: () => modal.remove(),
-  });
-  openModal(modal, origen);
+  $('modal-historial-subtitulo').textContent = `// placa ${vehiculo.placa}`;
+  $('tabla-historial').querySelector('caption').textContent =
+    `Historial de propietarios de ${vehiculo.placa}`;
+  mostrar($('historial-cargando'), true);
+  mostrar($('historial-error'), false);
+  mostrar($('historial-contenido'), false);
+  abrirModal($('modal-historial'), { origen });
   try {
-    const filas = await historialPropietarios(vehiculo.id);
-    cuerpo.replaceChildren(
-      createDataTable({
-        caption: `Historial de propietarios de ${vehiculo.placa}`,
-        minWidth: 640,
-        rows: filas,
-        empty: {
-          title: 'Sin cambios',
-          text: 'Este vehículo nunca ha tenido propietario registrado.',
-        },
-        columns: [
-          { key: 'fecha', label: 'Fecha', render: (h) => formatearFechaHora(h.fecha) },
-          {
-            key: 'anterior',
-            label: 'De',
-            render: (h) => (h.anterior ? h.anterior.nombre_completo : 'Sin propietario'),
-          },
-          {
-            key: 'nuevo',
-            label: 'A',
-            render: (h) => (h.nuevo ? h.nuevo.nombre_completo : 'Sin propietario'),
-          },
-          { key: 'cambiado_por', label: 'Registró' },
-          { key: 'motivo', label: 'Motivo' },
-        ],
-      })
-    );
+    tablaHistorial.pintar(await historialPropietarios(vehiculo.id));
+    mostrar($('historial-contenido'), true);
   } catch (error) {
-    cuerpo.replaceChildren(el('p', { text: error.message }));
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Listado
-// ---------------------------------------------------------------------------
-const contenedorTabla = el('div');
-
-function columnas() {
-  return [
-    {
-      key: 'placa',
-      label: 'Placa',
-      sortable: true,
-      render: (v) => createPlate({ placa: v.placa }),
-    },
-    {
-      key: 'tipo',
-      label: 'Tipo',
-      sortable: true,
-      render: (v) =>
-        el('span', { className: 'cell-person' }, [
-          createIcon({ name: v.tipo === 'moto' ? 'i-moto' : 'i-car' }),
-          v.tipo === 'moto' ? 'Moto' : 'Carro',
-        ]),
-    },
-    {
-      key: 'marca',
-      label: 'Marca y modelo',
-      sortable: true,
-      render: (v) => `${v.marca ?? ''} ${v.modelo ?? ''}`.trim(),
-    },
-    { key: 'color', label: 'Color' },
-    {
-      key: 'propietario',
-      label: 'Propietario',
-      sortable: true,
-      render: (v) =>
-        v.propietario
-          ? el('span', {}, [
-              v.propietario.nombre_completo,
-              el('span', {
-                className: 'cell-sub',
-                text: `${v.propietario.tipo_documento} ${v.propietario.numero_documento}`,
-              }),
-            ])
-          : el('span', { className: 'cell-muted', text: 'Sin propietario' }),
-    },
-    {
-      key: 'activo',
-      label: 'Estado',
-      render: (v) =>
-        createStatusChip({
-          text: v.activo ? 'Activo' : 'Inactivo',
-          variant: v.activo ? 'free' : 'neutral',
-        }),
-    },
-    {
-      key: 'acciones',
-      label: 'Acciones',
-      align: 'right',
-      render: (v) => {
-        const acciones = [];
-        if (puede('vehiculos.editar')) {
-          acciones.push(
-            createButton({
-              label: 'Editar',
-              variant: 'ghost',
-              size: 'sm',
-              ariaLabel: `Editar ${v.placa}`,
-              onClick: (e) => abrirFormulario(v, e.currentTarget),
-            })
-          );
-        }
-        if (!v.propietario && puede('vehiculos.crear')) {
-          acciones.push(
-            createButton({
-              label: 'Asignar dueño',
-              variant: 'dark',
-              size: 'sm',
-              ariaLabel: `Asignar propietario a ${v.placa}`,
-              onClick: (e) => abrirPropietario(v, e.currentTarget),
-            })
-          );
-        } else if (v.propietario && puede('vehiculos.reasignar')) {
-          acciones.push(
-            createButton({
-              label: 'Cambiar dueño',
-              variant: 'dark',
-              size: 'sm',
-              ariaLabel: `Cambiar propietario de ${v.placa}`,
-              onClick: (e) => abrirPropietario(v, e.currentTarget),
-            })
-          );
-        }
-        acciones.push(
-          createButton({
-            label: 'Historial',
-            variant: 'ghost',
-            size: 'sm',
-            ariaLabel: `Historial de ${v.placa}`,
-            onClick: (e) => abrirHistorial(v, e.currentTarget),
-          })
-        );
-        return el('div', { className: 'row-actions' }, acciones);
-      },
-    },
-  ];
-}
-
-function pintarTabla() {
-  const { data, meta } = estado.resultado;
-  const tabla = createDataTable({
-    caption: 'Vehículos registrados',
-    columns: columnas(),
-    rows: data,
-    loading: estado.cargando,
-    minWidth: 960,
-    sort: { key: estado.filtros.orden, dir: estado.filtros.dir },
-    onSort: (key) => {
-      const f = estado.filtros;
-      f.dir = f.orden === key && f.dir === 'asc' ? 'desc' : 'asc';
-      f.orden = key;
-      f.pagina = 1;
-      estado.enfocarOrden = true;
-      recargar();
-    },
-    empty: { title: 'Sin vehículos', text: 'Ningún vehículo coincide con los filtros.' },
-    pagination: meta && {
-      pagina: meta.pagina,
-      totalPaginas: meta.total_paginas,
-      total: meta.total,
-      onChange: (pagina) => {
-        estado.filtros.pagina = pagina;
-        recargar();
-      },
-    },
-  });
-  contenedorTabla.replaceChildren(tabla);
-  if (estado.enfocarOrden) {
-    tabla
-      .querySelector('th[aria-sort="ascending"] button, th[aria-sort="descending"] button')
-      ?.focus();
-    estado.enfocarOrden = false;
-  }
-}
-
-async function recargar() {
-  estado.cargando = true;
-  pintarTabla();
-  try {
-    estado.resultado = await listarVehiculos(estado.filtros);
-  } catch (error) {
-    showToast(error.message, 'error');
+    $('historial-error').textContent = error.message;
+    mostrar($('historial-error'), true);
   } finally {
-    estado.cargando = false;
-    pintarTabla();
+    mostrar($('historial-cargando'), false);
   }
-}
-
-function filtros() {
-  const buscarPor = (clave) => (texto) => {
-    estado.filtros[clave] = texto;
-    estado.filtros.pagina = 1;
-    recargar();
-  };
-  const cambiar = (clave) => (e) => buscarPor(clave)(e.target.value);
-  return el('div', { className: 'filters' }, [
-    createSearchBox({
-      label: 'Placa',
-      placeholder: 'Ej. MNP908',
-      transform: normalizarPlaca,
-      onSearch: buscarPor('placa'),
-    }),
-    createField({
-      label: 'Tipo',
-      control: createSelect({
-        options: [
-          { value: '', label: 'Todos' },
-          ...TIPOS.map(({ value, label }) => ({ value, label })),
-        ],
-        onChange: cambiar('tipo'),
-      }),
-    }),
-    createField({
-      label: 'Propietario',
-      control: createSelect({
-        options: [
-          { value: '', label: 'Todos' },
-          { value: 'con', label: 'Con propietario' },
-          { value: 'sin', label: 'Sin propietario (visitantes)' },
-        ],
-        onChange: cambiar('propietario'),
-      }),
-    }),
-    createSearchBox({
-      label: 'Cliente',
-      placeholder: 'Documento o nombre',
-      onSearch: buscarPor('q'),
-    }),
-  ]);
 }
 
 async function iniciar() {
-  const app = await montarApp({
-    paginaId: 'vehiculos',
-    cabecera: (sesion) => ({
-      titulo: 'Vehículos',
-      subtitulo: 'registro de vehículos y de sus propietarios',
-      acciones: tienePermiso(sesion, 'vehiculos.crear')
-        ? [
-            createButton({
-              label: 'Registrar vehículo',
-              icon: 'i-car',
-              onClick: (e) => abrirFormulario(null, e.currentTarget),
-            }),
-          ]
-        : [],
-    }),
-  });
+  const app = await montarMarco({ paginaId: 'vehiculos' });
   if (!app) return;
   estado.sesion = app.sesion;
-  app.main.append(
-    createPanel({ title: 'Vehículos registrados', children: [filtros(), contenedorTabla] })
-  );
+  if (puede('vehiculos.crear')) {
+    $('pagina-acciones').classList.remove('hidden');
+    $('accion-nuevo').classList.remove('hidden');
+    $('accion-nuevo').addEventListener('click', (e) => abrirFormulario(null, e.currentTarget));
+  }
+  conectarBusqueda($('filtro-placa'), (valor) => aplicar('placa', valor), {
+    transform: normalizarPlaca,
+  });
+  conectarBusqueda($('filtro-cliente'), (valor) => aplicar('q', valor));
+  $('filtro-tipo').addEventListener('change', (e) => aplicar('tipo', e.target.value));
+  $('filtro-propietario').addEventListener('change', (e) => aplicar('propietario', e.target.value));
   await recargar();
 }
 

@@ -32,11 +32,359 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     />
-    <link rel="stylesheet" href="/styles/main.css" />
+    <link rel="stylesheet" href="/styles/atomic.css" />
     <script type="module" src="/js/pages/publica.js"></script>
   </head>
   <body>
-    <noscript>PARKO necesita JavaScript activado para funcionar.</noscript>
-    <div id="app"></div>
+    <div class="template-app-layout template-public-layout">
+      <a class="skip-link" href="#contenido">Saltar al contenido</a>
+      <!-- organism-header -->
+      <header class="organism-header">
+        <div class="organism-header-inner">
+          <a class="molecule-brand molecule-brand--link" href="/">
+            <span class="atom-brand-mark" aria-hidden="true">P</span>
+            <div>PARKO<small id="marco-sede"></small></div>
+          </a>
+          <nav class="template-public-layout-actions" aria-label="Accesos">
+            <a class="atom-button atom-button--sm" href="/login.html"
+              ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-in"></use></svg
+              ><span>Ingresar</span></a
+            >
+          </nav>
+        </div>
+      </header>
+      <div class="atom-hazard-strip" aria-hidden="true"></div>
+      <main id="contenido" tabindex="-1">
+        <section class="organism-hero" aria-labelledby="hero-titulo">
+          <div class="organism-hero-inner">
+            <p class="organism-hero-brand">
+              <span class="atom-brand-mark" aria-hidden="true">P</span>
+              <span
+                ><strong>PARKO</strong
+                ><small id="hero-sede">Parqueadero ABC · Medellín</small></span
+              >
+            </p>
+            <h1 class="organism-hero-title" id="hero-titulo">24 horas en el corazón de Medellín</h1>
+            <p class="organism-hero-text">
+              Parqueo para carros y motos con cobro por minuto, mensualidades y reservas desde tu
+              cuenta.
+            </p>
+            <ul class="organism-hero-facts hidden" id="hero-datos">
+              <li id="hero-direccion"></li>
+              <li id="hero-horario"></li>
+            </ul>
+            <div class="organism-hero-actions">
+              <a class="atom-button" href="#disponibilidad"><span>Ver disponibilidad</span></a>
+              <a class="atom-button atom-button--ghost" href="/login.html"
+                ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                  <use href="/assets/icons.svg#i-in"></use></svg
+                ><span>Ingresar</span></a
+              >
+            </div>
+          </div>
+          <div class="atom-hazard-strip" aria-hidden="true"></div>
+        </section>
+        <div class="template-app-layout-page template-public-layout-page">
+          <section
+            class="template-public-layout-section"
+            id="disponibilidad"
+            aria-labelledby="disponibilidad-titulo"
+          >
+            <div class="template-public-layout-section-head">
+              <div>
+                <h2 id="disponibilidad-titulo">Disponibilidad en vivo</h2>
+                <p id="disponibilidad-subtitulo">Cupos libres en este momento</p>
+              </div>
+            </div>
+            <div class="organism-availability">
+              <div class="organism-availability-head">
+                <span class="molecule-live-status" id="indicador-vivo" role="status"
+                  >Conectando…</span
+                >
+                <p
+                  class="organism-availability-time"
+                  id="disponibilidad-hora"
+                  aria-live="polite"
+                ></p>
+              </div>
+              <div class="organism-kpis organism-kpis--2 organism-availability-cards">
+                <article class="molecule-kpi molecule-kpi--main">
+                  <p class="atom-label-caps">Cupos para carro</p>
+                  <p class="molecule-kpi-value">
+                    <span id="cupos-carro">—</span><small id="cupos-carro-unidad"> libres</small>
+                  </p>
+                  <div
+                    class="atom-meter"
+                    id="cupos-carro-medidor"
+                    role="meter"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="0"
+                    aria-label="Cupos para carro"
+                  >
+                    <span></span>
+                  </div>
+                  <p class="molecule-kpi-note" id="cupos-carro-nota"></p>
+                </article>
+                <article class="molecule-kpi">
+                  <p class="atom-label-caps">Cupos para moto</p>
+                  <p class="molecule-kpi-value">
+                    <span id="cupos-moto">—</span><small id="cupos-moto-unidad"> libres</small>
+                  </p>
+                  <div
+                    class="atom-meter"
+                    id="cupos-moto-medidor"
+                    role="meter"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="0"
+                    aria-label="Cupos para moto"
+                  >
+                    <span></span>
+                  </div>
+                  <p class="molecule-kpi-note" id="cupos-moto-nota"></p>
+                </article>
+              </div>
+            </div>
+          </section>
+          <section
+            class="template-public-layout-section"
+            id="tarifas"
+            aria-labelledby="tarifas-titulo"
+          >
+            <div class="template-public-layout-section-head">
+              <div>
+                <h2 id="tarifas-titulo">Tarifas</h2>
+                <p id="tarifas-subtitulo">Pagas por minuto, con un tope por cada 24 horas</p>
+              </div>
+            </div>
+            <div class="organism-pricing-table" id="tarifas-tabla">
+              <article class="organism-pricing-table-card">
+                <h3 class="organism-pricing-table-title">
+                  <svg class="atom-icon" aria-hidden="true" focusable="false">
+                    <use href="/assets/icons.svg#i-car"></use></svg
+                  >Carros
+                </h3>
+                <p class="organism-pricing-table-main" id="precio-carro-principal">
+                  <strong id="precio-carro-valor"></strong><span id="precio-carro-fraccion"></span>
+                </p>
+                <ul class="organism-pricing-table-list hidden" id="precio-carro-lista">
+                  <li id="precio-carro-tope"></li>
+                  <li id="precio-carro-gracia"></li>
+                  <li>Efectivo, tarjeta o transferencia.</li>
+                </ul>
+                <div class="organism-pricing-table-plans hidden" id="precio-carro-planes">
+                  <p><span>Mensualidad</span><strong id="precio-carro-mensual"></strong></p>
+                  <p class="hidden" id="precio-carro-anual-fila">
+                    <span>Anualidad</span><strong id="precio-carro-anual"></strong>
+                  </p>
+                </div>
+              </article>
+              <article class="organism-pricing-table-card">
+                <h3 class="organism-pricing-table-title">
+                  <svg class="atom-icon" aria-hidden="true" focusable="false">
+                    <use href="/assets/icons.svg#i-moto"></use></svg
+                  >Motos
+                </h3>
+                <p class="organism-pricing-table-main" id="precio-moto-principal">
+                  <strong id="precio-moto-valor"></strong><span id="precio-moto-fraccion"></span>
+                </p>
+                <ul class="organism-pricing-table-list hidden" id="precio-moto-lista">
+                  <li id="precio-moto-tope"></li>
+                  <li id="precio-moto-gracia"></li>
+                  <li>Efectivo, tarjeta o transferencia.</li>
+                </ul>
+                <div class="organism-pricing-table-plans hidden" id="precio-moto-planes">
+                  <p><span>Mensualidad</span><strong id="precio-moto-mensual"></strong></p>
+                  <p class="hidden" id="precio-moto-anual-fila">
+                    <span>Anualidad</span><strong id="precio-moto-anual"></strong>
+                  </p>
+                </div>
+              </article>
+            </div>
+            <div class="molecule-empty-state hidden" id="tarifas-error">
+              <strong>No disponible</strong>
+              <p>No pudimos cargar esta información. Intenta de nuevo en un momento.</p>
+            </div>
+          </section>
+          <section
+            class="template-public-layout-section"
+            id="servicios"
+            aria-labelledby="servicios-titulo"
+          >
+            <div class="template-public-layout-section-head">
+              <div>
+                <h2 id="servicios-titulo">Servicios</h2>
+              </div>
+            </div>
+            <ul class="organism-feature-grid">
+              <li class="organism-feature-grid-item">
+                <span class="organism-feature-grid-icon" aria-hidden="true"
+                  ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                    <use href="/assets/icons.svg#i-clock"></use></svg
+                ></span>
+                <h3 class="organism-feature-grid-title">Abierto 24 horas</h3>
+                <p>Entra y sal a cualquier hora, todos los días del año.</p>
+              </li>
+              <li class="organism-feature-grid-item">
+                <span class="organism-feature-grid-icon" aria-hidden="true"
+                  ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                    <use href="/assets/icons.svg#i-car"></use></svg
+                ></span>
+                <h3 class="organism-feature-grid-title">Carros y motos</h3>
+                <p>Celdas separadas por tipo y celdas accesibles para quien las necesita.</p>
+              </li>
+              <li class="organism-feature-grid-item">
+                <span class="organism-feature-grid-icon" aria-hidden="true"
+                  ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                    <use href="/assets/icons.svg#i-calendar"></use></svg
+                ></span>
+                <h3 class="organism-feature-grid-title">Mensualidades</h3>
+                <p>Planes mensuales o anuales, con celda fija opcional.</p>
+              </li>
+              <li class="organism-feature-grid-item">
+                <span class="organism-feature-grid-icon" aria-hidden="true"
+                  ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                    <use href="/assets/icons.svg#i-map"></use></svg
+                ></span>
+                <h3 class="organism-feature-grid-title">Reservas</h3>
+                <p>Desde tu cuenta aparta una celda libre antes de llegar.</p>
+              </li>
+              <li class="organism-feature-grid-item">
+                <span class="organism-feature-grid-icon" aria-hidden="true"
+                  ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                    <use href="/assets/icons.svg#i-shield"></use></svg
+                ></span>
+                <h3 class="organism-feature-grid-title">Seguridad</h3>
+                <p>Registro de cada entrada y salida con ticket y factura.</p>
+              </li>
+              <li class="organism-feature-grid-item">
+                <span class="organism-feature-grid-icon" aria-hidden="true"
+                  ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                    <use href="/assets/icons.svg#i-alert"></use></svg
+                ></span>
+                <h3 class="organism-feature-grid-title">Registro de incidentes</h3>
+                <p>Cualquier novedad con tu vehículo queda registrada y te avisamos.</p>
+              </li>
+            </ul>
+          </section>
+          <section
+            class="template-public-layout-section"
+            id="pico-placa"
+            aria-labelledby="pico-placa-titulo"
+          >
+            <div class="template-public-layout-section-head">
+              <div>
+                <h2 id="pico-placa-titulo">Pico y placa hoy</h2>
+                <p id="pico-placa-subtitulo">Medellín</p>
+              </div>
+            </div>
+            <div class="template-public-layout-plate-rule" id="pico-reglas">
+              <div>
+                <h3 class="organism-pricing-table-title">
+                  <svg class="atom-icon" aria-hidden="true" focusable="false">
+                    <use href="/assets/icons.svg#i-car"></use></svg
+                  >Carros
+                </h3>
+                <div
+                  class="template-public-layout-plate-digits hidden"
+                  id="pico-carro-digitos"
+                ></div>
+                <p class="hidden" id="pico-carro-libre">Sin restricción hoy.</p>
+                <p id="pico-carro-texto"></p>
+              </div>
+              <div>
+                <h3 class="organism-pricing-table-title">
+                  <svg class="atom-icon" aria-hidden="true" focusable="false">
+                    <use href="/assets/icons.svg#i-moto"></use></svg
+                  >Motos
+                </h3>
+                <div
+                  class="template-public-layout-plate-digits hidden"
+                  id="pico-moto-digitos"
+                ></div>
+                <p class="hidden" id="pico-moto-libre">Sin restricción hoy.</p>
+                <p id="pico-moto-texto"></p>
+              </div>
+            </div>
+            <div class="molecule-empty-state hidden" id="pico-error">
+              <strong>No disponible</strong>
+              <p>No pudimos cargar esta información. Intenta de nuevo en un momento.</p>
+            </div>
+          </section>
+          <section
+            class="template-public-layout-section"
+            id="ubicacion"
+            aria-labelledby="ubicacion-titulo"
+          >
+            <div class="template-public-layout-section-head">
+              <div>
+                <h2 id="ubicacion-titulo">Ubicación y contacto</h2>
+              </div>
+            </div>
+            <div class="organism-contact">
+              <div class="organism-contact-info">
+                <dl class="molecule-data-list">
+                  <div>
+                    <dt>Dirección</dt>
+                    <dd id="contacto-direccion">—</dd>
+                  </div>
+                  <div>
+                    <dt>Horario</dt>
+                    <dd id="contacto-horario">Abierto 24 horas</dd>
+                  </div>
+                  <div>
+                    <dt>Teléfono</dt>
+                    <dd id="contacto-telefono">—</dd>
+                  </div>
+                  <div>
+                    <dt>Vehículos</dt>
+                    <dd id="contacto-vehiculos">Carros y motos</dd>
+                  </div>
+                </dl>
+                <div class="organism-contact-actions">
+                  <a class="atom-button atom-button--sm" href="/login.html"
+                    ><span>Ingresar</span></a
+                  >
+                  <a
+                    class="atom-button atom-button--ghost atom-button--sm hidden"
+                    href="#"
+                    id="contacto-mapa-enlace"
+                    target="_blank"
+                    rel="noopener"
+                    ><span>Abrir el mapa</span></a
+                  >
+                </div>
+              </div>
+              <div class="organism-contact-map hidden" id="contacto-mapa">
+                <iframe
+                  id="contacto-mapa-iframe"
+                  title="Mapa de la ubicación"
+                  loading="lazy"
+                  referrerpolicy="no-referrer-when-downgrade"
+                ></iframe>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+      <!-- organism-footer -->
+      <footer class="organism-footer">
+        <div class="atom-hazard-strip" aria-hidden="true"></div>
+        <div class="organism-footer-inner">
+          <p class="organism-footer-brand">PARKO</p>
+          <p class="hidden" id="pie-sede"></p>
+          <nav class="organism-footer-links" aria-label="Enlaces del pie de página">
+            <a href="#disponibilidad">Disponibilidad</a><a href="#tarifas">Tarifas</a
+            ><a href="#servicios">Servicios</a><a href="#pico-placa">Pico y placa</a
+            ><a href="#ubicacion">Ubicación</a><a href="/login.html">Ingresar</a>
+          </nav>
+          <p>© <span id="pie-anio"></span> PARKO · Sistema de gestión de parqueaderos</p>
+        </div>
+      </footer>
+    </div>
+
+    <template id="tpl-digito"><span class="template-public-layout-plate-digit"></span></template>
   </body>
 </html>
