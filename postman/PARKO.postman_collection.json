@@ -1,0 +1,3197 @@
+{
+  "info": {
+    "name": "PARKO · API REST",
+    "description": "Colección de la API de PARKO (Parqueadero ABC). Base: {{baseUrl}} = http://localhost:3000/api/v1.\n\n**Cómo usarla:** 1) arranca el backend (`npm run dev` en backend/), 2) elige el entorno \"PARKO · local\", 3) ejecuta un Login de la carpeta \"0 · Autenticación\"; la cookie de sesión se guarda sola y vale 8 h. Para probar otro rol, ejecuta su Login (reemplaza la cookie).\n\n**No hay DELETE:** el sistema usa borrado lógico; para \"eliminar\" usa los PATCH de activo/estado.\n\nReferencia completa de parámetros y permisos: docs/api.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "f468fd7f-ef48-4dbb-9232-42e11f791b54"
+  },
+  "item": [
+    {
+      "name": "0 · Autenticación",
+      "item": [
+        {
+          "name": "Login Administrador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Inicia sesión como Administrador. La cookie parko_sesion queda guardada en Postman (Cookies → localhost) y se envía sola en las demás peticiones.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_documento\": \"CC\",\n  \"numero_documento\": \"{{docAdmin}}\",\n  \"contrasena\": \"{{claveAdmin}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login correcto\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Llega la cookie de sesión\", () => pm.expect(pm.cookies.has(\"parko_sesion\")).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Operador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Inicia sesión como Operador. La cookie parko_sesion queda guardada en Postman (Cookies → localhost) y se envía sola en las demás peticiones.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_documento\": \"CC\",\n  \"numero_documento\": \"{{docOperador}}\",\n  \"contrasena\": \"{{claveOperador}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login correcto\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Llega la cookie de sesión\", () => pm.expect(pm.cookies.has(\"parko_sesion\")).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Inicia sesión como Cliente. La cookie parko_sesion queda guardada en Postman (Cookies → localhost) y se envía sola en las demás peticiones.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_documento\": \"CC\",\n  \"numero_documento\": \"{{docCliente}}\",\n  \"contrasena\": \"{{claveCliente}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login correcto\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Llega la cookie de sesión\", () => pm.expect(pm.cookies.has(\"parko_sesion\")).to.be.true);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login con datos inválidos (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Ejemplo de error de validación zod.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_documento\": \"CC\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"422 de validación\", () => pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuario en sesión",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cambiar mi contraseña",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/cambiar-contrasena",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "cambiar-contrasena"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contrasena_actual\": \"Cliente2026*\",\n  \"contrasena_nueva\": \"NuevaClave2026*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cerrar sesión",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Público (sin sesión)",
+      "item": [
+        {
+          "name": "Salud (API + BD)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/salud",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "salud"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Sede y puertas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/parqueadero",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueadero"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Disponibilidad",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/publico/disponibilidad",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "publico",
+                "disponibilidad"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Tarifas públicas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/publico/tarifas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "publico",
+                "tarifas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Pico y placa de hoy",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/publico/pico-placa-hoy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "publico",
+                "pico-placa-hoy"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuarios (REQ-USR)",
+      "item": [
+        {
+          "name": "Roles",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/roles",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "roles"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar usuarios",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/usuarios?pagina=1&limite=20&q=&rol=usuario&estado=activo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                },
+                {
+                  "key": "q",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "rol",
+                  "value": "usuario",
+                  "disabled": true
+                },
+                {
+                  "key": "estado",
+                  "value": "activo",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar cliente por documento",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/buscar?documento=100000",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "documento",
+                  "value": "100000"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Usuario por id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear usuario (multipart)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            },
+            "description": "rol_id: 1 administrador, 2 operador, 3 usuario (confírmalo con GET /roles). Guarda el id en usuarioId.\n\nFoto opcional: en Body → form-data agrega la clave \"foto\", cámbiala a tipo File y elige un jpg/png ≤ 2 MB.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "tipo_documento",
+                  "value": "CC",
+                  "type": "text"
+                },
+                {
+                  "key": "numero_documento",
+                  "value": "1099000001",
+                  "type": "text"
+                },
+                {
+                  "key": "primer_nombre",
+                  "value": "Prueba",
+                  "type": "text"
+                },
+                {
+                  "key": "primer_apellido",
+                  "value": "Postman",
+                  "type": "text"
+                },
+                {
+                  "key": "correo",
+                  "value": "prueba.postman@parko.test",
+                  "type": "text"
+                },
+                {
+                  "key": "celular",
+                  "value": "3009990001",
+                  "type": "text"
+                },
+                {
+                  "key": "rol_id",
+                  "value": "3",
+                  "type": "text"
+                },
+                {
+                  "key": "contrasena_temporal",
+                  "value": "Temporal2026*",
+                  "type": "text"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta 2xx\", () => pm.response.to.be.success);",
+                  "const r = pm.response.json();",
+                  "if (r.data) pm.environment.set(\"usuarioId\", r.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar usuario (multipart)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioId}}"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "tipo_documento",
+                  "value": "CC",
+                  "type": "text"
+                },
+                {
+                  "key": "numero_documento",
+                  "value": "1099000001",
+                  "type": "text"
+                },
+                {
+                  "key": "primer_nombre",
+                  "value": "Prueba",
+                  "type": "text"
+                },
+                {
+                  "key": "primer_apellido",
+                  "value": "Editada",
+                  "type": "text"
+                },
+                {
+                  "key": "correo",
+                  "value": "prueba.postman@parko.test",
+                  "type": "text"
+                },
+                {
+                  "key": "celular",
+                  "value": "3009990002",
+                  "type": "text"
+                },
+                {
+                  "key": "rol_id",
+                  "value": "3",
+                  "type": "text"
+                },
+                {
+                  "key": "quitar_foto",
+                  "value": "false",
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Foto opcional: en Body → form-data agrega la clave \"foto\", cámbiala a tipo File y elige un jpg/png ≤ 2 MB."
+          }
+        },
+        {
+          "name": "Inactivar / activar usuario",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioId}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioId}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"inactivo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Asignar contraseña temporal",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{usuarioId}}/contrasena",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{usuarioId}}",
+                "contrasena"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contrasena_temporal\": \"Temporal2026*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mi cuenta (cualquier rol)",
+      "item": [
+        {
+          "name": "Mis datos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Editar mis datos (multipart)",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me"
+              ]
+            },
+            "description": "Notifica a los administradores (REQ-USR-4). Ajusta los valores a los del usuario en sesión.\n\nFoto opcional: en Body → form-data agrega la clave \"foto\", cámbiala a tipo File y elige un jpg/png ≤ 2 MB.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "primer_nombre",
+                  "value": "Andrea",
+                  "type": "text"
+                },
+                {
+                  "key": "primer_apellido",
+                  "value": "Salcedo",
+                  "type": "text"
+                },
+                {
+                  "key": "correo",
+                  "value": "andrea.salcedo@parko.test",
+                  "type": "text"
+                },
+                {
+                  "key": "celular",
+                  "value": "3001000004",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mis vehículos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me/vehiculos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "vehiculos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mis estadías",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me/estadias?pagina=1&limite=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "estadias"
+              ],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mis facturas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me/facturas?pagina=1&limite=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "facturas"
+              ],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mis membresías",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "membresias"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mis reservas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me/reservas?pagina=1&limite=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "reservas"
+              ],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mis incidencias",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me/incidencias?pagina=1&limite=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "incidencias"
+              ],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Dashboard (según rol)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehículos (REQ-CAR)",
+      "item": [
+        {
+          "name": "Listar vehículos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos?pagina=1&limite=20&tipo=carro&propietario=con&placa=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                },
+                {
+                  "key": "tipo",
+                  "value": "carro",
+                  "disabled": true
+                },
+                {
+                  "key": "propietario",
+                  "value": "con",
+                  "disabled": true
+                },
+                {
+                  "key": "placa",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar por placa",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/placa/{{placa}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "placa",
+                "{{placa}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vehículo por id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/{{vehiculoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{vehiculoId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Historial de propietarios",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/{{vehiculoId}}/historial",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{vehiculoId}}",
+                "historial"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear vehículo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            },
+            "description": "Carro: AAA123 · Moto: AAA12 o AAA12A. Agrega \"usuario_id\" para asignarle propietario. Guarda el id en vehiculoId.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placa}}\",\n  \"tipo\": \"carro\",\n  \"color\": \"Rojo\",\n  \"marca\": \"Mazda\",\n  \"modelo\": \"3\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta 2xx\", () => pm.response.to.be.success);",
+                  "const r = pm.response.json();",
+                  "if (r.data) pm.environment.set(\"vehiculoId\", r.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar vehículo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/{{vehiculoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{vehiculoId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placa}}\",\n  \"tipo\": \"carro\",\n  \"color\": \"Negro\",\n  \"marca\": \"Mazda\",\n  \"modelo\": \"3\",\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Asignar / reasignar propietario",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/{{vehiculoId}}/propietario",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{vehiculoId}}",
+                "propietario"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario_id\": 4,\n  \"motivo\": \"Prueba desde Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Celdas y pisos (REQ-CLD)",
+      "item": [
+        {
+          "name": "Pisos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/pisos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pisos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar celdas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/celdas?piso_id=1&tipo=carro&estado=disponible&accesible=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas"
+              ],
+              "query": [
+                {
+                  "key": "piso_id",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "tipo",
+                  "value": "carro",
+                  "disabled": true
+                },
+                {
+                  "key": "estado",
+                  "value": "disponible",
+                  "disabled": true
+                },
+                {
+                  "key": "accesible",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Resumen de ocupación",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/celdas/resumen",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "resumen"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Celda por id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/celdas/{{celdaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "{{celdaId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear celda",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"C-20\",\n  \"piso_id\": 2,\n  \"area\": \"C\",\n  \"tipo\": \"carro\",\n  \"es_accesible\": false,\n  \"fila_mapa\": \"superior\",\n  \"posicion\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta 2xx\", () => pm.response.to.be.success);",
+                  "const r = pm.response.json();",
+                  "if (r.data) pm.environment.set(\"celdaId\", r.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar celda",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/{{celdaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "{{celdaId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"C-20\",\n  \"piso_id\": 2,\n  \"area\": \"C\",\n  \"tipo\": \"carro\",\n  \"es_accesible\": true,\n  \"fila_mapa\": \"superior\",\n  \"posicion\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cambiar estado de celda",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/{{celdaId}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "{{celdaId}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"fuera_servicio\",\n  \"nota\": \"Mantenimiento\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Activar / inactivar celda",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/{{celdaId}}/activa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "{{celdaId}}",
+                "activa"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activa\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Puertas",
+      "item": [
+        {
+          "name": "Listar puertas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/puertas?incluir_inactivas=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "puertas"
+              ],
+              "query": [
+                {
+                  "key": "incluir_inactivas",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear puerta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/puertas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "puertas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Oriente\",\n  \"tipo\": \"mixta\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta 2xx\", () => pm.response.to.be.success);",
+                  "const r = pm.response.json();",
+                  "if (r.data) pm.environment.set(\"puertaNuevaId\", r.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar puerta",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/puertas/{{puertaNuevaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "puertas",
+                "{{puertaNuevaId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Oriente\",\n  \"tipo\": \"entrada\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Activar / inactivar puerta",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/puertas/{{puertaNuevaId}}/activa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "puertas",
+                "{{puertaNuevaId}}",
+                "activa"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activa\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pico y placa (REQ-CAR-4)",
+      "item": [
+        {
+          "name": "Listar reglas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/pico-placa?tipo_vehiculo=carro&dia_semana=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pico-placa"
+              ],
+              "query": [
+                {
+                  "key": "tipo_vehiculo",
+                  "value": "carro",
+                  "disabled": true
+                },
+                {
+                  "key": "dia_semana",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reglas de hoy",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/pico-placa/hoy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pico-placa",
+                "hoy"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear regla",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pico-placa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pico-placa"
+              ]
+            },
+            "description": "dia_semana: 1 lunes … 7 domingo. 409 si se cruza con otra regla.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_vehiculo\": \"carro\",\n  \"dia_semana\": 6,\n  \"digito\": 5,\n  \"hora_inicio\": \"08:00\",\n  \"hora_fin\": \"12:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta 2xx\", () => pm.response.to.be.success);",
+                  "const r = pm.response.json();",
+                  "if (r.data) pm.environment.set(\"reglaId\", r.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar regla",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pico-placa/{{reglaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pico-placa",
+                "{{reglaId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_vehiculo\": \"carro\",\n  \"dia_semana\": 6,\n  \"digito\": 5,\n  \"hora_inicio\": \"07:00\",\n  \"hora_fin\": \"13:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Activar / inactivar regla",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pico-placa/{{reglaId}}/activa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pico-placa",
+                "{{reglaId}}",
+                "activa"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activa\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Entradas, salidas y cobro (REQ-INEX)",
+      "description": "Flujo completo en orden: 1 → 5. Requiere sesión de admin u operador.",
+      "item": [
+        {
+          "name": "1. Previsualizar entrada",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/estadias/previsualizar?placa={{placa}}&requiere_accesible=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "estadias",
+                "previsualizar"
+              ],
+              "query": [
+                {
+                  "key": "placa",
+                  "value": "{{placa}}"
+                },
+                {
+                  "key": "requiere_accesible",
+                  "value": "0"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2. Registrar entrada (multipart)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/estadias/entrada",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "estadias",
+                "entrada"
+              ]
+            },
+            "description": "El vehículo debe existir (404 VEHICULO_NO_REGISTRADO → créalo en Vehículos). Guarda estadiaId.\n\nFoto opcional: en Body → form-data agrega la clave \"foto\", cámbiala a tipo File y elige un jpg/png ≤ 2 MB.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "puerta_id",
+                  "value": "{{puertaId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "placa",
+                  "value": "{{placa}}",
+                  "type": "text"
+                },
+                {
+                  "key": "requiere_accesible",
+                  "value": "false",
+                  "type": "text"
+                },
+                {
+                  "key": "deja_llaves",
+                  "value": "false",
+                  "type": "text"
+                },
+                {
+                  "key": "observaciones_entrada",
+                  "value": "Sin daños visibles",
+                  "type": "text"
+                },
+                {
+                  "key": "celda_id",
+                  "value": "",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "confirmar_accesible",
+                  "value": "false",
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta 2xx\", () => pm.response.to.be.success);",
+                  "const r = pm.response.json();",
+                  "if (r.data) pm.environment.set(\"estadiaId\", r.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Liquidar salida (no cierra)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/estadias/salida",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "estadias",
+                "salida"
+              ]
+            },
+            "description": "También acepta codigo_ticket en lugar de placa.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"puerta_id\": \"{{puertaId}}\",\n  \"placa\": \"{{placa}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "4. Recalcular con descuento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/estadias/{{estadiaId}}/liquidar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "estadias",
+                "{{estadiaId}}",
+                "liquidar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descuento_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "5. Pagar y cerrar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/estadias/{{estadiaId}}/pagar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "estadias",
+                "{{estadiaId}}",
+                "pagar"
+              ]
+            },
+            "description": "metodo_pago: efectivo | tarjeta | transferencia. Opcional: descuento_id. Guarda facturaId.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"puerta_id\": \"{{puertaId}}\",\n  \"metodo_pago\": \"efectivo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta 2xx\", () => pm.response.to.be.success);",
+                  "const r = pm.response.json();",
+                  "if (r.data) pm.environment.set(\"facturaId\", r.data.factura.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vehículos dentro",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/estadias/en-curso",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "estadias",
+                "en-curso"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Últimos movimientos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/estadias/ultimos-movimientos?limite=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "estadias",
+                "ultimos-movimientos"
+              ],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Historial de estadías",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/estadias?pagina=1&limite=20&placa=&desde=2026-10-01&hasta=2026-10-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "estadias"
+              ],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                },
+                {
+                  "key": "placa",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "desde",
+                  "value": "2026-10-01",
+                  "disabled": true
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-10-31",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ticket (JSON)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/estadias/{{estadiaId}}/ticket",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "estadias",
+                "{{estadiaId}}",
+                "ticket"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ticket (PDF)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/estadias/{{estadiaId}}/ticket.pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "estadias",
+                "{{estadiaId}}",
+                "ticket.pdf"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Accesos denegados",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/accesos-denegados?pagina=1&limite=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "accesos-denegados"
+              ],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tarifas y descuentos (REQ-TAR, REQ-DES)",
+      "item": [
+        {
+          "name": "Tarifas vigentes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/tarifas?historial=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas"
+              ],
+              "query": [
+                {
+                  "key": "historial",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Nueva tarifa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas"
+              ]
+            },
+            "description": "Crea la nueva vigente y desactiva la anterior del mismo tipo.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_vehiculo\": \"moto\",\n  \"valor_fraccion\": 60,\n  \"minutos_fraccion\": 1,\n  \"minutos_gracia\": 0,\n  \"valor_dia_maximo\": 12000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Simular cobro",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas/simular",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas",
+                "simular"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_vehiculo\": \"carro\",\n  \"minutos\": 157\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Listar descuentos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/descuentos?activos=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos"
+              ],
+              "query": [
+                {
+                  "key": "activos",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear descuento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Prueba Postman\",\n  \"descripcion\": \"Descuento de prueba\",\n  \"porcentaje\": 15\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta 2xx\", () => pm.response.to.be.success);",
+                  "const r = pm.response.json();",
+                  "if (r.data) pm.environment.set(\"descuentoId\", r.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar descuento",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos/{{descuentoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos",
+                "{{descuentoId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Prueba Postman\",\n  \"descripcion\": \"Editado\",\n  \"porcentaje\": 20\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Activar / inactivar descuento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos/{{descuentoId}}/activo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos",
+                "{{descuentoId}}",
+                "activo"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Membresías (REQ-MEM-1)",
+      "item": [
+        {
+          "name": "Listar membresías",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/membresias?pagina=1&limite=20&estado=activa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias"
+              ],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                },
+                {
+                  "key": "estado",
+                  "value": "activa",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cotizar",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/membresias/cotizar?vehiculo_id={{vehiculoId}}&tipo=mensual&fecha_inicio=2026-11-01",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias",
+                "cotizar"
+              ],
+              "query": [
+                {
+                  "key": "vehiculo_id",
+                  "value": "{{vehiculoId}}"
+                },
+                {
+                  "key": "tipo",
+                  "value": "mensual"
+                },
+                {
+                  "key": "fecha_inicio",
+                  "value": "2026-11-01"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Membresía por id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/membresias/{{membresiaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias",
+                "{{membresiaId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear membresía",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias"
+              ]
+            },
+            "description": "tipo: mensual | anual. Opcional: celda_asignada_id. El vehículo debe ser del usuario.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario_id\": 4,\n  \"vehiculo_id\": \"{{vehiculoId}}\",\n  \"tipo\": \"mensual\",\n  \"fecha_inicio\": \"2026-11-01\",\n  \"metodo_pago\": \"efectivo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta 2xx\", () => pm.response.to.be.success);",
+                  "const r = pm.response.json();",
+                  "if (r.data) pm.environment.set(\"membresiaId\", r.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancelar membresía",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/membresias/{{membresiaId}}/cancelar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias",
+                "{{membresiaId}}",
+                "cancelar"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Facturas (REQ-FAC)",
+      "item": [
+        {
+          "name": "Listar facturas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/facturas?pagina=1&limite=20&metodo_pago=efectivo&concepto=estadia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "facturas"
+              ],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                },
+                {
+                  "key": "metodo_pago",
+                  "value": "efectivo",
+                  "disabled": true
+                },
+                {
+                  "key": "concepto",
+                  "value": "estadia",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Resumen de hoy",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/facturas/resumen-hoy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "facturas",
+                "resumen-hoy"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Factura por id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/facturas/{{facturaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "facturas",
+                "{{facturaId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Factura (PDF)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/facturas/{{facturaId}}/pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "facturas",
+                "{{facturaId}}",
+                "pdf"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reservas (REQ-RES-1)",
+      "item": [
+        {
+          "name": "Listar reservas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reservas?pagina=1&limite=20&activas=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                },
+                {
+                  "key": "activas",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear reserva",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            },
+            "description": "La celda debe estar disponible y ser del tipo del vehículo. Vence a los 30 min.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehiculo_id\": \"{{vehiculoId}}\",\n  \"celda_id\": \"{{celdaId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta 2xx\", () => pm.response.to.be.success);",
+                  "const r = pm.response.json();",
+                  "if (r.data) pm.environment.set(\"reservaId\", r.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reserva por id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reservas/{{reservaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "{{reservaId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancelar reserva",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/reservas/{{reservaId}}/cancelar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "{{reservaId}}",
+                "cancelar"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Incidencias (REQ-INCD-1)",
+      "item": [
+        {
+          "name": "Listar incidencias",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/incidencias?pagina=1&limite=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias"
+              ],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Incidencia por id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/incidencias/{{incidenciaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias",
+                "{{incidenciaId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar incidencia",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_incidencia_id\": 1,\n  \"placa\": \"{{placa}}\",\n  \"descripcion\": \"Rayón leve en el bómper trasero.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta 2xx\", () => pm.response.to.be.success);",
+                  "const r = pm.response.json();",
+                  "if (r.data) pm.environment.set(\"incidenciaId\", r.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tipos de incidencia",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/tipos-incidencia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tipos-incidencia"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear tipo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tipos-incidencia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tipos-incidencia"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Vidrio roto\",\n  \"descripcion\": \"Daño en ventanas o parabrisas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Respuesta 2xx\", () => pm.response.to.be.success);",
+                  "const r = pm.response.json();",
+                  "if (r.data) pm.environment.set(\"tipoIncidenciaId\", r.data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar tipo",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tipos-incidencia/{{tipoIncidenciaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tipos-incidencia",
+                "{{tipoIncidenciaId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Vidrio roto\",\n  \"descripcion\": \"Ventanas, parabrisas o espejos\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Activar / inactivar tipo",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tipos-incidencia/{{tipoIncidenciaId}}/activo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tipos-incidencia",
+                "{{tipoIncidenciaId}}",
+                "activo"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"activo\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notificaciones (REQ-NOT-1)",
+      "item": [
+        {
+          "name": "Mis notificaciones",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/notificaciones/mias?pagina=1&limite=20&leida=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notificaciones",
+                "mias"
+              ],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                },
+                {
+                  "key": "leida",
+                  "value": "0",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Conteo no leídas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/notificaciones/mias/conteo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notificaciones",
+                "mias",
+                "conteo"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Marcar una como leída",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/notificaciones/{{notificacionId}}/leida",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notificaciones",
+                "{{notificacionId}}",
+                "leida"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Marcar todas como leídas",
+          "request": {
+            "method": "PATCH",
+            "url": {
+              "raw": "{{baseUrl}}/notificaciones/mias/leer-todas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notificaciones",
+                "mias",
+                "leer-todas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Enviar mensaje manual",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notificaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notificaciones"
+              ]
+            },
+            "description": "destino: usuario (con usuario_id) | rol (con rol) | todos.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destino\": \"rol\",\n  \"rol\": \"operador\",\n  \"titulo\": \"Prueba\",\n  \"mensaje\": \"Mensaje enviado desde Postman.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reportes (REQ-REP, solo admin)",
+      "description": "Activa el parámetro formato=csv para descargar en CSV.",
+      "item": [
+        {
+          "name": "Usuarios",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reportes/usuarios?pagina=1&limite=20&formato=csv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                },
+                {
+                  "key": "formato",
+                  "value": "csv",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vehículos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reportes/vehiculos?pagina=1&limite=20&formato=csv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "vehiculos"
+              ],
+              "query": [
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                },
+                {
+                  "key": "formato",
+                  "value": "csv",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Entradas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reportes/entradas?desde=2026-10-01&hasta=2026-10-31&pagina=1&limite=20&formato=csv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "entradas"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-10-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-10-31"
+                },
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                },
+                {
+                  "key": "formato",
+                  "value": "csv",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Salidas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reportes/salidas?desde=2026-10-01&hasta=2026-10-31&pagina=1&limite=20&formato=csv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "salidas"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-10-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-10-31"
+                },
+                {
+                  "key": "pagina",
+                  "value": "1"
+                },
+                {
+                  "key": "limite",
+                  "value": "20"
+                },
+                {
+                  "key": "formato",
+                  "value": "csv",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Incidencias",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reportes/incidencias?desde=2026-10-01&hasta=2026-10-31&formato=csv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "incidencias"
+              ],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2026-10-01"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2026-10-31"
+                },
+                {
+                  "key": "formato",
+                  "value": "csv",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Pico y placa",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reportes/pico-placa?fecha=2026-10-27&formato=csv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "pico-placa"
+              ],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "2026-10-27"
+                },
+                {
+                  "key": "formato",
+                  "value": "csv",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Celdas ocupadas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reportes/celdas-ocupadas?fecha=2026-10-27&formato=csv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "celdas-ocupadas"
+              ],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "2026-10-27"
+                },
+                {
+                  "key": "formato",
+                  "value": "csv",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Celdas más usadas",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reportes/celdas-mas-usadas?limite=10&formato=csv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "celdas-mas-usadas"
+              ],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "10"
+                },
+                {
+                  "key": "formato",
+                  "value": "csv",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vehículos frecuentes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reportes/vehiculos-frecuentes?limite=10&formato=csv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "vehiculos-frecuentes"
+              ],
+              "query": [
+                {
+                  "key": "limite",
+                  "value": "10"
+                },
+                {
+                  "key": "formato",
+                  "value": "csv",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ocupación",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reportes/ocupacion?formato=csv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "ocupacion"
+              ],
+              "query": [
+                {
+                  "key": "formato",
+                  "value": "csv",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Financiero",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/reportes/financiero?agrupar=dia&formato=csv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "financiero"
+              ],
+              "query": [
+                {
+                  "key": "agrupar",
+                  "value": "dia"
+                },
+                {
+                  "key": "formato",
+                  "value": "csv",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Configuración (solo admin)",
+      "item": [
+        {
+          "name": "Parámetros del negocio",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/configuracion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "configuracion"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cambiar parámetro",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/configuracion/reserva_minutos_expiracion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "configuracion",
+                "reserva_minutos_expiracion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"valor\": \"30\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

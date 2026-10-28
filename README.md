@@ -152,6 +152,15 @@ npm test
 - Cada suite deja la base de datos como la encontró. Si una prueba se interrumpe a mitad, `npm run db:reset` la restaura.
 - La prueba manual guiada por pantalla y rol está en [`docs/verificacion-manual.md`](docs/verificacion-manual.md).
 
+### Probar la API con Postman
+
+1. Arranca el backend (`npm run dev`) y comprueba `GET /api/v1/salud` → `{ estado: "ok", bd: "ok" }`.
+2. En Postman: **Import** → los dos archivos de [`postman/`](postman/) (colección `PARKO · API REST` y entorno `PARKO · local`). Arriba a la derecha elige el entorno **PARKO · local**.
+3. Ejecuta un login de la carpeta **0 · Autenticación** (Administrador, Operador o Cliente). La cookie `parko_sesion` queda guardada y se envía sola en las demás peticiones durante 8 h; para cambiar de rol ejecuta otro login.
+4. Las peticiones que crean algo guardan su id en el entorno (`vehiculoId`, `estadiaId`, `facturaId`…), así que las siguientes (editar, pagar, PDF) ya lo usan. La carpeta **Entradas, salidas y cobro** está numerada en el orden del flujo.
+
+No hay métodos `DELETE`: el sistema usa borrado lógico, así que "eliminar" se hace con los `PATCH …/activo`, `…/activa` o `…/estado`. Las peticiones de escritura cambian la BD de verdad; `npm run db:reset` la deja como al principio. Parámetros y permisos de cada ruta: [`docs/api.md`](docs/api.md).
+
 ## Base de datos
 
 - [`backend/database/schema.sql`](backend/database/schema.sql): modelo consolidado, **con todas las migraciones aplicadas**. Una instalación nueva solo necesita `schema.sql` + `seed.sql`. Descripción y diagrama en [`docs/modelo-datos.md`](docs/modelo-datos.md).
