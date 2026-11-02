@@ -312,6 +312,13 @@
 }
 
 /* Variante vertical (menú lateral de reportes): mismas pestañas apiladas */
+/* En móvil las pestañas pasan a otra línea en vez de desbordar la página */
+@media (max-width: 760px) {
+  .molecule-level-tabs {
+    flex-wrap: wrap;
+  }
+}
+
 .molecule-level-tabs--vertical {
   flex-direction: column;
   padding: 2px;
