@@ -198,21 +198,21 @@ description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundationa
 
 ## Phase 9: Interfaz por historia (rebanada vertical, constitución §VII)
 
-- [ ] T047 [P] [US1] [US3] [US5] `frontend/roles.html` + `frontend/js/views/roles.view.js` + `frontend/js/services/roles.service.js`: tabla paginada (10) con buscador, filtro de estado, etiqueta BASE, conteo de usuarios, acciones Ver, Editar y Cambiar estado (`<dialog>` de confirmación; 409 → toast con `message`); estados de carga, vacío y error
-- [ ] T048 [P] [US2] [US4] Diálogo «Nuevo / Editar rol» en `frontend/roles.html` (`<template>` de grupos de permisos con casillas por módulo; validación en línea 3–40 y «Seleccione al menos un permiso»; `details` junto al campo; `ROL_DUPLICADO` en el campo nombre; el nombre se deshabilita en roles base)
-- [ ] T049 [P] [US3] `frontend/rol-detalle.html` + `frontend/js/views/rol-detalle.view.js`: datos del rol, permisos agrupados, usuarios asignados y 404 «Rol no encontrado»
-- [ ] T050 [P] [US6] `frontend/permisos.html` + `frontend/js/views/permisos.view.js`: catálogo de solo lectura agrupado
-- [ ] T051 `frontend/js/components/navbar.js`: entradas Configuración › Roles y Permisos solo con `roles.ver`; acceso directo sin permiso → aviso 403 (criterio 2 de HU-06)
+- [X] T047 [P] [US1] [US3] [US5] `frontend/roles.html` + `frontend/js/views/roles.view.js` + `frontend/js/services/roles.service.js`: tabla paginada (10) con buscador, filtro de estado, etiqueta BASE, conteo de usuarios, acciones Ver, Editar y Cambiar estado (`<dialog>` de confirmación; 409 → toast con `message`); estados de carga, vacío y error
+- [X] T048 [P] [US2] [US4] Diálogo «Nuevo / Editar rol» en `frontend/roles.html` (`<template>` de grupos de permisos con casillas por módulo; validación en línea 3–40 y «Seleccione al menos un permiso»; `details` junto al campo; `ROL_DUPLICADO` en el campo nombre; el nombre se deshabilita en roles base)
+- [X] T049 [P] [US3] `frontend/rol-detalle.html` + `frontend/js/views/rol-detalle.view.js`: datos del rol, permisos agrupados, usuarios asignados y 404 «Rol no encontrado»
+- [X] T050 [P] [US6] `frontend/permisos.html` + `frontend/js/views/permisos.view.js`: catálogo de solo lectura agrupado
+- [X] T051 `frontend/js/components/navbar.js`: entradas Configuración › Roles y Permisos solo con `roles.ver`; acceso directo sin permiso → aviso 403 (criterio 2 de HU-06)
 
 ---
 
 ## Phase 10: Polish & Cross-Cutting
 
-- [ ] T052 Carpeta «001 Roles y permisos» en `backend/docs/postman/parqueadero.postman_collection.json` con las peticiones de la tabla de [quickstart.md](quickstart.md#colección-postman-carpeta-001-roles-y-permisos), cada una con `pm.test` de status y `ok`/`error.code`; `npm run test:api` en verde con el servidor en marcha
-- [ ] T053 [P] Actualizar `README.md` y `backend/README.md`: instalación, Node 20, `.env`/`.env.test`, `db:reset`, usuarios de prueba, endpoints de 001, pruebas (Jest y Newman), flujo spec-kit + Gitflow y aviso de certificados TLS
-- [ ] T054 Verificar la cobertura de `roles.service.js` (≥ 80 %), `npm run lint` sin errores y `npm run dev` arrancando; prueba manual según [quickstart.md](quickstart.md#interfaz-prueba-manual) en escritorio y a 375 px
-- [ ] T055 Verificar SC-004/RNF-REN-02: sembrar 50 000 filas de prueba en `usuario` (script temporal fuera del repositorio), medir `GET /roles` (p95 ≤ 1 s) y revisar `EXPLAIN` de `rolesRepository.listar`; documentar el resultado en `specs/001-roles-permisos/quickstart.md`
-- [ ] T056 Revisar que cada criterio de HU-01 a HU-06 tenga su prueba Jest con nombre `HU-xx Ey` y su caso Postman (RNF-CAL-03), y marcar `[X]` en este archivo
+- [X] T052 Carpeta «001 Roles y permisos» en `backend/docs/postman/parqueadero.postman_collection.json` con las peticiones de la tabla de [quickstart.md](quickstart.md#colección-postman-carpeta-001-roles-y-permisos), cada una con `pm.test` de status y `ok`/`error.code`; `npm run test:api` en verde con el servidor en marcha
+- [X] T053 [P] Actualizar `README.md` (se unificó en el README raíz; no se crea `backend/README.md`): instalación, Node 20, `.env`/`.env.test`, `db:reset`, usuarios de prueba, endpoints de 001, pruebas (Jest y Newman), flujo spec-kit + Gitflow y aviso de certificados TLS
+- [ ] T054 Verificar la cobertura de `roles.service.js` (≥ 80 %), `npm run lint` sin errores y `npm run dev` arrancando; prueba manual según [quickstart.md](quickstart.md#interfaz-prueba-manual) en escritorio y a 375 px — **Hecho:** cobertura de roles.service 97,6 %, lint sin errores, `npm run dev` arranca. **Pendiente:** prueba manual en navegador (escritorio y 375 px).
+- [X] T055 Verificar SC-004/RNF-REN-02: sembrar 50 000 filas de prueba en `usuario` (script temporal fuera del repositorio), medir `GET /roles` (p95 ≤ 1 s) y revisar `EXPLAIN` de `rolesRepository.listar`; documentar el resultado en `specs/001-roles-permisos/quickstart.md`
+- [X] T056 Revisar que cada criterio de HU-01 a HU-06 tenga su prueba Jest con nombre `HU-xx Ey` y su caso Postman (RNF-CAL-03), y marcar `[X]` en este archivo
 
 ---
 

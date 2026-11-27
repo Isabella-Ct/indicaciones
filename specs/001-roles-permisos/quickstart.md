@@ -78,3 +78,15 @@ H="Authorization: Bearer $TOKEN"
 | PATCH /roles/:id/estado | 200 | 409 rol base · 409 con usuarios activos · 422 estado inválido |
 | GET /permisos | 200 | 403 Operador |
 | GET /health | 200 | — |
+
+## Rendimiento (SC-004 · RNF-REN-02) — medido el 2026-11-27
+
+Con 50 007 filas en `usuario` (base `parqueaderodb_test`) y 40 peticiones seguidas a `GET /api/v1/roles?q=o&limit=10`:
+
+| Métrica | Resultado | Meta |
+|---|---|---|
+| p95 | **56 ms** | ≤ 1 000 ms |
+| mediana | 51 ms | — |
+| `EXPLAIN` | `rol` por PRIMARY (7 filas) · `usuario` por `idx_usuario_rol_estado` (ref) | sin recorrido completo |
+
+El conteo de usuarios por rol se hace en una sola consulta con `LEFT JOIN … GROUP BY`, sin N+1.

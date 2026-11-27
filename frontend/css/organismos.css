@@ -1745,3 +1745,62 @@ dialog.organism-modal:not([open]) {
 dialog.organism-modal::backdrop {
   background: var(--overlay);
 }
+
+/* --------------------------------------------------------------------------
+   Organism · permission-picker (spec 001): permisos agrupados por módulo en roles
+   -------------------------------------------------------------------------- */
+.organism-permission-picker {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.organism-permission-picker legend {
+  margin-bottom: 8px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.organism-permission-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.organism-permission-picker-group {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  min-width: 0;
+}
+
+.organism-permission-picker-group .atom-label-caps {
+  margin-bottom: 8px;
+}
+
+.organism-permission-picker-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.organism-permission-picker-list code {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.organism-permission-picker-group .organism-log-table {
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .organism-permission-picker-grid {
+    grid-template-columns: 1fr;
+  }
+}

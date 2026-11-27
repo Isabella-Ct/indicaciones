@@ -143,10 +143,11 @@ frontend/
 ├── index.html                  # página pública mínima (las specs 004 y 008 la completan)
 ├── login.html
 ├── roles.html                  # listado + diálogo nuevo/editar + diálogo de cambio de estado
+├── sin-acceso.html             # sesión sin pantallas disponibles en esta versión
 ├── rol-detalle.html
 ├── permisos.html
 ├── 404.html, error.html
-├── css/{tokens.css, base.css, componentes.css}
+├── css/{estilos.css → tokens, base, atomos, moleculas, organismos, plantillas}.css   (PARKO de v1, sin cambios de valores)
 ├── js/
 │   ├── config/config.js
 │   ├── api/http.js

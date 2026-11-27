@@ -3,10 +3,11 @@
  * Esc cierra, y el foco vuelve al botón que lo abrió (RNF-USA-04).
  */
 const retornos = new WeakMap();
+const preparados = new WeakSet();
 
 function preparar(dialogo) {
-  if (dialogo.dataset.listo) return;
-  dialogo.dataset.listo = '1';
+  if (preparados.has(dialogo)) return;
+  preparados.add(dialogo);
   dialogo
     .querySelectorAll('[data-cerrar]')
     .forEach((boton) => boton.addEventListener('click', () => cerrarDialogo(dialogo)));
