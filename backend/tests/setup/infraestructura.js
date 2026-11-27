@@ -2,6 +2,7 @@
 // propia infraestructura para no alterar los conteos de la semilla que usan otros archivos.
 const { pool } = require('../../src/config/db');
 const { app, request, auth } = require('./helpers');
+const { VEHICULOS } = require('../../database/generar-seed');
 
 let secuencia = 0;
 const sufijo = () => `${Date.now() % 1e6}${++secuencia}`;
@@ -29,11 +30,23 @@ async function crearCeldas(token, idParqueadero, { prefijo = 'T-', cantidad = 3,
   return filas.map((f) => f.id_celda);
 }
 
-/** Inserta un vehículo directo en la BD (el CRUD de vehículos es de la spec 005). Devuelve { id, placa }. */
+// Placas de la semilla (spec 005): las aleatorias nunca las repiten.
+const PLACAS_SEMILLA = new Set(VEHICULOS.map((v) => v[1]));
+const letra = () => String.fromCharCode(65 + Math.floor(Math.random() * 26));
+
+/** Placa aleatoria válida para el tipo que no está en la semilla. */
+function placaAleatoria(tipo = 'carro') {
+  for (;;) {
+    const n = String(Math.floor(Math.random() * 900) + 100);
+    const letras = letra() + letra() + letra();
+    const placa = tipo === 'carro' ? `${letras}${n}` : `${letras}${n.slice(0, 2)}${letra()}`;
+    if (!PLACAS_SEMILLA.has(placa)) return placa;
+  }
+}
+
+/** Inserta un vehículo directo en la BD (sin pasar por la API). Devuelve { id, placa }. */
 async function crearVehiculo(tipo = 'carro') {
-  const n = String(Math.floor(Math.random() * 900) + 100);
-  const letras = Array.from({ length: 3 }, () => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join('');
-  const placa = tipo === 'carro' ? `${letras}${n}` : `${letras}${n.slice(0, 2)}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`;
+  const placa = placaAleatoria(tipo);
   const [r] = await pool.query(
     "INSERT INTO vehiculo (placa, tipo, color, marca, modelo, estado) VALUES (?, ?, 'Gris', 'Prueba', 2024, 'activo')",
     [placa, tipo]
@@ -46,4 +59,17 @@ async function ocuparPorSql(idCelda, idVehiculo) {
   await pool.query("UPDATE celda SET estado = 'ocupada', id_vehiculo_actual = ? WHERE id_celda = ?", [idVehiculo, idCelda]);
 }
 
-module.exports = { crearParqueadero, crearCeldas, crearVehiculo, ocuparPorSql, sufijo };
+/**
+ * Abre un movimiento por SQL (la spec 007 hará la entrada real): celda ocupada + movimiento abierto
+ * en la puerta 1 con el Operador semilla. Devuelve el id del movimiento.
+ */
+async function abrirMovimiento(idVehiculo, idCelda, { entrada = new Date() } = {}) {
+  await ocuparPorSql(idCelda, idVehiculo);
+  const [r] = await pool.query(
+    "INSERT INTO movimiento (id_vehiculo, id_celda, id_puerta_entrada, fecha_hora_entrada, id_operador_entrada) VALUES (?, ?, 1, ?, 2)",
+    [idVehiculo, idCelda, entrada]
+  );
+  return r.insertId;
+}
+
+module.exports = { crearParqueadero, crearCeldas, crearVehiculo, placaAleatoria, ocuparPorSql, abrirMovimiento, sufijo };

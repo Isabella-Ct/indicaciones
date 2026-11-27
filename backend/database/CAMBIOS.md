@@ -4,6 +4,19 @@ Historial de `schema.sql` y de las migraciones en `migrations/`. Cada entrada in
 
 ---
 
+## 2.1.0 — 2026-11-27 · spec `005-vehiculos`
+
+Migración: `migrations/001_historial_propietario.sql` (para una BD 2.0.0 con datos; `npm run db:reset` ya crea la 2.1.0).
+
+| Cambio | Detalle | RF / decisión |
+|---|---|---|
+| Tabla `historial_propietario` `[Propuesta]` | `id_historial`, `id_vehiculo`, `id_usuario`, `fecha_desde`, `fecha_hasta` (NULL = vigente), `id_usuario_registro`; columna generada `vehiculo_abierto` con `UNIQUE` (un solo periodo abierto por vehículo); `CHECK fecha_hasta ≥ fecha_desde`; índices por vehículo y por usuario | RF-VEH-08, RN-12 · research R-05 de la spec 005 |
+| Semilla | 6 vehículos: ABC123 y QWE45A (Andrea), FGH678 (Carlos), JKL482 (Valentina), MNP908 (sin propietario), RTY12 (Mateo, inactivo); cada uno con propietario tiene su periodo abierto | research R-11 |
+
+6.1 solo guarda el propietario actual (`vehiculo.id_propietario`); sin el historial, al reasignar se perdería a quién pertenecían los movimientos anteriores (criterio 2 de HU-27). La migración abre un periodo para cada vehículo que ya tiene propietario, con su `created_at` como inicio.
+
+---
+
 ## 2.0.0 (sin cambios en el esquema; semilla ampliada) — 2026-11-27 · spec `004-parqueaderos-celdas`
 
 La spec 004 usa `parqueadero`, `puerta_acceso` y `celda` tal como están en la 2.0.0. Solo cambia `seed.sql` (generado con `generar-seed.js`, research R-11):

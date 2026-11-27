@@ -8,32 +8,32 @@
 
 ## Fase 1: Preparación
 
-- [ ] T001 `backend/database/schema.sql` 2.1.0: tabla `historial_propietario` (data-model.md HistorialPropietario.fecha_desde, HistorialPropietario.fecha_hasta, HistorialPropietario.vehiculo_abierto); `backend/database/migrations/001_historial_propietario.sql`; entrada 2.1.0 en `CAMBIOS.md`
-- [ ] T002 `backend/database/generar-seed.js` + `seed.sql`: 6 vehículos y sus periodos abiertos (research R-11); `npm run db:reset`; placas de la semilla excluidas en `tests/setup/infraestructura.js`
+- [X] T001 `backend/database/schema.sql` 2.1.0: tabla `historial_propietario` (data-model.md HistorialPropietario.fecha_desde, HistorialPropietario.fecha_hasta, HistorialPropietario.vehiculo_abierto); `backend/database/migrations/001_historial_propietario.sql`; entrada 2.1.0 en `CAMBIOS.md`
+- [X] T002 `backend/database/generar-seed.js` + `seed.sql`: 6 vehículos y sus periodos abiertos (research R-11); `npm run db:reset`; placas de la semilla excluidas en `tests/setup/infraestructura.js`
 
 ## Fase 2: Fundacional
 
-- [ ] T003 [P] `backend/src/modules/vehiculos/vehiculos.reglas.js` (`normalizarPlaca`, `placaValida(placa, tipo)`, `mensajeFormato(tipo)`, `modeloValido(anio, anioActual)`) + `anioActualBogota` en `utils/fechas.js` + `backend/tests/unit/vehiculos.reglas.test.js`
+- [X] T003 [P] `backend/src/modules/vehiculos/vehiculos.reglas.js` (`normalizarPlaca`, `placaValida(placa, tipo)`, `mensajeFormato(tipo)`, `modeloValido(anio, anioActual)`) + `anioActualBogota` en `utils/fechas.js` + `backend/tests/unit/vehiculos.reglas.test.js`
 
 ## Fase 3: US1 — Registrar un vehículo (P1) — HU-25
 
-- [ ] T004 [US1] `backend/tests/integration/vehiculos.test.js` bloque HU-25 E1–E5
-- [ ] T005 [US1] `backend/src/modules/vehiculos/` validator (data-model.md Vehiculo.placa, Vehiculo.tipo, Vehiculo.color, Vehiculo.marca, Vehiculo.modelo, Vehiculo.id_propietario), repository (insertar, obtener con propietario y `dentro`), service `crear` (409 `PLACA_DUPLICADA`, propietario opcional con su periodo, bitácora), controller y `POST /vehiculos`; registro en `rutasProtegidas()`
+- [X] T004 [US1] `backend/tests/integration/vehiculos.test.js` bloque HU-25 E1–E5
+- [X] T005 [US1] `backend/src/modules/vehiculos/` validator (data-model.md Vehiculo.placa, Vehiculo.tipo, Vehiculo.color, Vehiculo.marca, Vehiculo.modelo, Vehiculo.id_propietario), repository (insertar, obtener con propietario y `dentro`), service `crear` (409 `PLACA_DUPLICADA`, propietario opcional con su periodo, bitácora), controller y `POST /vehiculos`; registro en `rutasProtegidas()`
 
 ## Fase 4: US2 — Asociar un vehículo a su propietario (P1) — HU-26
 
-- [ ] T006 [US2] Bloque HU-26 E1–E4 en `vehiculos.test.js`
-- [ ] T007 [US2] Service `asignarPropietario(id, { idUsuario | tipoDocumento+numeroDocumento }, actor)` con `FOR UPDATE`, reglas de data-model.md § Transiciones (403 `SOLO_ADMIN_REASIGNA`, 404 `VEHICULO_NO_ENCONTRADO` / `USUARIO_NO_ENCONTRADO`, 409 `USUARIO_INACTIVO`), periodos en `historial_propietario` y bitácora; `PATCH /vehiculos/:id/propietario`
+- [X] T006 [US2] Bloque HU-26 E1–E4 en `vehiculos.test.js`
+- [X] T007 [US2] Service `asignarPropietario(id, { idUsuario | tipoDocumento+numeroDocumento }, actor)` con `FOR UPDATE`, reglas de data-model.md § Transiciones (403 `SOLO_ADMIN_REASIGNA`, 404 `VEHICULO_NO_ENCONTRADO` / `USUARIO_NO_ENCONTRADO`, 409 `USUARIO_INACTIVO`), periodos en `historial_propietario` y bitácora; `PATCH /vehiculos/:id/propietario`
 
 ## Fase 5: US4 — Consultar vehículos (P1) — HU-28
 
-- [ ] T008 [US4] Bloque HU-28 E1–E3 en `vehiculos.test.js` (movimiento abierto insertado por SQL para `dentro`)
-- [ ] T009 [US4] Repository `listar({ q, tipo, propietario, dentro, limit, offset })` (R-08), `historial(id)`, `ultimosMovimientos(id)`; service `listar`, `obtener`, `misVehiculos`; rutas `GET /vehiculos`, `GET /vehiculos/:id` y `GET /usuarios/me/vehiculos` (antes de `/:id` en `usuarios.routes.js`)
+- [X] T008 [US4] Bloque HU-28 E1–E3 en `vehiculos.test.js` (movimiento abierto insertado por SQL para `dentro`)
+- [X] T009 [US4] Repository `listar({ q, tipo, propietario, dentro, limit, offset })` (R-08), `historial(id)`, `ultimosMovimientos(id)`; service `listar`, `obtener`, `misVehiculos`; rutas `GET /vehiculos`, `GET /vehiculos/:id` y `GET /usuarios/me/vehiculos` (antes de `/:id` en `usuarios.routes.js`)
 
 ## Fase 6: US3 — Actualizar o reasignar un vehículo (P2) — HU-27
 
-- [ ] T010 [US3] Bloque HU-27 E1–E5 en `vehiculos.test.js`
-- [ ] T011 [US3] Service `actualizar` (solo diferencias en la bitácora; 409 `VEHICULO_DENTRO` al cambiar placa o tipo dentro; `idPropietario` usa `asignarPropietario`); `PUT /vehiculos/:id`
+- [X] T010 [US3] Bloque HU-27 E1–E5 en `vehiculos.test.js`
+- [X] T011 [US3] Service `actualizar` (solo diferencias en la bitácora; 409 `VEHICULO_DENTRO` al cambiar placa o tipo dentro; `idPropietario` usa `asignarPropietario`); `PUT /vehiculos/:id`
 
 ## Fase 7: Interfaz (Atomic Design)
 

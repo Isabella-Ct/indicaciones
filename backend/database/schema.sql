@@ -1,5 +1,5 @@
 -- =====================================================================
--- Sistema de Gestión de Parqueadero (Parking Lot ABC) · esquema v2.0.0
+-- Sistema de Gestión de Parqueadero (Parking Lot ABC) · esquema v2.1.0
 -- Fuente: SRS v2.0 §6.1 (modelo lógico) + tablas [Propuesta] de
 -- specs/001-roles-permisos/research.md R-09. Cambios: database/CAMBIOS.md
 -- MySQL 8 · InnoDB · utf8mb4_0900_ai_ci · hora America/Bogota (-05:00)
@@ -217,6 +217,28 @@ CREATE TABLE vehiculo (
     (tipo = 'carro' AND placa REGEXP '^[A-Z]{3}[0-9]{3}$') OR
     (tipo = 'moto'  AND placa REGEXP '^[A-Z]{3}[0-9]{2}[A-Z]?$')),
   CONSTRAINT ck_vehiculo_modelo CHECK (modelo >= 1950)
+) ENGINE=InnoDB;
+
+CREATE TABLE historial_propietario (
+  -- [Propuesta] spec 005 R-05: periodos de propiedad (RF-VEH-08); un solo periodo abierto por vehículo
+  id_historial        INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  id_vehiculo         INT UNSIGNED NOT NULL,
+  id_usuario          INT UNSIGNED NOT NULL,
+  fecha_desde         DATETIME     NOT NULL,
+  fecha_hasta         DATETIME     NULL,
+  id_usuario_registro INT UNSIGNED NULL,
+  vehiculo_abierto    INT UNSIGNED GENERATED ALWAYS AS (IF(fecha_hasta IS NULL, id_vehiculo, NULL)) STORED,
+  PRIMARY KEY (id_historial),
+  UNIQUE KEY uq_historial_abierto (vehiculo_abierto),
+  KEY idx_historial_vehiculo (id_vehiculo, fecha_desde),
+  KEY idx_historial_usuario (id_usuario, fecha_desde),
+  CONSTRAINT fk_historial_vehiculo FOREIGN KEY (id_vehiculo) REFERENCES vehiculo (id_vehiculo)
+    ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT fk_historial_usuario FOREIGN KEY (id_usuario) REFERENCES usuario (id_usuario)
+    ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT fk_historial_registro FOREIGN KEY (id_usuario_registro) REFERENCES usuario (id_usuario)
+    ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT ck_historial_fechas CHECK (fecha_hasta IS NULL OR fecha_hasta >= fecha_desde)
 ) ENGINE=InnoDB;
 
 CREATE TABLE celda (

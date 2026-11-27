@@ -195,7 +195,9 @@ describe('HU-08 Consultar y buscar usuarios', () => {
   test('HU-08 E4 detalle con vehículos y membresía, nunca la contraseña', async () => {
     const res = await api('get', '/usuarios/4', admin);
     expect(res.status).toBe(200);
-    expect(res.body.data).toMatchObject({ idUsuario: 4, vehiculos: [], membresiaVigente: null });
+    expect(res.body.data).toMatchObject({ idUsuario: 4, membresiaVigente: null });
+    // Desde la spec 005 la semilla le da a Andrea un carro y una moto (otras pruebas pueden agregarle más).
+    expect(res.body.data.vehiculos.map((v) => v.placa)).toEqual(expect.arrayContaining(['ABC123', 'QWE45A']));
     expect(JSON.stringify(res.body)).not.toMatch(/contrasena_?hash|claveFoto|\$2b\$/i);
   });
 

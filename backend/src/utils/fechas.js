@@ -76,8 +76,12 @@ function aIsoBogota(fecha) {
   return `${dia}T${hora}-05:00`;
 }
 
+/** Año actual en Bogotá (p. ej. para el rango del modelo de un vehículo). */
+const anioActualBogota = (fecha = new Date()) => Number(enBogota(fecha).fecha.slice(0, 4));
+
 module.exports = {
   aIsoBogota,
+  anioActualBogota,
   ZONA,
   enBogota,
   nombreDia,

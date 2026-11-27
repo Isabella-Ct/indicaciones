@@ -72,6 +72,17 @@ const PARQUEADEROS = [
   [1, 'Parqueadero ABC', 'Carrera 43 # 47-53, Medellín', 2, '24 horas', 'activo'],
   [2, 'Parqueadero ABC · Zona anexa', 'Carrera 43 # 47-61, Medellín', 1, '6:00 a. m. – 10:00 p. m.', 'inactivo'],
 ];
+// Vehículos (spec 005, research R-11): [id, placa, tipo, color, marca, modelo, id_propietario]
+const VEHICULOS = [
+  [1, 'ABC123', 'carro', 'Rojo', 'Chevrolet', 2018, 4],
+  [2, 'QWE45A', 'moto', 'Negro', 'Yamaha', 2021, 4],
+  [3, 'FGH678', 'carro', 'Blanco', 'Renault', 2020, 5],
+  [4, 'JKL482', 'carro', 'Gris', 'Mazda', 2022, 6],
+  [5, 'MNP908', 'carro', 'Azul', 'Kia', 2019, null],
+  [6, 'RTY12', 'moto', 'Rojo', 'Honda', 2017, 7],
+];
+const INICIO_SEMILLA = '2026-01-15 08:00:00';
+
 // [id_parqueadero, nombre, tipo, estado]
 const PUERTAS = [
   [1, 'Carrera 43', 'mixta', 'activo'],
@@ -190,13 +201,20 @@ async function generarSeed() {
   lineas.push(valores(celdas));
   lineas.push('');
 
+  lineas.push('-- Vehículos y su periodo de propiedad abierto (spec 005, RF-VEH-01, RF-VEH-04, RF-VEH-08)');
+  lineas.push('INSERT INTO vehiculo (id_vehiculo, placa, tipo, color, marca, modelo, id_propietario) VALUES');
+  lineas.push(valores(VEHICULOS));
+  lineas.push('INSERT INTO historial_propietario (id_vehiculo, id_usuario, fecha_desde) VALUES');
+  lineas.push(valores(VEHICULOS.filter((v) => v[6] !== null).map((v) => [v[0], v[6], INICIO_SEMILLA])));
+  lineas.push('');
+
   lineas.push('-- Consecutivos sin huecos (RN-22)');
   lineas.push('INSERT INTO consecutivo (clave, prefijo, siguiente, longitud) VALUES');
   lineas.push(CONSECUTIVOS.map(([c, p]) => `  (${q(c)}, ${q(p)}, 1, 6)`).join(',\n') + ';');
   lineas.push('');
 
   fs.writeFileSync(DESTINO, lineas.filter((l) => l !== null).join('\n'));
-  return { permisos: permisos.length, usuarios: USUARIOS.length, roles: ROLES.length, parqueaderos: PARQUEADEROS.length, puertas: PUERTAS.length, celdas: construirCeldas().length };
+  return { permisos: permisos.length, usuarios: USUARIOS.length, roles: ROLES.length, parqueaderos: PARQUEADEROS.length, puertas: PUERTAS.length, celdas: construirCeldas().length, vehiculos: VEHICULOS.length };
 }
 
 if (require.main === module) {
@@ -208,4 +226,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { generarSeed, construirPermisos, CATALOGO };
+module.exports = { generarSeed, construirPermisos, CATALOGO, VEHICULOS };

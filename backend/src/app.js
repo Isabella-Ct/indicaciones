@@ -30,6 +30,8 @@ function rutasProtegidas() {
     { ruta: '/parqueaderos', router: require('./modules/parqueaderos/parqueaderos.routes').parqueaderosRouter },
     { ruta: '/puertas', router: require('./modules/parqueaderos/parqueaderos.routes').puertasRouter },
     { ruta: '/celdas', router: require('./modules/celdas/celdas.routes') },
+    // spec 005-vehiculos
+    { ruta: '/vehiculos', router: require('./modules/vehiculos/vehiculos.routes') },
   ];
 }
 
