@@ -1,4 +1,6 @@
 // Páginas de la spec 002, armadas con el mismo marco que las de la 001 (se ejecuta junto con armar-paginas.js).
+const { camposVehiculo } = require('./partes-vehiculo.js');
+
 module.exports = ({ pagina, tablaVacia, icono }) => {
   const AVISO_PRIVACIDAD = `<p class="molecule-field-hint" id="aviso-privacidad">
                 Aviso de privacidad (Ley 1581 de 2012): Parking Lot ABC trata los datos personales solo para
@@ -215,12 +217,15 @@ ${tablaVacia(
           </section>
 
           <section class="molecule-panel" aria-labelledby="detalle-vehiculos-titulo">
-            <div class="molecule-panel-head"><h2 id="detalle-vehiculos-titulo">Vehículos asociados</h2></div>
+            <div class="molecule-panel-head">
+              <h2 id="detalle-vehiculos-titulo">Vehículos asociados</h2>
+              <button class="atom-button atom-button--sm hidden" type="button" id="accion-agregar-vehiculo">${icono('i-car')}<span>Agregar vehículo</span></button>
+            </div>
             <div class="molecule-panel-body">
 ${tablaVacia(
   'tabla-vehiculos-usuario',
   'Vehículos asociados',
-  [{ texto: 'Placa' }, { texto: 'Tipo' }, { texto: 'Marca' }, { texto: 'Color' }, { texto: 'Estado' }],
+  [{ texto: 'Placa' }, { texto: 'Tipo' }, { texto: 'Marca' }, { texto: 'Color' }, { texto: 'Estado' }, { texto: 'Acciones', derecha: true }],
   'w600',
   ['Sin vehículos', 'El usuario no tiene vehículos asociados.']
 )}
@@ -235,8 +240,33 @@ ${tablaVacia(
             <td class="js-marca"></td>
             <td class="js-color"></td>
             <td><span class="atom-status-chip js-estado"></span></td>
+            <td class="organism-log-table-right">
+              <div class="organism-data-table-row-actions">
+                <a class="atom-button atom-button--ghost atom-button--sm hidden js-ver" href="#"><span>Ver</span></a>
+              </div>
+            </td>
           </tr>
         </template>`,
+    // spec 005 (HU-26): agregar un vehículo por placa; si no está registrado, se registra y se asocia.
+    extra: `
+    <dialog class="organism-modal" id="dialogo-agregar" aria-labelledby="dialogo-agregar-titulo">
+      <header class="organism-modal-head">
+        <div><h2 id="dialogo-agregar-titulo">Agregar vehículo</h2><p id="agregar-subtitulo">// Escriba la placa del vehículo del usuario</p></div>
+        <button class="atom-icon-button" type="button" data-cerrar aria-label="Cerrar">${icono('i-x')}</button>
+      </header>
+      <div class="organism-modal-body">
+        <form class="organism-form--grid" id="form-agregar" novalidate>
+          <div class="molecule-alert molecule-alert--error molecule-field--full hidden" id="agregar-alerta" aria-live="assertive">
+            ${icono('i-alert')}<p></p>
+          </div>
+          ${camposVehiculo('agregar', icono, { resto: true })}
+        </form>
+      </div>
+      <footer class="organism-modal-foot">
+        <button class="atom-button atom-button--ghost" type="button" data-cerrar><span>Cancelar</span></button>
+        <button class="atom-button" type="submit" form="form-agregar" id="agregar-guardar">${icono('i-check')}<span>Asociar</span></button>
+      </footer>
+    </dialog>`,
   });
 
   // ---------------------------------------------------------------- mi-perfil.html

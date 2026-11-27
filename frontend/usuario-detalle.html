@@ -86,6 +86,12 @@
               <a class="organism-navbar-item" data-id="disponibilidad" href="/disponibilidad.html">Disponibilidad</a>
             </li>
             <li class="hidden">
+              <a class="organism-navbar-item" data-id="vehiculos" href="/vehiculos.html">Vehículos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mis-vehiculos" href="/mis-vehiculos.html">Mis vehículos</a>
+            </li>
+            <li class="hidden">
               <a class="organism-navbar-item is-active" data-id="usuarios" href="/usuarios.html" aria-current="page">Usuarios</a>
             </li>
             <li class="hidden">
@@ -165,7 +171,10 @@
           </section>
 
           <section class="molecule-panel" aria-labelledby="detalle-vehiculos-titulo">
-            <div class="molecule-panel-head"><h2 id="detalle-vehiculos-titulo">Vehículos asociados</h2></div>
+            <div class="molecule-panel-head">
+              <h2 id="detalle-vehiculos-titulo">Vehículos asociados</h2>
+              <button class="atom-button atom-button--sm hidden" type="button" id="accion-agregar-vehiculo"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-car"></use></svg><span>Agregar vehículo</span></button>
+            </div>
             <div class="molecule-panel-body">
 
           <div class="organism-data-table" id="tabla-vehiculos-usuario">
@@ -179,6 +188,7 @@
                     <th scope="col">Marca</th>
                     <th scope="col">Color</th>
                     <th scope="col">Estado</th>
+                    <th scope="col" class="organism-log-table-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
@@ -208,6 +218,11 @@
             <td class="js-marca"></td>
             <td class="js-color"></td>
             <td><span class="atom-status-chip js-estado"></span></td>
+            <td class="organism-log-table-right">
+              <div class="organism-data-table-row-actions">
+                <a class="atom-button atom-button--ghost atom-button--sm hidden js-ver" href="#"><span>Ver</span></a>
+              </div>
+            </td>
           </tr>
         </template>
       </main>
@@ -234,6 +249,54 @@
       </footer>
     </dialog>
 
+    <dialog class="organism-modal" id="dialogo-agregar" aria-labelledby="dialogo-agregar-titulo">
+      <header class="organism-modal-head">
+        <div><h2 id="dialogo-agregar-titulo">Agregar vehículo</h2><p id="agregar-subtitulo">// Escriba la placa del vehículo del usuario</p></div>
+        <button class="atom-icon-button" type="button" data-cerrar aria-label="Cerrar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-x"></use></svg></button>
+      </header>
+      <div class="organism-modal-body">
+        <form class="organism-form--grid" id="form-agregar" novalidate>
+          <div class="molecule-alert molecule-alert--error molecule-field--full hidden" id="agregar-alerta" aria-live="assertive">
+            <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-alert"></use></svg><p></p>
+          </div>
+          <div class="molecule-field molecule-field--full">
+            <label for="agregar-placa">Placa<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input atom-input--plate" id="agregar-placa" type="text" maxlength="9" required autocomplete="off" spellcheck="false" placeholder="ABC123" aria-describedby="agregar-placa-hint agregar-placa-error" />
+            <p class="molecule-field-hint" id="agregar-placa-hint">Carro: 3 letras y 3 dígitos (ABC123).</p>
+            <p class="molecule-field-error" id="agregar-placa-error" aria-live="polite"></p>
+          </div>
+          <div class="organism-form--grid molecule-field--full hidden" id="agregar-resto">
+          <fieldset class="molecule-field molecule-field--full" id="agregar-tipo">
+            <legend>Tipo de vehículo<span class="molecule-field-required" aria-hidden="true"> *</span></legend>
+            <div class="molecule-tiles molecule-tiles--2">
+              <label class="molecule-tile"><input type="radio" name="agregar-tipo" id="agregar-tipo-carro" value="carro" checked aria-describedby="agregar-tipo-carro-error" /><span><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-car"></use></svg>Carro</span></label>
+              <label class="molecule-tile"><input type="radio" name="agregar-tipo" value="moto" /><span><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-moto"></use></svg>Moto</span></label>
+            </div>
+            <p class="molecule-field-error" id="agregar-tipo-carro-error" aria-live="polite"></p>
+          </fieldset>
+          <div class="molecule-field">
+            <label for="agregar-color">Color<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="agregar-color" type="text" maxlength="30" required autocomplete="off" aria-describedby="agregar-color-error" />
+            <p class="molecule-field-error" id="agregar-color-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="agregar-marca">Marca<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="agregar-marca" type="text" maxlength="40" required autocomplete="off" aria-describedby="agregar-marca-error" />
+            <p class="molecule-field-error" id="agregar-marca-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="agregar-modelo">Modelo (año)<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="agregar-modelo" type="number" required min="1950" step="1" inputmode="numeric" aria-describedby="agregar-modelo-error" />
+            <p class="molecule-field-error" id="agregar-modelo-error" aria-live="polite"></p>
+          </div>
+          </div>
+        </form>
+      </div>
+      <footer class="organism-modal-foot">
+        <button class="atom-button atom-button--ghost" type="button" data-cerrar><span>Cancelar</span></button>
+        <button class="atom-button" type="submit" form="form-agregar" id="agregar-guardar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-check"></use></svg><span>Asociar</span></button>
+      </footer>
+    </dialog>
     <div class="molecule-toast-region" id="avisos" aria-live="polite"></div>
 
     <template id="tpl-aviso">

@@ -14,6 +14,9 @@ export const MENU = [
   // spec 004: el mapa con placas es del personal; el Cliente ve solo la disponibilidad (RF-CLD-17).
   { id: 'celdas', texto: 'Celdas', href: '/celdas.html', permiso: 'celdas.ver', tambien: 'movimientos.ver' },
   { id: 'disponibilidad', texto: 'Disponibilidad', href: '/disponibilidad.html', permiso: 'celdas.ver', ocultarCon: 'movimientos.ver' },
+  // spec 005: el personal consulta todos los vehículos; el Cliente solo los suyos (RF-VEH-12).
+  { id: 'vehiculos', texto: 'Vehículos', href: '/vehiculos.html', permiso: 'vehiculos.ver' },
+  { id: 'mis-vehiculos', texto: 'Mis vehículos', href: '/mis-vehiculos.html', permiso: 'perfil.ver', ocultarCon: 'vehiculos.ver' },
   { id: 'usuarios', texto: 'Usuarios', href: '/usuarios.html', permiso: 'usuarios.ver' },
   { id: 'parqueaderos', texto: 'Parqueaderos', href: '/parqueaderos.html', permiso: 'parqueaderos.ver', grupo: 'Configuración' },
   { id: 'roles', texto: 'Roles', href: '/roles.html', permiso: 'roles.ver', grupo: 'Configuración' },

@@ -11,6 +11,8 @@ const icono = (id) =>
 const MENU = [
   ['celdas', 'Celdas', '/celdas.html'],
   ['disponibilidad', 'Disponibilidad', '/disponibilidad.html'],
+  ['vehiculos', 'Vehículos', '/vehiculos.html'],
+  ['mis-vehiculos', 'Mis vehículos', '/mis-vehiculos.html'],
   ['usuarios', 'Usuarios', '/usuarios.html'],
   ['parqueaderos', 'Parqueaderos', '/parqueaderos.html'],
   ['roles', 'Roles', '/roles.html'],
@@ -420,4 +422,5 @@ pagina({
 require('./paginas-002.js')({ pagina, tablaVacia, icono });
 require('./paginas-003.js')({ pagina, icono, destino });
 require('./paginas-004.js')({ pagina, tablaVacia, icono });
+require('./paginas-005.js')({ pagina, tablaVacia, icono });
 console.log('Páginas escritas en', destino);
