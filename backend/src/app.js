@@ -19,7 +19,12 @@ const CARPETA_FRONTEND = path.join(__dirname, '..', '..', 'frontend');
  * Se cargan de forma diferida para que cada spec agregue la suya aquí.
  */
 function rutasProtegidas() {
-  return [];
+  const { rolesRouter, permisosRouter } = require('./modules/roles/roles.routes');
+  return [
+    // spec 001-roles-permisos
+    { ruta: '/roles', router: rolesRouter },
+    { ruta: '/permisos', router: permisosRouter },
+  ];
 }
 
 function crearApp() {

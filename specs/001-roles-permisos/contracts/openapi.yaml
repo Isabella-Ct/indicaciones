@@ -196,7 +196,7 @@ paths:
               examples:
                 duplicado: { value: { ok: false, error: { code: 'ROL_DUPLICADO', message: 'Ya existe un rol con ese nombre.' } } }
                 base: { value: { ok: false, error: { code: 'ROL_BASE_INMUTABLE', message: 'Los roles base no se pueden modificar.' } } }
-                admin: { value: { ok: false, error: { code: 'PERMISOS_ADMIN_PROTEGIDOS', message: 'El rol Administrador no puede perder los permisos de gestión de roles y usuarios.' } } }
+                admin: { value: { ok: false, error: { code: 'PERMISOS_ADMIN_PROTEGIDOS', message: 'El rol Administrador no puede perder los permisos de gestión de roles y usuarios (roles.editar).' } } }
         '422': { $ref: '#/components/responses/Validacion' }
 
   /roles/{id}/estado:

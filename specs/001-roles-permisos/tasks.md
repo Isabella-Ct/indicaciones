@@ -87,16 +87,16 @@ description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundationa
 
 ### Tests for User Story 1
 
-- [ ] T026 [P] [US1] `backend/tests/unit/roles.reglas.test.js`: `normalizarNombre` (recorte, minúsculas), `esRenombre(actual, nuevo)` y `faltanProtegidos(codigos)` con los 8 permisos protegidos ([data-model.md](data-model.md#catálogo-de-permisos))
-- [ ] T027 [US1] `backend/tests/integration/roles.test.js` bloque HU-01: `HU-01 E1` solo 3 roles base activos con `estado=activo&q=` filtrando los semilla; `E2` el Operador no tiene `roles.*`, `tarifas.crear` ni `reportes.*` y sí tiene `usuarios.crear`, `vehiculos.crear`, `movimientos.crear`, `facturas.crear`, `reservas.crear` e `incidencias.crear`; `E3` el Administrador tiene los 63; `E4` el Cliente solo tiene los 11 de su lista; `E5` PATCH estado y PUT con otro nombre sobre un rol base → 409
+- [X] T026 [P] [US1] `backend/tests/unit/roles.reglas.test.js`: `normalizarNombre` (recorte, minúsculas), `esRenombre(actual, nuevo)` y `faltanProtegidos(codigos)` con los 8 permisos protegidos ([data-model.md](data-model.md#catálogo-de-permisos))
+- [X] T027 [US1] `backend/tests/integration/roles.test.js` bloque HU-01: `HU-01 E1` solo 3 roles base activos con `estado=activo&q=` filtrando los semilla; `E2` el Operador no tiene `roles.*`, `tarifas.crear` ni `reportes.*` y sí tiene `usuarios.crear`, `vehiculos.crear`, `movimientos.crear`, `facturas.crear`, `reservas.crear` e `incidencias.crear`; `E3` el Administrador tiene los 63; `E4` el Cliente solo tiene los 11 de su lista; `E5` PATCH estado y PUT con otro nombre sobre un rol base → 409
 
 ### Implementation for User Story 1
 
-- [ ] T028 [P] [US1] `backend/src/modules/roles/roles.reglas.js`: funciones puras de T026 y `agruparPorModulo(permisos)`
-- [ ] T029 [P] [US1] `backend/src/modules/roles/roles.validator.js`: esquemas zod `params.id`, `query` del listado (paginación + `estado`), `RolEntrada` (`data-model.md` Rol.nombre 3–40 con recorte, Rol.descripcion ≤150 o null, `permisos` ≥1 enteros únicos) y `estado` (`data-model.md` Rol.estado)
-- [ ] T030 [US1] `backend/src/modules/roles/roles.repository.js`: `listar({q, estado, limit, offset})` con `COUNT` de usuarios asignados y activos en una consulta + `contar`, `obtenerPorId(conexion, id, {bloquear})`, `permisosDeRol`, `usuariosDeRol` (solo `id_usuario, nombre_completo, estado`), `insertar`, `actualizar`, `reemplazarPermisos`, `cambiarEstado`, `contarUsuariosActivos`, `existenPermisos(ids)`, `catalogo()`; snake → camel; sin `SELECT *`
-- [ ] T031 [US1] `backend/src/modules/roles/roles.service.js`: `listar` y la regla de rol base (`asegurarNoBase` → 409 `ROL_BASE_INMUTABLE`) que usan T042 y T047
-- [ ] T032 [US1] `backend/src/modules/roles/roles.controller.js` + `roles.routes.js` (`GET /roles` con `authenticate` + `authorize('roles.ver')` + `validate`), montados en `backend/src/app.js`
+- [X] T028 [P] [US1] `backend/src/modules/roles/roles.reglas.js`: funciones puras de T026 y `agruparPorModulo(permisos)`
+- [X] T029 [P] [US1] `backend/src/modules/roles/roles.validator.js`: esquemas zod `params.id`, `query` del listado (paginación + `estado`), `RolEntrada` (`data-model.md` Rol.nombre 3–40 con recorte, Rol.descripcion ≤150 o null, `permisos` ≥1 enteros únicos) y `estado` (`data-model.md` Rol.estado)
+- [X] T030 [US1] `backend/src/modules/roles/roles.repository.js`: `listar({q, estado, limit, offset})` con `COUNT` de usuarios asignados y activos en una consulta + `contar`, `obtenerPorId(conexion, id, {bloquear})`, `permisosDeRol`, `usuariosDeRol` (solo `id_usuario, nombre_completo, estado`), `insertar`, `actualizar`, `reemplazarPermisos`, `cambiarEstado`, `contarUsuariosActivos`, `existenPermisos(ids)`, `catalogo()`; snake → camel; sin `SELECT *`
+- [X] T031 [US1] `backend/src/modules/roles/roles.service.js`: `listar` y la regla de rol base (`asegurarNoBase` → 409 `ROL_BASE_INMUTABLE`) que usan T042 y T047
+- [X] T032 [US1] `backend/src/modules/roles/roles.controller.js` + `roles.routes.js` (`GET /roles` con `authenticate` + `authorize('roles.ver')` + `validate`), montados en `backend/src/app.js`
 
 **Checkpoint**: HU-01 en verde. Es el MVP mínimo del control de acceso.
 
@@ -110,12 +110,12 @@ description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundationa
 
 ### Tests for User Story 2
 
-- [ ] T033 [US2] `backend/tests/integration/roles.test.js` bloque HU-02: `E1` 201 con `estado:'activo'`, `esBase:false`, permisos guardados y entrada en `bitacora`; `E2` duplicado sin distinguir mayúsculas ni espacios → 409 `ROL_DUPLICADO`; `E3` `permisos:[]` → 422 con `details[0].campo='permisos'`; `E4` nombre de 2 o 41 caracteres, descripción de 151, permiso 99999 → 422; Operador → 403
+- [X] T033 [US2] `backend/tests/integration/roles.test.js` bloque HU-02: `E1` 201 con `estado:'activo'`, `esBase:false`, permisos guardados y entrada en `bitacora`; `E2` duplicado sin distinguir mayúsculas ni espacios → 409 `ROL_DUPLICADO`; `E3` `permisos:[]` → 422 con `details[0].campo='permisos'`; `E4` nombre de 2 o 41 caracteres, descripción de 151, permiso 99999 → 422; Operador → 403
 
 ### Implementation for User Story 2
 
-- [ ] T034 [US2] `rolesService.crear(datos, actor)` en `backend/src/modules/roles/roles.service.js`: `withTransaction`; valida que los permisos existan (si no → 422 con campo `permisos`); inserta rol + `rol_permiso` (sin duplicados); `registrarBitacora(accion:'crear', entidad:'rol')`; traduce `ER_DUP_ENTRY` en `uq_rol_nombre` a 409 `ROL_DUPLICADO`; devuelve el `RolDetalle`
-- [ ] T035 [US2] Ruta `POST /roles` (`authorize('roles.crear')`) y controlador `crear` → 201 en `backend/src/modules/roles/roles.{routes,controller}.js`
+- [X] T034 [US2] `rolesService.crear(datos, actor)` en `backend/src/modules/roles/roles.service.js`: `withTransaction`; valida que los permisos existan (si no → 422 con campo `permisos`); inserta rol + `rol_permiso` (sin duplicados); `registrarBitacora(accion:'crear', entidad:'rol')`; traduce `ER_DUP_ENTRY` en `uq_rol_nombre` a 409 `ROL_DUPLICADO`; devuelve el `RolDetalle`
+- [X] T035 [US2] Ruta `POST /roles` (`authorize('roles.crear')`) y controlador `crear` → 201 en `backend/src/modules/roles/roles.{routes,controller}.js`
 
 **Checkpoint**: HU-01 y HU-02 en verde.
 
@@ -129,12 +129,12 @@ description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundationa
 
 ### Tests for User Story 3
 
-- [ ] T036 [US3] `backend/tests/integration/roles.test.js` bloque HU-03: `E1` `meta {page:1, limit:10, total}`, cada fila con `usuariosAsignados` y `usuariosActivos`; `E2` `q=OPER` solo trae los que contienen «oper»; `E3` `estado=inactivo` trae Auditor; `E4` detalle con `permisos[]` agrupados por `modulo` y `usuarios[]` sin correo, documento ni hash; `E5` 404 `ROL_NO_ENCONTRADO`; `limit=101` → 422
+- [X] T036 [US3] `backend/tests/integration/roles.test.js` bloque HU-03: `E1` `meta {page:1, limit:10, total}`, cada fila con `usuariosAsignados` y `usuariosActivos`; `E2` `q=OPER` solo trae los que contienen «oper»; `E3` `estado=inactivo` trae Auditor; `E4` detalle con `permisos[]` agrupados por `modulo` y `usuarios[]` sin correo, documento ni hash; `E5` 404 `ROL_NO_ENCONTRADO`; `limit=101` → 422
 
 ### Implementation for User Story 3
 
-- [ ] T037 [US3] `rolesService.obtener(id)` (404 `ROL_NO_ENCONTRADO`; agrupa con `agruparPorModulo`) y filtros `q`/`estado` en `rolesService.listar` en `backend/src/modules/roles/roles.service.js`
-- [ ] T038 [US3] Ruta `GET /roles/:id` (`authorize('roles.ver')`) y controlador `obtener` en `backend/src/modules/roles/roles.{routes,controller}.js`
+- [X] T037 [US3] `rolesService.obtener(id)` (404 `ROL_NO_ENCONTRADO`; agrupa con `agruparPorModulo`) y filtros `q`/`estado` en `rolesService.listar` en `backend/src/modules/roles/roles.service.js`
+- [X] T038 [US3] Ruta `GET /roles/:id` (`authorize('roles.ver')`) y controlador `obtener` en `backend/src/modules/roles/roles.{routes,controller}.js`
 
 **Checkpoint**: HU-01 a HU-03 en verde.
 
@@ -148,12 +148,12 @@ description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundationa
 
 ### Tests for User Story 4
 
-- [ ] T039 [US4] `backend/tests/integration/roles.test.js` bloque HU-04: `E1` 200, bitácora con `valor_anterior`/`valor_nuevo` de permisos y descripción; `permisos[]` del token viejo sin el nuevo código y login nuevo con él; `E2` nombre de otro rol → 409 `ROL_DUPLICADO`; `E3` `permisos:[]` → 422; `E4` Administrador sin `roles.editar` → 409 `PERMISOS_ADMIN_PROTEGIDOS`; `E5` rol base Operador: cambiar descripción y permisos → 200, cambiar nombre → 409 `ROL_BASE_INMUTABLE`; `E6` 404
+- [X] T039 [US4] `backend/tests/integration/roles.test.js` bloque HU-04: `E1` 200, bitácora con `valor_anterior`/`valor_nuevo` de permisos y descripción; `permisos[]` del token viejo sin el nuevo código y login nuevo con él; `E2` nombre de otro rol → 409 `ROL_DUPLICADO`; `E3` `permisos:[]` → 422; `E4` Administrador sin `roles.editar` → 409 `PERMISOS_ADMIN_PROTEGIDOS`; `E5` rol base Operador: cambiar descripción y permisos → 200, cambiar nombre → 409 `ROL_BASE_INMUTABLE`; `E6` 404
 
 ### Implementation for User Story 4
 
-- [ ] T040 [US4] `rolesService.actualizar(id, datos, actor)` en `backend/src/modules/roles/roles.service.js`: `withTransaction` + `obtenerPorId(..., {bloquear:true})`; 404; si `es_base` y `esRenombre` → 409; si es el rol Administrador y `faltanProtegidos` → 409; valida que los permisos existan; `actualizar` + `reemplazarPermisos`; `registrarBitacora(accion:'editar')` con la diferencia; `ER_DUP_ENTRY` → 409
-- [ ] T041 [US4] Ruta `PUT /roles/:id` (`authorize('roles.editar')`) y controlador `actualizar` en `backend/src/modules/roles/roles.{routes,controller}.js`
+- [X] T040 [US4] `rolesService.actualizar(id, datos, actor)` en `backend/src/modules/roles/roles.service.js`: `withTransaction` + `obtenerPorId(..., {bloquear:true})`; 404; si `es_base` y `esRenombre` → 409; si es el rol Administrador y `faltanProtegidos` → 409; valida que los permisos existan; `actualizar` + `reemplazarPermisos`; `registrarBitacora(accion:'editar')` con la diferencia; `ER_DUP_ENTRY` → 409
+- [X] T041 [US4] Ruta `PUT /roles/:id` (`authorize('roles.editar')`) y controlador `actualizar` en `backend/src/modules/roles/roles.{routes,controller}.js`
 
 **Checkpoint**: HU-01 a HU-04 en verde.
 
@@ -167,12 +167,12 @@ description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundationa
 
 ### Tests for User Story 5
 
-- [ ] T042 [US5] `backend/tests/integration/roles.test.js` bloque HU-05: `E1` rol creado en la prueba → inactivo + bitácora `cambiar_estado`, y ya no sale en `GET /roles?estado=activo` (fuente de las opciones de asignación, RF-ROL-14); `E2` 409 `ROL_CON_USUARIOS_ACTIVOS` con N real en el mensaje; `E3` rol base → 409 `ROL_BASE_INMUTABLE`; `E4` reactivar Auditor → 200; `E5` `estado:'borrado'` → 422; mismo estado → 200 sin nueva entrada en bitácora
+- [X] T042 [US5] `backend/tests/integration/roles.test.js` bloque HU-05: `E1` rol creado en la prueba → inactivo + bitácora `cambiar_estado`, y ya no sale en `GET /roles?estado=activo` (fuente de las opciones de asignación, RF-ROL-14); `E2` 409 `ROL_CON_USUARIOS_ACTIVOS` con N real en el mensaje; `E3` rol base → 409 `ROL_BASE_INMUTABLE`; `E4` reactivar Auditor → 200; `E5` `estado:'borrado'` → 422; mismo estado → 200 sin nueva entrada en bitácora
 
 ### Implementation for User Story 5
 
-- [ ] T043 [US5] `rolesService.cambiarEstado(id, estado, actor)` en `backend/src/modules/roles/roles.service.js`: `withTransaction` + bloqueo del rol; 404; sin cambios → devuelve el actual; si `inactivo`: rol base → 409 y `contarUsuariosActivos > 0` → 409 con N; `cambiarEstado` + `registrarBitacora`
-- [ ] T044 [US5] Ruta `PATCH /roles/:id/estado` (`authorize('roles.cambiar_estado')`) y controlador `cambiarEstado` en `backend/src/modules/roles/roles.{routes,controller}.js`
+- [X] T043 [US5] `rolesService.cambiarEstado(id, estado, actor)` en `backend/src/modules/roles/roles.service.js`: `withTransaction` + bloqueo del rol; 404; sin cambios → devuelve el actual; si `inactivo`: rol base → 409 y `contarUsuariosActivos > 0` → 409 con N; `cambiarEstado` + `registrarBitacora`
+- [X] T044 [US5] Ruta `PATCH /roles/:id/estado` (`authorize('roles.cambiar_estado')`) y controlador `cambiarEstado` en `backend/src/modules/roles/roles.{routes,controller}.js`
 
 **Checkpoint**: HU-01 a HU-05 en verde.
 
@@ -186,11 +186,11 @@ description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundationa
 
 ### Tests for User Story 6
 
-- [ ] T045 [US6] `backend/tests/integration/permisos.test.js`: `HU-06 E1` 200 con 21 grupos y 63 permisos con `codigo = modulo.accion`; `E2` Operador → 403 `SIN_PERMISO`; `E3` sin token → 401 `NO_AUTENTICADO`
+- [X] T045 [US6] `backend/tests/integration/permisos.test.js`: `HU-06 E1` 200 con 21 grupos y 63 permisos con `codigo = modulo.accion`; `E2` Operador → 403 `SIN_PERMISO`; `E3` sin token → 401 `NO_AUTENTICADO`
 
 ### Implementation for User Story 6
 
-- [ ] T046 [US6] `rolesService.catalogo()` + ruta `GET /permisos` (`authorize('roles.ver')`) montada en `/api/v1` desde `backend/src/modules/roles/roles.routes.js` (exporta `rolesRouter` y `permisosRouter`)
+- [X] T046 [US6] `rolesService.catalogo()` + ruta `GET /permisos` (`authorize('roles.ver')`) montada en `/api/v1` desde `backend/src/modules/roles/roles.routes.js` (exporta `rolesRouter` y `permisosRouter`)
 
 **Checkpoint**: las 6 historias en verde en la API.
 
