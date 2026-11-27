@@ -63,6 +63,7 @@ Las funciones puras `normalizarDocumento`, `normalizarNombre`, `normalizarCorreo
   - el detalle o la foto de un usuario que no es Cliente → 403;
   - el registro con un rol que no es Cliente → 403.
 - **Justificación**: el criterio se basa en permisos y no en el nombre del rol del actor, así sirve también para roles nuevos como «Supervisor de turno».
+- **Rol por defecto del Operador**: el Operador no tiene `roles.ver` (criterio 2 de HU-01), así que su formulario no puede consultar el id del rol Cliente. En `POST /usuarios`, `idRol` es **opcional** para quien no tiene alcance total y el servidor asigna Cliente; si lo envía con otro rol → 403. Para el Administrador, `idRol` sigue siendo obligatorio (422 si falta). No hace falta un endpoint nuevo.
 
 ## R-09 · Aviso al Administrador (RF-USR-16)
 

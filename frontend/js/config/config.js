@@ -10,8 +10,10 @@ export const RUTA_INICIO_PUBLICO = '/';
  * (la autorización real la hace el servidor, RNF-SEG-04). Las specs siguientes agregan los suyos.
  */
 export const MENU = [
+  { id: 'usuarios', texto: 'Usuarios', href: '/usuarios.html', permiso: 'usuarios.ver' },
   { id: 'roles', texto: 'Roles', href: '/roles.html', permiso: 'roles.ver', grupo: 'Configuración' },
   { id: 'permisos', texto: 'Permisos', href: '/permisos.html', permiso: 'roles.ver', grupo: 'Configuración' },
+  { id: 'mi-perfil', texto: 'Mi perfil', href: '/mi-perfil.html', permiso: 'perfil.ver' },
 ];
 
 /** Primera página a la que puede entrar la sesión después del login. */

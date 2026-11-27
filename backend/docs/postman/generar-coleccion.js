@@ -39,7 +39,7 @@ function pruebas(caso) {
   const lineas = [
     `pm.test('HTTP ${caso.status}', () => pm.response.to.have.status(${caso.status}));`,
   ];
-  if (caso.status !== 204) {
+  if (caso.status !== 204 && !caso.binario) {
     lineas.push(
       "const cuerpo = pm.response.json();",
       `pm.test('sobre ok=${caso.status < 400}', () => pm.expect(cuerpo.ok).to.eql(${caso.status < 400}));`
@@ -72,7 +72,15 @@ function peticion(caso) {
   const header = [{ key: 'Accept', value: 'application/json' }];
   if (caso.token) header.push({ key: 'Authorization', value: `Bearer {{${caso.token}}}` });
   const request = { method: caso.metodo, header, url };
-  if (caso.body !== undefined) {
+  if (caso.formdata) {
+    // multipart/form-data (fotos): Newman resuelve `src` desde la carpeta backend/.
+    request.body = {
+      mode: 'formdata',
+      formdata: caso.formdata.map((c) =>
+        c.src ? { key: c.key, type: 'file', src: c.src } : { key: c.key, value: String(c.value), type: 'text' }
+      ),
+    };
+  } else if (caso.body !== undefined) {
     header.push({ key: 'Content-Type', value: 'application/json' });
     request.body = {
       mode: 'raw',

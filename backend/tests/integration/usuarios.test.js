@@ -110,7 +110,7 @@ describe('HU-07 Registrar un usuario', () => {
     expect(campos).toEqual(['aceptaTratamientoDatos', 'celular', 'correo', 'nombreCompleto', 'numeroDocumento']);
     const vacio = await crear({});
     expect(vacio.status).toBe(422);
-    expect(vacio.body.error.details.length).toBeGreaterThanOrEqual(7);
+    expect(vacio.body.error.details.length).toBeGreaterThanOrEqual(6);
   });
 
   test('HU-07 E4 foto PNG se guarda y se muestra; GIF o > 2 MB se rechazan sin crear', async () => {
@@ -141,6 +141,14 @@ describe('HU-07 Registrar un usuario', () => {
     expect(otroRol.body.error.code).toBe('SIN_PERMISO');
     const clienteNuevo = await crear(nuevo({ idRol: 3 }), operador);
     expect(clienteNuevo.status).toBe(201);
+    // Sin rol: al Operador se le asigna Cliente; al Administrador se le pide (research R-08).
+    const { idRol: _r, ...sinRol } = nuevo();
+    const porDefecto = await crear(sinRol, operador);
+    expect(porDefecto.status).toBe(201);
+    expect(porDefecto.body.data.rol.nombre).toBe('Cliente');
+    const adminSinRol = await crear({ ...sinRol, numeroDocumento: '4455667788', correo: 'sinrol@correo.co' });
+    expect(adminSinRol.status).toBe(422);
+    expect(adminSinRol.body.error.details).toEqual([{ campo: 'idRol', mensaje: 'Seleccione el rol.' }]);
     const sinPermiso = await crear(nuevo(), cliente);
     expect(sinPermiso.status).toBe(403);
   });

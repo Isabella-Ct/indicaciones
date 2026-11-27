@@ -18,14 +18,15 @@ Se construye con **Spec-Driven Development (GitHub spec-kit)** y **Gitflow**, un
 | Spec | Módulo | Estado |
 |---|---|---|
 | `001-roles-permisos` | Roles y permisos + fundación del backend v2 | ✅ implementada |
-| `002`–`015` | Usuarios, acceso, celdas, vehículos, pico y placa, movimientos, tarifas, facturación, membresías, descuentos, reservas, incidencias, monitoreo, reportes | pendientes |
+| `002-gestion-usuarios` | Usuarios, foto, mis datos y avisos al administrador | ✅ implementada |
+| `003`–`015` | Acceso, celdas, vehículos, pico y placa, movimientos, tarifas, facturación, membresías, descuentos, reservas, incidencias, monitoreo, reportes | pendientes |
 | `016-festivos-pico-placa` | API externa Nager.Date (festivos para pico y placa, TBD-03) | pendiente |
 
 La versión anterior (PARKO v1, trazabilidad `REQ-`) se conserva en el tag `v0.9.0-legado`.
 
 ## Requisitos
 
-- **Node.js 20 LTS** (ver `backend/.nvmrc`; con nvm-windows: `nvm install 20 && nvm use 20`).
+- **Node.js 20 LTS**, 20.19 o superior (ver `backend/.nvmrc`; con nvm-windows: `nvm install 20 && nvm use 20`). ESLint 10 pide 20.19+.
 - **MySQL 8** en `localhost:3306` (MySQL Server o XAMPP con MySQL 8).
 - Git. Para la colección de pruebas: `npm i -g newman`.
 
@@ -63,6 +64,9 @@ node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 | `CORS_ORIGIN` | Solo si el frontend se sirve desde otro origen | vacío |
 | `TRUST_PROXY` | Proxies HTTPS delante de Express | `0` |
 | `LOGIN_LIMITE_IP` | Intentos de login por IP cada 15 min | `20` |
+| `CORREO_TRANSPORTE` | `smtp`, `archivo` (`.eml` en `backend/correos/`) o `memoria` (pruebas) | `archivo` |
+| `CORREO_REMITENTE` | Remitente de los correos | `Parking Lot ABC <no-responder@…>` |
+| `SMTP_HOST`, `SMTP_PUERTO`, `SMTP_SEGURO`, `SMTP_USUARIO`, `SMTP_CLAVE` | Servidor SMTP (solo con `smtp`; TBD-09) | — |
 
 `.env` y `.env.test` nunca se suben al repositorio.
 
@@ -81,6 +85,8 @@ Todos inician sesión con **tipo y número de documento + contraseña**.
 | Cliente inactivo | CC 1000000009 | `Cliente2026*` | Mateo Cardona Ruiz | no puede iniciar sesión |
 
 Para regenerar los hashes de la semilla: `npm run db:seed:generar`.
+
+Los usuarios que registra el administrador u operador reciben por correo una **contraseña temporal**. Con `CORREO_TRANSPORTE=archivo`, ese correo queda en `backend/correos/*.eml` (ábralo con cualquier cliente de correo).
 
 ## Scripts (`backend/`)
 
@@ -122,6 +128,14 @@ Autenticación con `Authorization: Bearer <token>`. Listados con `?page&limit&q`
 | PUT | `/api/v1/roles/:id` | `roles.editar` | HU-04 |
 | PATCH | `/api/v1/roles/:id/estado` | `roles.cambiar_estado` | HU-05 |
 | GET | `/api/v1/permisos` | `roles.ver` | HU-06 |
+| POST | `/api/v1/usuarios` (JSON o multipart con `foto`) | `usuarios.crear` (Operador: solo Clientes) | HU-07 |
+| GET | `/api/v1/usuarios?page&limit&q&rol&estado` | `usuarios.ver` | HU-08 |
+| GET | `/api/v1/usuarios/:id` | `usuarios.ver` | HU-08 |
+| GET | `/api/v1/usuarios/:id/foto` `[Propuesta]` | propia o `usuarios.ver` | HU-08 |
+| PUT | `/api/v1/usuarios/:id` | `usuarios.editar` | HU-09 |
+| PATCH | `/api/v1/usuarios/:id/estado` | `usuarios.cambiar_estado` | HU-10 |
+| GET | `/api/v1/usuarios/me` | `perfil.ver` | HU-11 |
+| PUT | `/api/v1/usuarios/me` | `perfil.editar` | HU-11 |
 
 El contrato completo de cada spec está en `specs/NNN-*/contracts/openapi.yaml`.
 

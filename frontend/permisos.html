@@ -46,6 +46,9 @@
             </button>
             <ul class="molecule-user-menu-list hidden" id="menu-usuario-lista">
               <li>
+                <a class="molecule-user-menu-item" href="/mi-perfil.html"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-user"></use></svg>Mi perfil</a>
+              </li>
+              <li>
                 <button class="molecule-user-menu-item" id="menu-usuario-salir" type="button">
                   <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-logout"></use></svg>Cerrar sesión
                 </button>
@@ -74,10 +77,16 @@
           </div>
           <ul class="organism-navbar-list" id="navbar-lista">
             <li class="hidden">
+              <a class="organism-navbar-item" data-id="usuarios" href="/usuarios.html">Usuarios</a>
+            </li>
+            <li class="hidden">
               <a class="organism-navbar-item" data-id="roles" href="/roles.html">Roles</a>
             </li>
             <li class="hidden">
               <a class="organism-navbar-item is-active" data-id="permisos" href="/permisos.html" aria-current="page">Permisos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mi-perfil" href="/mi-perfil.html">Mi perfil</a>
             </li>
           </ul>
         </div>

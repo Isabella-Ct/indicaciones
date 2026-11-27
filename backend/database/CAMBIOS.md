@@ -4,6 +4,12 @@ Historial de `schema.sql` y de las migraciones en `migrations/`. Cada entrada in
 
 ---
 
+## 2.0.0 (sin cambios) — 2026-11-27 · spec `002-gestion-usuarios`
+
+La spec 002 no cambia el esquema: usa `usuario`, `sesion`, `notificacion` y `bitacora` tal como quedaron en la 2.0.0. Las fotos se guardan fuera de la BD (`backend/uploads/usuarios/`); en `usuario.foto_url` va solo la clave relativa (RNF-PRI-03).
+
+---
+
 ## 2.0.0 — 2026-11-26 · spec `001-roles-permisos` (fundación v2)
 
 Reescritura completa según el **modelo lógico 6.1 del SRS v2.0**. Reemplaza el esquema v1 (PARKO, 24 tablas con PK `id`), que se conserva en el tag `v0.9.0-legado`.

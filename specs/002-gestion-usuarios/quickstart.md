@@ -68,3 +68,15 @@ ADMIN=$(login 1000000001 'Admin2026*'); OPER=$(login 1000000002 'Operador2026*')
 | GET /usuarios/me | 200 | 401 sin token |
 | PUT /usuarios/me | 200 | 422 documento enviado |
 | GET /usuarios/:id/foto | 200 imagen | 404 sin foto |
+
+## Rendimiento (SC-004 · RNF-REN-02) — medido el 2026-11-27
+
+Con 50 013 usuarios en `parqueaderodb_test` y 40 peticiones seguidas a `GET /api/v1/usuarios?q=carga 4999&limit=10`:
+
+| Métrica | Resultado | Meta |
+|---|---|---|
+| p95 | **302 ms** | ≤ 1 000 ms |
+| mediana | 290 ms | — |
+| `EXPLAIN` | recorrido completo de `usuario` (50 013 filas) | — |
+
+La búsqueda por «contiene» (`LIKE '%texto%'`) sobre documento, nombre y correo no puede usar índices, así que recorre la tabla. Aun así cumple la meta con un margen de más de 3 veces. Si el volumen crece más allá del de referencia, la mejora sería un índice `FULLTEXT` sobre `nombre_completo` y la búsqueda por prefijo del documento.

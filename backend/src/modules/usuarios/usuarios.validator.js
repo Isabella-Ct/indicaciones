@@ -73,7 +73,8 @@ const usuarioEntrada = z
     nombreCompleto,
     correo,
     celular,
-    idRol,
+    // Opcional solo para quien no tiene alcance total (Operador): el servidor asigna Cliente (research R-08).
+    idRol: idRol.optional(),
     aceptaTratamientoDatos: booleano('Debe aceptar la autorización de tratamiento de datos.').refine((v) => v === true, {
       message: 'Debe aceptar la autorización de tratamiento de datos.',
     }),

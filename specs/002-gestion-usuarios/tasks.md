@@ -112,22 +112,22 @@ description: "Lista de tareas de 002-gestion-usuarios"
 
 ## Fase 8: Interfaz (Atomic Design)
 
-- [ ] T028 [P] Átomo `frontend/js/components/atomos/avatar.js` (`ponerAvatar(nodo, { nombre, blob })`: `<img>` con object URL o iniciales; libera la URL anterior) y molécula `frontend/js/components/moleculas/foto.js` (`conectarFoto(raiz)`: vista previa, validación de JPG/PNG ≤ 2 MB, quitar; expone `archivo()` y `quitada()`), con el CSS que haga falta en `frontend/css/atomos.css` y `moleculas.css`
-- [ ] T029 [P] `frontend/js/services/usuarios.service.js` (una función por endpoint; FormData cuando hay foto)
-- [ ] T030 `frontend/js/config/config.js` (MENU con Usuarios y Mi perfil; `paginaInicial`), navbar y menú de usuario («Mi perfil») actualizados en `frontend/roles.html`, `rol-detalle.html` y `permisos.html`
-- [ ] T031 [US1] [US2] [US3] [US4] `frontend/usuarios.html` + `frontend/js/views/usuarios.view.js`: tabla con avatar, búsqueda y filtros de rol y estado (el Operador solo ve Cliente), diálogo Nuevo/Editar con foto, aviso de privacidad y autorización, código de solo lectura, confirmación de cambio de estado, mensaje «Usuario registrado — código N» y advertencia si `correoEnviado` es falso
-- [ ] T032 [P] [US2] `frontend/usuario-detalle.html` + `frontend/js/views/usuario-detalle.view.js`: datos, foto, vehículos, membresía vigente y 404
-- [ ] T033 [P] [US5] `frontend/mi-perfil.html` + `frontend/js/views/mi-perfil.view.js`: documento, código y rol de solo lectura; nombre, correo, celular y foto editables; aviso de privacidad
+- [X] T028 [P] Átomo `frontend/js/components/atomos/avatar.js` (`ponerAvatar(nodo, { nombre, blob })`: `<img>` con object URL o iniciales; libera la URL anterior) y molécula `frontend/js/components/moleculas/foto.js` (`conectarFoto(raiz)`: vista previa, validación de JPG/PNG ≤ 2 MB, quitar; expone `archivo()` y `quitada()`), con el CSS que haga falta en `frontend/css/atomos.css` y `moleculas.css`
+- [X] T029 [P] `frontend/js/services/usuarios.service.js` (una función por endpoint; FormData cuando hay foto)
+- [X] T030 `frontend/js/config/config.js` (MENU con Usuarios y Mi perfil; `paginaInicial`), navbar y menú de usuario («Mi perfil») actualizados en `frontend/roles.html`, `rol-detalle.html` y `permisos.html`
+- [X] T031 [US1] [US2] [US3] [US4] `frontend/usuarios.html` + `frontend/js/views/usuarios.view.js`: tabla con avatar, búsqueda y filtros de rol y estado (el Operador solo ve Cliente), diálogo Nuevo/Editar con foto, aviso de privacidad y autorización, código de solo lectura, confirmación de cambio de estado, mensaje «Usuario registrado — código N» y advertencia si `correoEnviado` es falso
+- [X] T032 [P] [US2] `frontend/usuario-detalle.html` + `frontend/js/views/usuario-detalle.view.js`: datos, foto, vehículos, membresía vigente y 404
+- [X] T033 [P] [US5] `frontend/mi-perfil.html` + `frontend/js/views/mi-perfil.view.js`: documento, código y rol de solo lectura; nombre, correo, celular y foto editables; aviso de privacidad
 
 ---
 
 ## Fase 9: Pulido y transversales
 
-- [ ] T034 Carpeta Postman `backend/docs/postman/casos/002-gestion-usuarios.js` (con `archivos/foto.png` y soporte de `formdata` en `generar-coleccion.js`); `npm run test:api` en verde dos veces seguidas
-- [ ] T035 [P] `README.md`: endpoints de usuarios, variables de correo, carpeta `backend/correos/`, pantallas
-- [ ] T036 SC-004: medir `GET /usuarios?q=` con 50 000 usuarios (p95 ≤ 1 s) y documentarlo en `quickstart.md`
-- [ ] T037 Cobertura de `usuarios.service.js` ≥ 80 %, `npm run lint` sin errores, `node --check` del frontend, verificación de imports e ids, revisión de que no queden textos en inglés y prueba manual en escritorio y a 375 px
-- [ ] T038 Verificar que cada escenario HU-07..HU-11 tenga su prueba `HU-xx Ey` y su caso Postman, y marcar `[X]`
+- [X] T034 Carpeta Postman `backend/docs/postman/casos/002-gestion-usuarios.js` (con `archivos/foto.png` y soporte de `formdata` en `generar-coleccion.js`); `npm run test:api` en verde dos veces seguidas
+- [X] T035 [P] `README.md`: endpoints de usuarios, variables de correo, carpeta `backend/correos/`, pantallas
+- [X] T036 SC-004: medir `GET /usuarios?q=` con 50 000 usuarios (p95 ≤ 1 s) y documentarlo en `quickstart.md`
+- [ ] T037 Cobertura de `usuarios.service.js` ≥ 80 %, `npm run lint` sin errores, `node --check` del frontend, verificación de imports e ids, revisión de que no queden textos en inglés y prueba manual en escritorio y a 375 px — **Hecho:** cobertura de usuarios.service 96 %, lint, `node --check`, imports e ids verificados y revisión de textos en inglés. **Pendiente:** prueba manual en navegador (escritorio y 375 px).
+- [X] T038 Verificar que cada escenario HU-07..HU-11 tenga su prueba `HU-xx Ey` y su caso Postman, y marcar `[X]`
 
 ---
 

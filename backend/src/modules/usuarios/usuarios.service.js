@@ -64,9 +64,15 @@ async function asegurarAlcance(usuario, actor) {
 
 // ---------------------------------------------------------------- HU-07 · registrar
 /** RF-USR-01..05, RF-ROL-14, RN-05. Devuelve el usuario y si salió el correo. */
-async function crear(datos, foto, actor) {
-  if (!alcanceTotal(actor) && datos.idRol !== (await repositorio.idRolCliente())) {
-    throw errores.sinPermiso(); // RF-USR-04
+async function crear(entrada, foto, actor) {
+  const datos = { ...entrada };
+  if (!alcanceTotal(actor)) {
+    // RF-USR-04: el Operador solo registra Clientes; si no envía rol, se asigna Cliente.
+    const idCliente = await repositorio.idRolCliente();
+    datos.idRol ??= idCliente;
+    if (datos.idRol !== idCliente) throw errores.sinPermiso();
+  } else if (datos.idRol === undefined) {
+    throw errores.validacion([{ campo: 'idRol', mensaje: 'Seleccione el rol.' }]);
   }
   const contrasena = generarContrasenaTemporal();
   const contrasenaHash = await bcrypt.hash(contrasena, env.BCRYPT_COSTO);
