@@ -1,7 +1,9 @@
 // Página · Movimientos (caseta, HU-31..HU-35): registrar entrada con su ticket, registrar salida por placa
 // o ticket, vehículos dentro con su tiempo y anulación de entradas erróneas. Aviso de pico y placa de hoy.
+// Spec 009 (HU-39..HU-41): liquidación y cobro después de la salida, con su factura.
 import { registrarEntrada, registrarSalida, listarMovimientos, anularMovimiento } from '../services/movimientos.service.js';
 import { obtenerTicket } from '../services/tickets.service.js';
+import { registrarPago, emitirFactura } from '../services/facturas.service.js';
 import { listarParqueaderos, listarPuertas } from '../services/parqueaderos.service.js';
 import { listarCeldas } from '../services/celdas.service.js';
 import { buscarPorPlaca } from '../services/vehiculos.service.js';
@@ -13,6 +15,7 @@ import { ponerTicket } from '../components/organismos/ticket.js';
 import { abrirDialogo, cerrarDialogo } from '../components/organismos/modal.js';
 import { conectarSelectorTipo } from '../components/moleculas/selector-tipo.js';
 import { ponerPicoPlaca } from '../components/moleculas/aviso-pico-placa.js';
+import { ponerCobro } from '../components/moleculas/cobro.js';
 import { consultarCada } from '../components/moleculas/consulta-periodica.js';
 import { conectarBusqueda } from '../components/moleculas/buscador.js';
 import { mostrarAlerta } from '../components/moleculas/alerta.js';
@@ -23,7 +26,7 @@ import { botonCargando } from '../components/atomos/boton.js';
 import { clonar } from '../utils/plantillas.js';
 import { tienePermiso } from '../utils/sesion.js';
 import { $, mostrar } from '../utils/dom.js';
-import { formatearFechaHora, formatearHora, formatearDuracion } from '../utils/formato.js';
+import { formatearFechaHora, formatearHora, formatearDuracion, formatearCOP } from '../utils/formato.js';
 import { normalizarPlaca, placaValida, mensajeFormato } from '../utils/placa.js';
 
 const marco = montarMarco({ permiso: 'movimientos.ver', alSalir: cerrarSesion });
@@ -31,7 +34,7 @@ const marco = montarMarco({ permiso: 'movimientos.ver', alSalir: cerrarSesion })
 const TIPO = { carro: 'Carro', moto: 'Moto' };
 const puede = { registrar: tienePermiso('movimientos.crear'), anular: tienePermiso('movimientos.anular') };
 /** Estado de la página: los datos viven aquí, no en el DOM. */
-const estado = { sedes: [], idParqueadero: null, vehiculo: undefined, placaBuscada: '', salida: null, anulando: null, q: '' };
+const estado = { sedes: [], idParqueadero: null, vehiculo: undefined, placaBuscada: '', salida: null, anulando: null, q: '', cobro: null };
 
 const sedeActual = () => estado.sedes.find((p) => p.idParqueadero === estado.idParqueadero);
 
@@ -185,6 +188,7 @@ function mostrarSalida(m) {
   mostrarAlerta(alertaSalida, '');
   mostrar(formSalida);
   mostrar($('salida-resultado'), false);
+  mostrar($('cobro'), false);
   $('salida-puerta').focus();
 }
 
@@ -228,18 +232,130 @@ formSalida.addEventListener('submit', async (e) => {
       ticketExtraviado: $('salida-extraviado').checked,
     });
     mostrar(formSalida, false);
-    // La liquidación (valor a pagar) la agrega la spec 009; aquí se informa el tiempo de estadía.
     $('salida-resultado').querySelector('p').textContent =
       `Salida registrada: ${m.vehiculo.placa} · ${formatearDuracion(m.minutosEstadia)} de estadía (${m.minutosEstadia} min). La celda ${m.celda.codigo} quedó disponible.`;
     mostrar($('salida-resultado'));
     $('salida-buscar').value = '';
-    $('salida-buscar').focus();
+    // Spec 009: liquidación y cobro (HU-39, HU-40).
+    mostrarCobro(m);
     cargarCeldas();
     consulta?.ahora();
   } catch (error) {
     if (error.status === 401) return;
     if (error.code === 'VALIDACION') pintarErroresApi(error, { idPuerta: 'salida-puerta' });
     else mostrarAlerta(alertaSalida, error.message, 'error');
+  } finally {
+    botonCargando(boton, false);
+  }
+});
+
+// ---------------------------------------------------------------- liquidación y cobro (spec 009: HU-39, HU-40, HU-41)
+const formCobro = $('form-cobro');
+const campoMetodo = $('cobro-metodo');
+const campoRecibido = $('cobro-recibido');
+
+function actualizarCambio() {
+  const total = estado.cobro?.liquidacion.total ?? 0;
+  const recibido = Number(campoRecibido.value);
+  const texto = !campoRecibido.value
+    ? ''
+    : recibido >= total
+      ? `Cambio: ${formatearCOP(recibido - total)}`
+      : `Faltan ${formatearCOP(total - recibido)}`;
+  $('cobro-cambio').textContent = texto;
+}
+
+function ajustarMetodo() {
+  const efectivo = campoMetodo.value === 'efectivo';
+  mostrar($('cobro-recibido-campo'), efectivo);
+  mostrar($('cobro-referencia-campo'), !efectivo);
+}
+
+/** Muestra la liquidación de la salida y el formulario de cobro; sin tarifa, el aviso del Administrador. */
+function mostrarCobro(m) {
+  estado.cobro = { idMovimiento: m.idMovimiento, liquidacion: m.liquidacion };
+  limpiarErrores(formCobro);
+  mostrarAlerta($('cobro-alerta'), '');
+  mostrar($('cobro-resultado'), false);
+  mostrar($('cobro'));
+  const sinTarifa = !m.liquidacion;
+  mostrarAlerta($('cobro-sin-tarifa'), sinTarifa ? `${m.liquidacionError?.message ?? 'No se pudo liquidar'}: avise al Administrador para configurar la tarifa.` : '', 'error');
+  mostrar($('cobro-liquidacion'), !sinTarifa);
+  mostrar(formCobro, !sinTarifa && puede.registrar);
+  if (sinTarifa) return;
+  ponerCobro($('cobro-liquidacion'), m.liquidacion);
+  campoMetodo.value = 'efectivo';
+  campoRecibido.value = m.liquidacion.total ? '' : '0';
+  $('cobro-referencia').value = '';
+  $('cobro-con-tercero').checked = false;
+  mostrar($('cobro-tercero'), false);
+  $('cobro-guardar').querySelector('span').textContent = m.liquidacion.total ? 'Cobrar y emitir factura' : 'Emitir comprobante en $ 0';
+  ajustarMetodo();
+  actualizarCambio();
+  (m.liquidacion.total ? campoRecibido : $('cobro-guardar')).focus();
+}
+
+campoMetodo.addEventListener('change', ajustarMetodo);
+campoRecibido.addEventListener('input', actualizarCambio);
+$('cobro-con-tercero').addEventListener('change', (e) => mostrar($('cobro-tercero'), e.target.checked));
+
+formCobro.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  limpiarErrores(formCobro);
+  mostrarAlerta($('cobro-alerta'), '');
+  const metodo = campoMetodo.value;
+  const total = estado.cobro.liquidacion.total;
+  const datos = { idMovimiento: estado.cobro.idMovimiento, metodo };
+  let valido;
+  if (metodo === 'efectivo') {
+    const recibido = Number(campoRecibido.value);
+    valido = marcarCampo(campoRecibido, campoRecibido.value === '' ? 'Ingrese el valor recibido.' : recibido < total ? `El valor recibido no alcanza: faltan ${formatearCOP(total - recibido)}.` : '');
+    datos.valorRecibido = recibido;
+  } else {
+    const referencia = $('cobro-referencia').value.trim();
+    valido = marcarCampo($('cobro-referencia'), referencia.length < 4 ? 'Ingrese el número de referencia o autorización (4 a 40 caracteres).' : '');
+    datos.referencia = referencia;
+  }
+  if ($('cobro-con-tercero').checked) {
+    const documento = $('cobro-tercero-documento').value.trim();
+    const nombre = $('cobro-tercero-nombre').value.trim();
+    valido = marcarCampo($('cobro-tercero-documento'), documento.length < 5 ? 'El documento debe tener entre 5 y 20 caracteres.' : '') && valido;
+    valido = marcarCampo($('cobro-tercero-nombre'), nombre.length < 3 ? 'La razón social debe tener entre 3 y 100 caracteres.' : '') && valido;
+    datos.tercero = { documento, nombre };
+  }
+  if (!valido) return formCobro.querySelector('[aria-invalid="true"]')?.focus();
+  const boton = $('cobro-guardar');
+  botonCargando(boton, true, 'Cobrando…');
+  try {
+    const { pago, factura } = await registrarPago(datos);
+    // RF-FAC-10: se emite el comprobante (y se envía al correo si el cliente tiene).
+    let enviadaA = null;
+    try {
+      enviadaA = (await emitirFactura(factura.idFactura)).enviadaA;
+    } catch {
+      // El pago ya quedó; el comprobante se puede reenviar desde su página.
+    }
+    mostrar(formCobro, false);
+    const cambio = pago.metodo === 'efectivo' && pago.cambio ? ` · cambio ${formatearCOP(pago.cambio)}` : '';
+    $('cobro-resultado').querySelector('p').textContent =
+      `Factura ${factura.numero} por ${formatearCOP(factura.total)}${cambio}${enviadaA ? ` · enviada a ${enviadaA}` : ''}.`;
+    $('cobro-comprobante').href = `/factura.html?id=${factura.idFactura}`;
+    mostrar($('cobro-resultado'));
+    $('cobro-comprobante').focus();
+  } catch (error) {
+    if (error.status === 401) return;
+    if (error.code === 'VALIDACION') {
+      const sinCampo = pintarErroresApi(error, {
+        valorRecibido: 'cobro-recibido',
+        referencia: 'cobro-referencia',
+        metodo: 'cobro-metodo',
+        tercero: 'cobro-tercero-documento',
+      });
+      if (sinCampo.length) mostrarAlerta($('cobro-alerta'), sinCampo.join(' '), 'error');
+    } else {
+      // YA_PAGADO, SIN_TARIFA, MOVIMIENTO_NO_CERRADO…
+      mostrarAlerta($('cobro-alerta'), error.message, 'error');
+    }
   } finally {
     botonCargando(boton, false);
   }

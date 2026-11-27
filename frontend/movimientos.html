@@ -83,6 +83,12 @@
               <a class="organism-navbar-item is-active" data-id="movimientos" href="/movimientos.html" aria-current="page">Movimientos</a>
             </li>
             <li class="hidden">
+              <a class="organism-navbar-item" data-id="facturas" href="/facturas.html">Facturación</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="caja" href="/caja.html">Caja</a>
+            </li>
+            <li class="hidden">
               <a class="organism-navbar-item" data-id="celdas" href="/celdas.html">Celdas</a>
             </li>
             <li class="hidden">
@@ -93,6 +99,9 @@
             </li>
             <li class="hidden">
               <a class="organism-navbar-item" data-id="mis-vehiculos" href="/mis-vehiculos.html">Mis vehículos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mis-facturas" href="/mis-facturas.html">Mis facturas</a>
             </li>
             <li class="hidden">
               <a class="organism-navbar-item" data-id="usuarios" href="/usuarios.html">Usuarios</a>
@@ -268,6 +277,76 @@
             </form>
             <div class="molecule-alert molecule-alert--success hidden" id="salida-resultado" aria-live="polite">
               <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-check"></use></svg><p></p>
+            </div>
+
+            <!-- Spec 009 (HU-39, HU-40): liquidación y cobro después de la salida -->
+            <div class="template-app-layout-stack hidden" id="cobro" aria-live="polite">
+              <div class="molecule-alert molecule-alert--error hidden" id="cobro-sin-tarifa" aria-live="assertive">
+                <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-alert"></use></svg><p></p>
+              </div>
+              <div class="hidden" id="cobro-liquidacion">
+                <div class="molecule-charge">
+                  <div>
+                    <p class="atom-label-caps">Valor a pagar</p>
+                    <p class="molecule-charge-value js-total"></p>
+                  </div>
+                  <p class="molecule-charge-pct js-tope"></p>
+                </div>
+                <div class="atom-meter atom-meter--orange"><span></span></div>
+                <p class="molecule-charge-note js-explicacion"></p>
+                <dl class="molecule-data-list">
+                  <div><dt>Tiempo</dt><dd class="js-tiempo"></dd></div>
+                  <div><dt>Tarifa</dt><dd class="js-tarifa"></dd></div>
+                </dl>
+              </div>
+              <form class="organism-form--grid hidden" id="form-cobro" novalidate>
+                <div class="molecule-field--full"><div class="molecule-alert molecule-alert--error hidden" id="cobro-alerta" aria-live="assertive">
+              <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-alert"></use></svg><p></p>
+            </div></div>
+                <div class="molecule-field">
+                  <label for="cobro-metodo">Método de pago<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+                  <select class="atom-select" id="cobro-metodo" required aria-describedby="cobro-metodo-error">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="tarjeta">Tarjeta</option>
+                    <option value="transferencia">Transferencia</option>
+                    <option value="qr">QR</option>
+                  </select>
+                  <p class="molecule-field-error" id="cobro-metodo-error" aria-live="polite"></p>
+                </div>
+                <div class="molecule-field" id="cobro-recibido-campo">
+                  <label for="cobro-recibido">Valor recibido ($)<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+                  <input class="atom-input" id="cobro-recibido" type="number" min="0" step="any" inputmode="decimal" aria-describedby="cobro-cambio cobro-recibido-error" />
+                  <p class="molecule-field-hint" id="cobro-cambio" aria-live="polite"></p>
+                  <p class="molecule-field-error" id="cobro-recibido-error" aria-live="polite"></p>
+                </div>
+                <div class="molecule-field hidden" id="cobro-referencia-campo">
+                  <label for="cobro-referencia">Referencia o autorización<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+                  <input class="atom-input" id="cobro-referencia" type="text" maxlength="40" autocomplete="off" aria-describedby="cobro-referencia-error" />
+                  <p class="molecule-field-error" id="cobro-referencia-error" aria-live="polite"></p>
+                </div>
+                <div class="molecule-field molecule-field--full">
+                  <label class="molecule-check"><input type="checkbox" id="cobro-con-tercero" />Factura a nombre de un tercero (empresa)</label>
+                </div>
+                <div class="organism-form--grid molecule-field--full hidden" id="cobro-tercero">
+                  <div class="molecule-field">
+                    <label for="cobro-tercero-documento">NIT o documento<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+                    <input class="atom-input" id="cobro-tercero-documento" type="text" maxlength="20" autocomplete="off" aria-describedby="cobro-tercero-documento-error" />
+                    <p class="molecule-field-error" id="cobro-tercero-documento-error" aria-live="polite"></p>
+                  </div>
+                  <div class="molecule-field">
+                    <label for="cobro-tercero-nombre">Razón social<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+                    <input class="atom-input" id="cobro-tercero-nombre" type="text" maxlength="100" autocomplete="off" aria-describedby="cobro-tercero-nombre-error" />
+                    <p class="molecule-field-error" id="cobro-tercero-nombre-error" aria-live="polite"></p>
+                  </div>
+                </div>
+                <div class="molecule-field--full">
+                  <button class="atom-button" type="submit" id="cobro-guardar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-check"></use></svg><span>Cobrar y emitir factura</span></button>
+                </div>
+              </form>
+              <div class="molecule-alert molecule-alert--success hidden" id="cobro-resultado" aria-live="polite">
+                <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-check"></use></svg><p></p>
+                <a class="atom-button atom-button--ghost atom-button--sm" id="cobro-comprobante" href="#"><span>Ver comprobante</span></a>
+              </div>
             </div>
           </div>
         </section>

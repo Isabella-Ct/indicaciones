@@ -10,10 +10,13 @@ const icono = (id) =>
 
 const MENU = [
   ['movimientos', 'Movimientos', '/movimientos.html'],
+  ['facturas', 'Facturación', '/facturas.html'],
+  ['caja', 'Caja', '/caja.html'],
   ['celdas', 'Celdas', '/celdas.html'],
   ['disponibilidad', 'Disponibilidad', '/disponibilidad.html'],
   ['vehiculos', 'Vehículos', '/vehiculos.html'],
   ['mis-vehiculos', 'Mis vehículos', '/mis-vehiculos.html'],
+  ['mis-facturas', 'Mis facturas', '/mis-facturas.html'],
   ['usuarios', 'Usuarios', '/usuarios.html'],
   ['parqueaderos', 'Parqueaderos', '/parqueaderos.html'],
   ['pico-placa', 'Pico y placa', '/pico-placa.html'],
@@ -429,4 +432,5 @@ require('./paginas-005.js')({ pagina, tablaVacia, icono });
 require('./paginas-006.js')({ pagina, icono });
 require('./paginas-007.js')({ pagina, tablaVacia, icono });
 require('./paginas-008.js')({ pagina, tablaVacia, icono });
+require('./paginas-009.js')({ pagina, tablaVacia, icono });
 console.log('Páginas escritas en', destino);

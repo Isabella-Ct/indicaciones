@@ -34,6 +34,11 @@ export function ponerChipTarifa(chip, situacion) {
   ponerChip(chip, texto, variante);
 }
 
+/** Estado de una factura (spec 009): emitida | anulada. */
+export function ponerChipFactura(chip, estado) {
+  ponerChip(chip, estado === 'anulada' ? 'Anulada' : 'Emitida', estado === 'anulada' ? 'out' : 'free');
+}
+
 /** Chip de estado activo/inactivo (usuarios, roles, tarifas…). */
 export function ponerChipActivo(chip, estado) {
   ponerChip(chip, estado === 'activo' ? 'Activo' : 'Inactivo', estado === 'activo' ? 'free' : 'out');

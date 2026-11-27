@@ -13,12 +13,16 @@ export const RUTA_CAMBIAR_CONTRASENA = '/cambiar-contrasena.html';
 export const MENU = [
   // spec 007: la caseta es la primera pantalla del personal (entradas, salidas y vehículos dentro).
   { id: 'movimientos', texto: 'Movimientos', href: '/movimientos.html', permiso: 'movimientos.ver' },
+  // spec 009: facturación y caja del personal; el Cliente ve solo sus facturas.
+  { id: 'facturas', texto: 'Facturación', href: '/facturas.html', permiso: 'facturas.ver' },
+  { id: 'caja', texto: 'Caja', href: '/caja.html', permiso: 'caja.ver' },
   // spec 004: el mapa con placas es del personal; el Cliente ve solo la disponibilidad (RF-CLD-17).
   { id: 'celdas', texto: 'Celdas', href: '/celdas.html', permiso: 'celdas.ver', tambien: 'movimientos.ver' },
   { id: 'disponibilidad', texto: 'Disponibilidad', href: '/disponibilidad.html', permiso: 'celdas.ver', ocultarCon: 'movimientos.ver' },
   // spec 005: el personal consulta todos los vehículos; el Cliente solo los suyos (RF-VEH-12).
   { id: 'vehiculos', texto: 'Vehículos', href: '/vehiculos.html', permiso: 'vehiculos.ver' },
   { id: 'mis-vehiculos', texto: 'Mis vehículos', href: '/mis-vehiculos.html', permiso: 'perfil.ver', ocultarCon: 'vehiculos.ver' },
+  { id: 'mis-facturas', texto: 'Mis facturas', href: '/mis-facturas.html', permiso: 'perfil.ver', ocultarCon: 'facturas.ver' },
   { id: 'usuarios', texto: 'Usuarios', href: '/usuarios.html', permiso: 'usuarios.ver' },
   { id: 'parqueaderos', texto: 'Parqueaderos', href: '/parqueaderos.html', permiso: 'parqueaderos.ver', grupo: 'Configuración' },
   // spec 006: solo quien configura ve la tabla semanal en el menú (el aviso de hoy está en otras pantallas).
