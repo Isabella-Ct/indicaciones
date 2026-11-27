@@ -29,10 +29,25 @@ const esquema = z
       .transform((v) => v.trim()),
     TRUST_PROXY: z.coerce.number().int().min(0).default(0),
     LOGIN_LIMITE_IP: z.coerce.number().int().positive().default(20),
+    // Correo (spec 002 research R-01): smtp | archivo (.eml en backend/correos) | memoria (pruebas)
+    CORREO_TRANSPORTE: z.enum(['smtp', 'archivo', 'memoria']).default('archivo'),
+    CORREO_REMITENTE: z.string().min(3).default('Parking Lot ABC <no-responder@parqueaderoabc.co>'),
+    SMTP_HOST: z.string().default(''),
+    SMTP_PUERTO: z.coerce.number().int().positive().default(587),
+    SMTP_SEGURO: z
+      .enum(['true', 'false'])
+      .default('false')
+      .transform((v) => v === 'true'),
+    SMTP_USUARIO: z.string().default(''),
+    SMTP_CLAVE: z.string().default(''),
   })
   .refine((e) => e.NODE_ENV !== 'test' || e.DB_NAME.endsWith('_test'), {
     message: 'Con NODE_ENV=test, DB_NAME debe terminar en _test (protege la base de desarrollo)',
     path: ['DB_NAME'],
+  })
+  .refine((e) => e.CORREO_TRANSPORTE !== 'smtp' || e.SMTP_HOST, {
+    message: 'Con CORREO_TRANSPORTE=smtp, SMTP_HOST es obligatorio',
+    path: ['SMTP_HOST'],
   });
 
 const resultado = esquema.safeParse(process.env);

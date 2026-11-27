@@ -32,12 +32,21 @@ describe('POST /api/v1/auth/login (fundación, RF-ACC-01/02/05)', () => {
     });
   });
 
-  test('401 con el mismo mensaje para documento inexistente y usuario inactivo (RN-06)', async () => {
+  test('401 genérico para documento inexistente y para inactivo con contraseña errada (RF-ACC-02)', async () => {
     const inexistente = await login({ ...CREDENCIALES.admin, numeroDocumento: '9999999999' });
-    const inactivo = await login(CREDENCIALES.inactivo);
+    const inactivoErrado = await login({ ...CREDENCIALES.inactivo, contrasena: 'otra-clave' });
     expect(inexistente.status).toBe(401);
-    expect(inactivo.status).toBe(401);
-    expect(inactivo.body).toEqual(inexistente.body);
+    expect(inactivoErrado.body).toEqual(inexistente.body);
+    expect(inexistente.body.error.code).toBe('CREDENCIALES_INVALIDAS');
+  });
+
+  test('HU-10 E2 usuario inactivo con contraseña correcta → 401 USUARIO_INACTIVO (spec 002 R-05)', async () => {
+    const res = await login(CREDENCIALES.inactivo);
+    expect(res.status).toBe(401);
+    expect(res.body.error).toEqual({
+      code: 'USUARIO_INACTIVO',
+      message: 'Usuario inactivo. Comuníquese con el administrador.',
+    });
   });
 
   test('422 sin documento ni contraseña, con detalle por campo', async () => {

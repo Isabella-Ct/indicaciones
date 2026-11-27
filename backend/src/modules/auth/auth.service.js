@@ -14,13 +14,18 @@ const HASH_FICTICIO = bcrypt.hashSync(crypto.randomUUID(), env.BCRYPT_COSTO);
 
 /**
  * RF-ACC-01/05: documento + contraseña → token JWT con rol y permisos (fijos en la sesión, RF-ROL-10).
- * RF-ACC-02 / RN-06: mismo mensaje si el documento no existe, la contraseña falla o el usuario está inactivo.
+ * RF-ACC-02: mensaje genérico si el documento no existe o la contraseña falla.
+ * HU-10 E2 / RN-06: con la contraseña correcta, un usuario inactivo recibe el motivo
+ * (spec 002 research R-05: solo quien conoce la contraseña lo ve, no permite enumerar documentos).
  */
 async function iniciarSesion({ tipoDocumento, numeroDocumento, contrasena }, { ip } = {}) {
   const usuario = await repositorio.buscarPorDocumento(tipoDocumento, numeroDocumento);
   const coincide = await bcrypt.compare(contrasena, usuario?.contrasena_hash ?? HASH_FICTICIO);
-  if (!usuario || !coincide || usuario.estado !== 'activo') {
+  if (!usuario || !coincide) {
     throw errores.noAutenticado(MENSAJE_GENERICO, 'CREDENCIALES_INVALIDAS');
+  }
+  if (usuario.estado !== 'activo') {
+    throw errores.noAutenticado('Usuario inactivo. Comuníquese con el administrador.', 'USUARIO_INACTIVO');
   }
 
   const permisos = await repositorio.codigosPermisoDeRol(usuario.id_rol);

@@ -53,6 +53,7 @@
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
     "dotenv": "^18.0.8",
     "express": "^5.3.0",
     "express-rate-limit": "^8.7.1",
@@ -60,9 +61,9 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.4.0",
     "mysql2": "^3.24.6",
+    "nodemailer": "^10.6.1",
     "pdfkit": "^0.20.2",
-    "zod": "^3.25.76",
-    "cors": "^2.8.5"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

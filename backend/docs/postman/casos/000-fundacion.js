@@ -30,12 +30,12 @@ module.exports = {
       code: 'CREDENCIALES_INVALIDAS',
     },
     {
-      nombre: 'POST /auth/login — 401 usuario inactivo',
+      nombre: 'POST /auth/login — 401 usuario inactivo (HU-10 E2)',
       metodo: 'POST',
       ruta: '/auth/login',
       body: { tipoDocumento: 'CC', numeroDocumento: '1000000009', contrasena: 'Cliente2026*' },
       status: 401,
-      code: 'CREDENCIALES_INVALIDAS',
+      code: 'USUARIO_INACTIVO',
     },
     {
       nombre: 'POST /auth/login — 422 sin documento',

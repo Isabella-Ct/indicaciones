@@ -9,3 +9,6 @@ coverage/
 .DS_Store
 Thumbs.db
 .claude/settings.local.json
+backend/correos/
+backend/uploads/usuarios/*
+!backend/uploads/usuarios/.gitkeep

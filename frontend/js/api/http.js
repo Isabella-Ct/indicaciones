@@ -36,8 +36,10 @@ export async function solicitar(ruta, { method = 'GET', body, query, publica = f
     if (valor !== undefined && valor !== null && valor !== '') url.searchParams.set(clave, String(valor));
   }
 
+  // Con FormData (fotos) el navegador pone el Content-Type con su boundary (spec 002 R-11).
+  const esFormulario = body instanceof FormData;
   const cabeceras = { Accept: 'application/json' };
-  if (body !== undefined) cabeceras['Content-Type'] = 'application/json';
+  if (body !== undefined && !esFormulario) cabeceras['Content-Type'] = 'application/json';
   const token = tokenActual();
   if (token && !publica) cabeceras.Authorization = `Bearer ${token}`;
 
@@ -48,7 +50,7 @@ export async function solicitar(ruta, { method = 'GET', body, query, publica = f
     respuesta = await fetch(url, {
       method,
       headers: cabeceras,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined || esFormulario ? body : JSON.stringify(body),
       signal: control.signal,
     });
   } catch (error) {
@@ -79,4 +81,28 @@ export async function solicitar(ruta, { method = 'GET', body, query, publica = f
     avisar(fallo.message, 'error');
   }
   throw fallo;
+}
+
+/**
+ * Descarga un archivo protegido (p. ej. la foto de un usuario) con el token Bearer: un <img src>
+ * no envía la cabecera Authorization. Devuelve el Blob, o null si no existe (404).
+ * @param {string} ruta ruta relativa a /api/v1
+ * @returns {Promise<Blob|null>}
+ */
+export async function solicitarArchivo(ruta) {
+  const token = tokenActual();
+  const control = new AbortController();
+  const temporizador = setTimeout(() => control.abort(), TIEMPO_ESPERA_MS);
+  try {
+    const respuesta = await fetch(new URL(API_BASE + ruta, location.origin), {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      signal: control.signal,
+    });
+    if (!respuesta.ok) return null;
+    return await respuesta.blob();
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(temporizador);
+  }
 }

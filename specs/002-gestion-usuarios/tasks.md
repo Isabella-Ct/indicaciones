@@ -23,18 +23,18 @@ description: "Lista de tareas de 002-gestion-usuarios"
 
 **Propósito**: dependencia de correo y configuración (research R-01)
 
-- [ ] T001 Instalar `nodemailer` en `backend/package.json`; agregar `backend/correos/` y `backend/uploads/usuarios/` a `.gitignore` (con `.gitkeep` para uploads)
-- [ ] T002 [P] Variables `CORREO_TRANSPORTE`, `CORREO_REMITENTE`, `SMTP_HOST`, `SMTP_PUERTO`, `SMTP_SEGURO`, `SMTP_USUARIO`, `SMTP_CLAVE` en `backend/.env.example` (documentadas), `backend/.env` y `backend/.env.test` (`memoria`); validarlas en `backend/src/config/env.js` (con `smtp`, `SMTP_HOST` es obligatorio)
+- [X] T001 Instalar `nodemailer` en `backend/package.json`; agregar `backend/correos/` y `backend/uploads/usuarios/` a `.gitignore` (con `.gitkeep` para uploads)
+- [X] T002 [P] Variables `CORREO_TRANSPORTE`, `CORREO_REMITENTE`, `SMTP_HOST`, `SMTP_PUERTO`, `SMTP_SEGURO`, `SMTP_USUARIO`, `SMTP_CLAVE` en `backend/.env.example` (documentadas), `backend/.env` y `backend/.env.test` (`memoria`); validarlas en `backend/src/config/env.js` (con `smtp`, `SMTP_HOST` es obligatorio)
 
 ---
 
 ## Fase 2: Fundacional (bloquea las historias)
 
-- [ ] T003 [P] `backend/src/integrations/correo.js`: `enviarCorreo({ para, asunto, texto })` con transportes `smtp` / `archivo` (`.eml` en `backend/correos/`) / `memoria` (`bandejaMemoria()`, `vaciarBandeja()`); devuelve `true`/`false` sin lanzar (R-01)
-- [ ] T004 [P] `backend/src/utils/archivos.js` (`guardarFoto(buffer, ext)` → clave `usuarios/<uuid>.<ext>`, `rutaFoto(clave)`, `borrarFoto(clave)` sin error si no existe) y `backend/src/middlewares/subir-foto.js` (multer en memoria, 2 MB, un archivo `foto`, firma JPG/PNG → `req.foto = { buffer, ext, mime }`; errores → 422 con campo `foto`) (R-03)
-- [ ] T005 Ajustar `backend/src/modules/auth/auth.service.js`: contraseña correcta + usuario inactivo → 401 `USUARIO_INACTIVO` «Usuario inactivo. Comuníquese con el administrador.» (R-05); actualizar `backend/tests/integration/auth-login.test.js` y el caso «401 usuario inactivo» de `backend/docs/postman/casos/000-fundacion.js`
-- [ ] T006 [P] Pruebas unitarias `backend/tests/unit/correo.test.js` (memoria guarda; error de transporte → false) y `backend/tests/unit/subir-foto.test.js` (PNG y JPG válidos; GIF, PNG falso y > 2 MB → 422)
-- [ ] T007 [P] `frontend/js/api/http.js`: cuerpo `FormData` sin `Content-Type` manual y `solicitarArchivo(ruta)` → `Blob` (R-11)
+- [X] T003 [P] `backend/src/integrations/correo.js`: `enviarCorreo({ para, asunto, texto })` con transportes `smtp` / `archivo` (`.eml` en `backend/correos/`) / `memoria` (`bandejaMemoria()`, `vaciarBandeja()`); devuelve `true`/`false` sin lanzar (R-01)
+- [X] T004 [P] `backend/src/utils/archivos.js` (`guardarFoto(buffer, ext)` → clave `usuarios/<uuid>.<ext>`, `rutaFoto(clave)`, `borrarFoto(clave)` sin error si no existe) y `backend/src/middlewares/subir-foto.js` (multer en memoria, 2 MB, un archivo `foto`, firma JPG/PNG → `req.foto = { buffer, ext, mime }`; errores → 422 con campo `foto`) (R-03)
+- [X] T005 Ajustar `backend/src/modules/auth/auth.service.js`: contraseña correcta + usuario inactivo → 401 `USUARIO_INACTIVO` «Usuario inactivo. Comuníquese con el administrador.» (R-05); actualizar `backend/tests/integration/auth-login.test.js` y el caso «401 usuario inactivo» de `backend/docs/postman/casos/000-fundacion.js`
+- [X] T006 [P] Pruebas unitarias `backend/tests/unit/correo.test.js` (memoria guarda; error de transporte → false) y `backend/tests/unit/subir-foto.test.js` (PNG y JPG válidos; GIF, PNG falso y > 2 MB → 422)
+- [X] T007 [P] `frontend/js/api/http.js`: cuerpo `FormData` sin `Content-Type` manual y `solicitarArchivo(ruta)` → `Blob` (R-11)
 
 **Punto de control**: la suite de la 001 sigue en verde con el login ajustado.
 
