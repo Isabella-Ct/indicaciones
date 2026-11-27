@@ -48,16 +48,16 @@ description: "Lista de tareas de 002-gestion-usuarios"
 
 ### Pruebas de la historia 1
 
-- [ ] T008 [P] [US1] `backend/tests/unit/usuarios.reglas.test.js`: `normalizarDocumento` (puntos, espacios, PAS), `normalizarNombre`, `normalizarCorreo`, `normalizarCelular`, `generarContrasenaTemporal` (12 caracteres con los 4 tipos, sin ambiguos) y `diferencias`
-- [ ] T009 [US1] `backend/tests/integration/usuarios.test.js` bloque HU-07: E1 (201, código, `debeCambiarContrasena`, correo con contraseña que permite iniciar sesión, bitácora `crear` sin contraseña), E2 (documento y correo 409), E3 (422 por campo, sin autorización de datos), E4 (multipart PNG → `fotoUrl`; > 2 MB y GIF → 422 sin crear), E5 (Operador con rol 2 → 403; con rol 3 → 201), E6 (rol 5 inactivo y rol 999 → 422)
+- [X] T008 [P] [US1] `backend/tests/unit/usuarios.reglas.test.js`: `normalizarDocumento` (puntos, espacios, PAS), `normalizarNombre`, `normalizarCorreo`, `normalizarCelular`, `generarContrasenaTemporal` (12 caracteres con los 4 tipos, sin ambiguos) y `diferencias`
+- [X] T009 [US1] `backend/tests/integration/usuarios.test.js` bloque HU-07: E1 (201, código, `debeCambiarContrasena`, correo con contraseña que permite iniciar sesión, bitácora `crear` sin contraseña), E2 (documento y correo 409), E3 (422 por campo, sin autorización de datos), E4 (multipart PNG → `fotoUrl`; > 2 MB y GIF → 422 sin crear), E5 (Operador con rol 2 → 403; con rol 3 → 201), E6 (rol 5 inactivo y rol 999 → 422)
 
 ### Implementación de la historia 1
 
-- [ ] T010 [P] [US1] `backend/src/modules/usuarios/usuarios.reglas.js` (funciones de T008, según `data-model.md` Usuario.numero_documento, Usuario.nombre_completo, Usuario.correo y Usuario.celular)
-- [ ] T011 [P] [US1] `backend/src/modules/usuarios/usuarios.validator.js`: `usuarioEntrada` (data-model.md Usuario.tipo_documento, Usuario.numero_documento, Usuario.nombre_completo, Usuario.correo, Usuario.celular, Usuario.id_rol, Usuario.acepta_tratamiento_datos con conversión de multipart), `usuarioEdicion`, `perfilEntrada` (strict), `listar` (paginación + `rol` + `estado`), `params`, `cambioEstado`
-- [ ] T012 [US1] `backend/src/modules/usuarios/usuarios.repository.js`: `insertar`, `obtenerPorId` (sin hash, con rol), `rolAsignable(conexion, idRol)` con `FOR UPDATE`, `idRolCliente()`, mapeo a camelCase con `fotoUrl`
-- [ ] T013 [US1] `backend/src/modules/usuarios/usuarios.service.js` `crear(datos, foto, actor)`: alcance (R-08), rol activo, contraseña temporal + bcrypt, `withTransaction` + bitácora, traducción de `ER_DUP_ENTRY` (`uq_usuario_documento` → DOCUMENTO_DUPLICADO, `uq_usuario_correo` → CORREO_DUPLICADO), foto (borrar si falla la transacción), correo después del commit, `correoEnviado`
-- [ ] T014 [US1] `backend/src/modules/usuarios/usuarios.controller.js` + `usuarios.routes.js` (`POST /` con `authorize('usuarios.crear')`, `subirFoto`, `validate`) y registro en `rutasProtegidas()` de `backend/src/app.js`
+- [X] T010 [P] [US1] `backend/src/modules/usuarios/usuarios.reglas.js` (funciones de T008, según `data-model.md` Usuario.numero_documento, Usuario.nombre_completo, Usuario.correo y Usuario.celular)
+- [X] T011 [P] [US1] `backend/src/modules/usuarios/usuarios.validator.js`: `usuarioEntrada` (data-model.md Usuario.tipo_documento, Usuario.numero_documento, Usuario.nombre_completo, Usuario.correo, Usuario.celular, Usuario.id_rol, Usuario.acepta_tratamiento_datos con conversión de multipart), `usuarioEdicion`, `perfilEntrada` (strict), `listar` (paginación + `rol` + `estado`), `params`, `cambioEstado`
+- [X] T012 [US1] `backend/src/modules/usuarios/usuarios.repository.js`: `insertar`, `obtenerPorId` (sin hash, con rol), `rolAsignable(conexion, idRol)` con `FOR UPDATE`, `idRolCliente()`, mapeo a camelCase con `fotoUrl`
+- [X] T013 [US1] `backend/src/modules/usuarios/usuarios.service.js` `crear(datos, foto, actor)`: alcance (R-08), rol activo, contraseña temporal + bcrypt, `withTransaction` + bitácora, traducción de `ER_DUP_ENTRY` (`uq_usuario_documento` → DOCUMENTO_DUPLICADO, `uq_usuario_correo` → CORREO_DUPLICADO), foto (borrar si falla la transacción), correo después del commit, `correoEnviado`
+- [X] T014 [US1] `backend/src/modules/usuarios/usuarios.controller.js` + `usuarios.routes.js` (`POST /` con `authorize('usuarios.crear')`, `subirFoto`, `validate`) y registro en `rutasProtegidas()` de `backend/src/app.js`
 
 **Punto de control**: HU-07 en verde.
 
@@ -69,10 +69,10 @@ description: "Lista de tareas de 002-gestion-usuarios"
 
 **Prueba independiente**: `?q=salcedo`, `?rol=&estado=`; detalle sin hash; el Operador con un Administrador → 403.
 
-- [ ] T015 [US2] Bloque HU-08 en `backend/tests/integration/usuarios.test.js`: E1–E6 y `GET /usuarios/:id/foto` (200 con imagen del propio usuario, 404 sin foto, 403 de un Cliente con la foto de otro)
-- [ ] T016 [US2] Repositorio: `listar({ q, idRol, estado, limit, offset })` con `LIKE` escapado sobre documento, nombre y correo, más `contar`; `vehiculosDe(id)` y `membresiaVigente(id)` (data-model.md § Solo lectura)
-- [ ] T017 [US2] Servicio: `listar` (alcance del Operador fuerza el rol Cliente), `obtener` (404 y 403 por alcance), `foto(id, actor)` (propia con `perfil.ver`, o con `usuarios.ver` dentro del alcance)
-- [ ] T018 [US2] Rutas `GET /`, `GET /:id`, `GET /:id/foto` (`authorize('usuarios.ver')`; la foto con verificación de alcance en el servicio) en `backend/src/modules/usuarios/usuarios.routes.js`
+- [X] T015 [US2] Bloque HU-08 en `backend/tests/integration/usuarios.test.js`: E1–E6 y `GET /usuarios/:id/foto` (200 con imagen del propio usuario, 404 sin foto, 403 de un Cliente con la foto de otro)
+- [X] T016 [US2] Repositorio: `listar({ q, idRol, estado, limit, offset })` con `LIKE` escapado sobre documento, nombre y correo, más `contar`; `vehiculosDe(id)` y `membresiaVigente(id)` (data-model.md § Solo lectura)
+- [X] T017 [US2] Servicio: `listar` (alcance del Operador fuerza el rol Cliente), `obtener` (404 y 403 por alcance), `foto(id, actor)` (propia con `perfil.ver`, o con `usuarios.ver` dentro del alcance)
+- [X] T018 [US2] Rutas `GET /`, `GET /:id`, `GET /:id/foto` (`authorize('usuarios.ver')`; la foto con verificación de alcance en el servicio) en `backend/src/modules/usuarios/usuarios.routes.js`
 
 **Punto de control**: HU-07 y HU-08 en verde.
 
@@ -84,9 +84,9 @@ description: "Lista de tareas de 002-gestion-usuarios"
 
 **Prueba independiente**: inactivar un Cliente con token vigente → ese token da 401 y el login da 401 `USUARIO_INACTIVO`; reactivar → login 200.
 
-- [ ] T019 [US4] Bloque HU-10 en `backend/tests/integration/usuarios.test.js`: E1–E6
-- [ ] T020 [US4] Repositorio `cambiarEstado` y `revocarSesiones(conexion, idUsuario)`; servicio `cambiarEstado(id, estado, actor)` (404, 409 `AUTOINACTIVACION`, sin cambios → 200, bitácora) (data-model.md Usuario.estado)
-- [ ] T021 [US4] Ruta `PATCH /:id/estado` (`authorize('usuarios.cambiar_estado')`)
+- [X] T019 [US4] Bloque HU-10 en `backend/tests/integration/usuarios.test.js`: E1–E6
+- [X] T020 [US4] Repositorio `cambiarEstado` y `revocarSesiones(conexion, idUsuario)`; servicio `cambiarEstado(id, estado, actor)` (404, 409 `AUTOINACTIVACION`, sin cambios → 200, bitácora) (data-model.md Usuario.estado)
+- [X] T021 [US4] Ruta `PATCH /:id/estado` (`authorize('usuarios.cambiar_estado')`)
 
 **Punto de control**: HU-07, HU-08 y HU-10 en verde.
 
@@ -94,17 +94,17 @@ description: "Lista de tareas de 002-gestion-usuarios"
 
 ## Fase 6: Historia de usuario 3 — Actualizar cualquier usuario (Prioridad: P2) · HU-09
 
-- [ ] T022 [US3] Bloque HU-09 en `backend/tests/integration/usuarios.test.js`: E1–E5 (incluye el reemplazo de la foto y `quitarFoto`)
-- [ ] T023 [US3] Repositorio `actualizar`; servicio `actualizar(id, datos, foto, actor)`: 404, rol activo (bloqueado), diferencias → bitácora `editar` solo con los campos cambiados, duplicados → 409, foto nueva / quitar (borrar la anterior después del commit)
-- [ ] T024 [US3] Ruta `PUT /:id` (`authorize('usuarios.editar')`, `subirFoto`, `validate`)
+- [X] T022 [US3] Bloque HU-09 en `backend/tests/integration/usuarios.test.js`: E1–E5 (incluye el reemplazo de la foto y `quitarFoto`)
+- [X] T023 [US3] Repositorio `actualizar`; servicio `actualizar(id, datos, foto, actor)`: 404, rol activo (bloqueado), diferencias → bitácora `editar` solo con los campos cambiados, duplicados → 409, foto nueva / quitar (borrar la anterior después del commit)
+- [X] T024 [US3] Ruta `PUT /:id` (`authorize('usuarios.editar')`, `subirFoto`, `validate`)
 
 ---
 
 ## Fase 7: Historia de usuario 5 — Actualizar mis datos personales (Prioridad: P2) · HU-11
 
-- [ ] T025 [US5] Bloque HU-11 en `backend/tests/integration/usuarios.test.js`: E1–E6 (notificaciones en la tabla `notificacion` y correo en la bandeja de memoria para el Administrador)
-- [ ] T026 [US5] Repositorio `administradoresActivos()`, `insertarNotificaciones(conexion, …)`, `marcarNotificacionEnviada`; servicio `misDatos(actor)` y `actualizarMisDatos(datos, foto, actor)` (diferencias → bitácora `editar_perfil` + notificaciones en la transacción; correo después del commit; sin cambios → no notifica) (data-model.md § notificacion)
-- [ ] T027 [US5] Rutas `GET /me` (`perfil.ver`) y `PUT /me` (`perfil.editar`, `subirFoto`, `validate`), declaradas antes de `/:id`
+- [X] T025 [US5] Bloque HU-11 en `backend/tests/integration/usuarios.test.js`: E1–E6 (notificaciones en la tabla `notificacion` y correo en la bandeja de memoria para el Administrador)
+- [X] T026 [US5] Repositorio `administradoresActivos()`, `insertarNotificaciones(conexion, …)`, `marcarNotificacionEnviada`; servicio `misDatos(actor)` y `actualizarMisDatos(datos, foto, actor)` (diferencias → bitácora `editar_perfil` + notificaciones en la transacción; correo después del commit; sin cambios → no notifica) (data-model.md § notificacion)
+- [X] T027 [US5] Rutas `GET /me` (`perfil.ver`) y `PUT /me` (`perfil.editar`, `subirFoto`, `validate`), declaradas antes de `/:id`
 
 **Punto de control**: las 5 historias en verde en la API.
 

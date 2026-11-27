@@ -24,6 +24,8 @@ function rutasProtegidas() {
     // spec 001-roles-permisos
     { ruta: '/roles', router: rolesRouter },
     { ruta: '/permisos', router: permisosRouter },
+    // spec 002-gestion-usuarios
+    { ruta: '/usuarios', router: require('./modules/usuarios/usuarios.routes') },
   ];
 }
 

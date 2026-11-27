@@ -2,8 +2,17 @@
 // req.validado (en Express 5 req.query es de solo lectura). Errores → 422 con detalle por campo.
 const { errores } = require('../utils/errores');
 
+/** Un mensaje por campo (el primero), para mostrarlo junto al control (RNF-USA-03). */
 function aDetalles(issues) {
-  return issues.map((i) => ({ campo: i.path.join('.') || null, mensaje: i.message }));
+  const vistos = new Set();
+  const detalles = [];
+  for (const issue of issues) {
+    const campo = issue.path.join('.') || null;
+    if (campo !== null && vistos.has(campo)) continue;
+    vistos.add(campo);
+    detalles.push({ campo, mensaje: issue.message });
+  }
+  return detalles;
 }
 
 /**
