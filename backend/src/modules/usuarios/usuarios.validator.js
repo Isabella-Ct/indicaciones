@@ -127,4 +127,7 @@ const params = z.object({
 
 const cambioEstado = z.object({ estado }).strict(NO_PERMITIDOS);
 
-module.exports = { usuarioEntrada, usuarioEdicion, perfilEntrada, listar, params, cambioEstado };
+// Campos sueltos que reutiliza el autorregistro (spec 003).
+const campos = { tipoDocumento, numeroDocumento, nombreCompleto, correo, celular, booleano, documentoValido };
+
+module.exports = { usuarioEntrada, usuarioEdicion, perfilEntrada, listar, params, cambioEstado, campos };

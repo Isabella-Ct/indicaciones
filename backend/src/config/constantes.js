@@ -24,6 +24,11 @@ const PERMISOS_PROTEGIDOS_ADMIN = Object.freeze([
 // Ventana del límite de peticiones de login por IP (constitución §III).
 const LOGIN_VENTANA_MS = 15 * 60 * 1000;
 
+// Bloqueo por intentos fallidos (RN-07, RNF-SEG-05) y vigencia del enlace de recuperación (RN-08).
+const LOGIN_MAX_FALLIDOS = 5;
+const LOGIN_VENTANA_MIN = 15;
+const TOKEN_RECUPERACION_MIN = 30;
+
 // Paginación (constitución §II).
 const LIMITE_POR_DEFECTO = 10;
 const LIMITE_MAXIMO = 100;
@@ -34,6 +39,9 @@ module.exports = {
   ROL_ADMINISTRADOR,
   PERMISOS_PROTEGIDOS_ADMIN,
   LOGIN_VENTANA_MS,
+  LOGIN_MAX_FALLIDOS,
+  LOGIN_VENTANA_MIN,
+  TOKEN_RECUPERACION_MIN,
   LIMITE_POR_DEFECTO,
   LIMITE_MAXIMO,
 };

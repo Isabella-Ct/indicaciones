@@ -18,15 +18,15 @@ description: "Lista de tareas de 003-gestion-acceso"
 
 ## Fase 1: Preparación
 
-- [ ] T001 `URL_PUBLICA` en `backend/.env.example` (documentada), `backend/.env` y `backend/.env.test`, y validada en `backend/src/config/env.js` (por defecto `http://localhost:<PORT>`); constantes `LOGIN_MAX_FALLIDOS = 5`, `LOGIN_VENTANA_MIN = 15` y `TOKEN_RECUPERACION_MIN = 30` en `backend/src/config/constantes.js`
+- [X] T001 `URL_PUBLICA` en `backend/.env.example` (documentada), `backend/.env` y `backend/.env.test`, y validada en `backend/src/config/env.js` (por defecto `http://localhost:<PORT>`); constantes `LOGIN_MAX_FALLIDOS = 5`, `LOGIN_VENTANA_MIN = 15` y `TOKEN_RECUPERACION_MIN = 30` en `backend/src/config/constantes.js`
 
 ---
 
 ## Fase 2: Fundacional
 
-- [ ] T002 [P] `backend/src/modules/auth/auth.reglas.js`: `generarTokenRecuperacion()` (32 bytes en hexadecimal), `hashToken(token)` (SHA-256) y `contrasenaCumple(texto)` (8–64, letra y dígito); prueba en `backend/tests/unit/acceso.reglas.test.js`
-- [ ] T003 `backend/src/middlewares/authenticate.js` + `auth.repository.buscarSesionVigente` (incluye `debe_cambiar_contrasena`): 403 `CAMBIO_CONTRASENA_REQUERIDO` salvo con `authenticate.permitirCambioPendiente` (research R-02)
-- [ ] T004 [P] `backend/src/modules/usuarios/usuarios.repository.js` `insertar` con `debeCambiarContrasena` (por defecto TRUE, así la spec 002 sigue igual)
+- [X] T002 [P] `backend/src/modules/auth/auth.reglas.js`: `generarTokenRecuperacion()` (32 bytes en hexadecimal), `hashToken(token)` (SHA-256) y `contrasenaCumple(texto)` (8–64, letra y dígito); prueba en `backend/tests/unit/acceso.reglas.test.js`
+- [X] T003 `backend/src/middlewares/authenticate.js` + `auth.repository.buscarSesionVigente` (incluye `debe_cambiar_contrasena`): 403 `CAMBIO_CONTRASENA_REQUERIDO` salvo con `authenticate.permitirCambioPendiente` (research R-02)
+- [X] T004 [P] `backend/src/modules/usuarios/usuarios.repository.js` `insertar` con `debeCambiarContrasena` (por defecto TRUE, así la spec 002 sigue igual)
 
 **Punto de control**: suites 001 y 002 en verde.
 
@@ -34,37 +34,37 @@ description: "Lista de tareas de 003-gestion-acceso"
 
 ## Fase 3: Historia de usuario 1 — Iniciar sesión como Administrador u Operador (Prioridad: P1) 🎯 MVP · HU-12
 
-- [ ] T005 [US1] `backend/tests/integration/acceso.test.js` bloque HU-12: E1–E5 (el bloqueo con un documento propio de la prueba; la liberación a los 15 min se simula con `UPDATE intento_acceso SET fecha = fecha - INTERVAL 16 MINUTE`)
-- [ ] T006 [US1] `auth.repository`: `registrarIntento`, `fallosRecientes(numeroDocumento)` (data-model.md § intento_acceso), `hashDeUsuario`, `cambiarContrasena(conexion, id, hash)`; `auth.service.iniciarSesion` con el bloqueo (research R-01) y `cambiarContrasena(datos, actor)` (actual correcta, nueva distinta, bitácora)
-- [ ] T007 [US1] `auth.validator`: esquema `contrasenaNueva` (data-model.md Usuario.contrasena_hash vía regla R-03) y `cambioContrasena`; ruta `PUT /auth/contrasena` con `authenticate.permitirCambioPendiente` en `auth.routes.js`
+- [X] T005 [US1] `backend/tests/integration/acceso.test.js` bloque HU-12: E1–E5 (el bloqueo con un documento propio de la prueba; la liberación a los 15 min se simula con `UPDATE intento_acceso SET fecha = fecha - INTERVAL 16 MINUTE`)
+- [X] T006 [US1] `auth.repository`: `registrarIntento`, `fallosRecientes(numeroDocumento)` (data-model.md § intento_acceso), `hashDeUsuario`, `cambiarContrasena(conexion, id, hash)`; `auth.service.iniciarSesion` con el bloqueo (research R-01) y `cambiarContrasena(datos, actor)` (actual correcta, nueva distinta, bitácora)
+- [X] T007 [US1] `auth.validator`: esquema `contrasenaNueva` (data-model.md Usuario.contrasena_hash vía regla R-03) y `cambioContrasena`; ruta `PUT /auth/contrasena` con `authenticate.permitirCambioPendiente` en `auth.routes.js`
 
 ---
 
 ## Fase 4: Historia de usuario 2 — Iniciar sesión como Cliente (Prioridad: P1) · HU-13
 
-- [ ] T008 [US2] Bloque HU-13 en `backend/tests/integration/acceso.test.js`: E1–E3 (permisos del Cliente en el token; 403 en `/usuarios`)
+- [X] T008 [US2] Bloque HU-13 en `backend/tests/integration/acceso.test.js`: E1–E3 (permisos del Cliente en el token; 403 en `/usuarios`)
 
 ---
 
 ## Fase 5: Historia de usuario 4 — Recuperar mi contraseña (Prioridad: P1) · HU-15
 
-- [ ] T009 [US4] Bloque HU-15: E1–E4 (correo en la bandeja de memoria con el enlace y la URL pública; cuerpos idénticos; restablecimiento que revoca sesiones; token usado, vencido —se simula con `UPDATE expira_en`—, reemplazado e inventado → 409)
-- [ ] T010 [US4] `auth.repository`: `invalidarTokens`, `crearToken`, `tokenVigente(conexion, hash)` con `FOR UPDATE`, `marcarTokenUsado`, `revocarSesionesDe` (data-model.md TokenRecuperacion.token_hash, TokenRecuperacion.expira_en, TokenRecuperacion.usado); `auth.service.recuperar` (respuesta fija, correo sin esperar) y `restablecer` (transacción + bitácora)
-- [ ] T011 [US4] Validadores `recuperar` y `restablecer`; rutas públicas `POST /auth/recuperar` y `POST /auth/restablecer` con el límite por IP
+- [X] T009 [US4] Bloque HU-15: E1–E4 (correo en la bandeja de memoria con el enlace y la URL pública; cuerpos idénticos; restablecimiento que revoca sesiones; token usado, vencido —se simula con `UPDATE expira_en`—, reemplazado e inventado → 409)
+- [X] T010 [US4] `auth.repository`: `invalidarTokens`, `crearToken`, `tokenVigente(conexion, hash)` con `FOR UPDATE`, `marcarTokenUsado`, `revocarSesionesDe` (data-model.md TokenRecuperacion.token_hash, TokenRecuperacion.expira_en, TokenRecuperacion.usado); `auth.service.recuperar` (respuesta fija, correo sin esperar) y `restablecer` (transacción + bitácora)
+- [X] T011 [US4] Validadores `recuperar` y `restablecer`; rutas públicas `POST /auth/recuperar` y `POST /auth/restablecer` con el límite por IP
 
 ---
 
 ## Fase 6: Historia de usuario 5 — Cerrar sesión (Prioridad: P1) · HU-16
 
-- [ ] T012 [US5] Bloque HU-16: E1–E2 (204; luego 401 en `/usuarios/me` y en un segundo logout)
-- [ ] T013 [US5] `auth.repository.revocarSesion(jti)`, `auth.service.cerrarSesion(actor)` y ruta `POST /auth/logout` (`authenticate.permitirCambioPendiente`)
+- [X] T012 [US5] Bloque HU-16: E1–E2 (204; luego 401 en `/usuarios/me` y en un segundo logout)
+- [X] T013 [US5] `auth.repository.revocarSesion(jti)`, `auth.service.cerrarSesion(actor)` y ruta `POST /auth/logout` (`authenticate.permitirCambioPendiente`)
 
 ---
 
 ## Fase 7: Historia de usuario 3 — Registrarme como cliente (Prioridad: P2) · HU-14
 
-- [ ] T014 [US3] Bloque HU-14: E1–E5
-- [ ] T015 [US3] Validador `registro` (reutiliza los campos de `usuarios.validator`: data-model de la spec 002 Usuario.tipo_documento, Usuario.numero_documento, Usuario.nombre_completo, Usuario.correo, Usuario.celular, Usuario.acepta_tratamiento_datos + contraseña y confirmación; estricto); `auth.service.registrarme` (rol Cliente, `debeCambiarContrasena = FALSE`, 409 `CUENTA_EXISTENTE` / `CORREO_DUPLICADO`, bitácora `autorregistro`); ruta pública `POST /auth/registro`
+- [X] T014 [US3] Bloque HU-14: E1–E5
+- [X] T015 [US3] Validador `registro` (reutiliza los campos de `usuarios.validator`: data-model de la spec 002 Usuario.tipo_documento, Usuario.numero_documento, Usuario.nombre_completo, Usuario.correo, Usuario.celular, Usuario.acepta_tratamiento_datos + contraseña y confirmación; estricto); `auth.service.registrarme` (rol Cliente, `debeCambiarContrasena = FALSE`, 409 `CUENTA_EXISTENTE` / `CORREO_DUPLICADO`, bitácora `autorregistro`); ruta pública `POST /auth/registro`
 
 **Punto de control**: las 5 historias en verde en la API.
 

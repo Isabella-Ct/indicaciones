@@ -14,6 +14,7 @@ const globalesNode = {
   clearTimeout: 'readonly',
   setInterval: 'readonly',
   clearInterval: 'readonly',
+  setImmediate: 'readonly',
 };
 
 const globalesJest = {

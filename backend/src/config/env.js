@@ -40,6 +40,8 @@ const esquema = z
       .transform((v) => v === 'true'),
     SMTP_USUARIO: z.string().default(''),
     SMTP_CLAVE: z.string().default(''),
+    // Base de los enlaces que viajan por correo (recuperación de contraseña, spec 003)
+    URL_PUBLICA: z.string().url('URL_PUBLICA debe ser una URL (p. ej. http://localhost:3000)').optional(),
   })
   .refine((e) => e.NODE_ENV !== 'test' || e.DB_NAME.endsWith('_test'), {
     message: 'Con NODE_ENV=test, DB_NAME debe terminar en _test (protege la base de desarrollo)',
@@ -58,7 +60,10 @@ if (!resultado.success) {
   throw new Error(`Variables de entorno inválidas (revisa backend/${archivo}):\n${detalle}`);
 }
 
-const env = Object.freeze(resultado.data);
+const env = Object.freeze({
+  ...resultado.data,
+  URL_PUBLICA: (resultado.data.URL_PUBLICA ?? `http://localhost:${resultado.data.PORT}`).replace(/\/$/, ''),
+});
 process.env.TZ = env.TZ;
 
 module.exports = env;

@@ -230,7 +230,15 @@ describe('HU-10 Activar o inactivar un usuario', () => {
     documento = datos.numeroDocumento;
     const res = await crear(datos);
     idTemporal = res.body.data.idUsuario;
-    contrasena = bandejaMemoria().at(-1).texto.match(/Contraseña temporal: (\S+)/)[1];
+    const temporal = bandejaMemoria().at(-1).texto.match(/Contraseña temporal: (\S+)/)[1];
+    // Con la contraseña temporal solo se puede cambiarla (spec 003 RF-ACC-04): se cambia primero.
+    const token = (await login('CC', documento, temporal)).body.data.token;
+    contrasena = 'NuevaClave2026';
+    await api('put', '/auth/contrasena', token).send({
+      contrasenaActual: temporal,
+      contrasenaNueva: contrasena,
+      confirmacion: contrasena,
+    });
   });
 
   test('HU-10 E1 inactiva, revoca la sesión abierta y registra en la bitácora', async () => {

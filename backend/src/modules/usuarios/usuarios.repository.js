@@ -90,7 +90,7 @@ async function insertar(datos, { conexion }) {
     `INSERT INTO usuario (tipo_documento, numero_documento, nombre_completo, correo, celular, foto_url,
                           id_rol, contrasena_hash, debe_cambiar_contrasena, estado,
                           acepta_tratamiento_datos, fecha_autorizacion)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, TRUE, 'activo', TRUE, NOW())`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'activo', TRUE, NOW())`,
     [
       datos.tipoDocumento,
       datos.numeroDocumento,
@@ -100,6 +100,8 @@ async function insertar(datos, { conexion }) {
       datos.claveFoto ?? null,
       datos.idRol,
       datos.contrasenaHash,
+      // Contraseña temporal (spec 002) → TRUE; autorregistro (spec 003) → FALSE.
+      datos.debeCambiarContrasena ?? true,
     ]
   );
   return resultado.insertId;
