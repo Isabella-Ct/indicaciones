@@ -1,0 +1,160 @@
+openapi: 3.1.0
+info:
+  title: Parking Lot ABC — API v1 · 007 Control de ingreso y salida
+  version: 1.0.0
+  description: |
+    Contrato de la spec 007 (SRS v2.0 Apéndice B.1 §4.7). Sobre común { ok, data, meta, error }; errores y paginación
+    como en specs/001-roles-permisos/contracts/openapi.yaml. `x-permiso`: permiso exigido (RNF-SEG-04).
+    La fecha y hora de entrada y salida las pone el servidor (RN-16). La liquidación es de la spec 009.
+servers:
+  - url: http://localhost:3000/api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Movimientos
+  - name: Tickets
+
+paths:
+  /movimientos:
+    post:
+      tags: [Movimientos]
+      summary: Registrar la entrada de un vehículo (HU-31 · RF-MOV-01..06)
+      x-permiso: movimientos.crear
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [placa, idPuerta]
+              properties:
+                placa: { type: string, description: se normaliza (mayúsculas, sin espacios ni guiones) }
+                idPuerta: { type: integer }
+                tipo: { type: string, enum: [carro, moto], description: obligatorio si la placa no está registrada }
+                idCelda: { type: integer, description: opcional; si no, la disponible de menor código }
+            example: { placa: abc 123, idPuerta: 1 }
+      responses:
+        '201': { description: Movimiento abierto con su ticket, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaMovimiento' } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '409': { description: 'PICO_Y_PLACA «Vehículo con restricción de pico y placa hoy (dígito 3)» · VEHICULO_DENTRO «El vehículo ya se encuentra dentro (celda A-07)» · SIN_CELDAS «Sin celdas disponibles para moto» · CELDA_NO_DISPONIBLE · PUERTA_NO_VALIDA' }
+        '422': { $ref: '#/components/responses/Validacion', description: 'placa con formato inválido, falta el tipo de una placa nueva, tipo distinto al registrado, celda de otro tipo o parqueadero' }
+    get:
+      tags: [Movimientos]
+      summary: Vehículos dentro y consulta de movimientos (HU-33, HU-34 · RF-MOV-13, RF-MOV-14)
+      x-permiso: movimientos.ver
+      parameters:
+        - { name: estado, in: query, schema: { type: string, enum: [abierto, cerrado, anulado], default: abierto } }
+        - { name: placa, in: query, description: placa exacta (normalizada), schema: { type: string } }
+        - { name: q, in: query, description: parte de la placa, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200': { description: 'Abiertos del más antiguo al más reciente, con minutosTranscurridos y masDe24h', content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/Movimiento' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /movimientos/{id}/salida:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    post:
+      tags: [Movimientos]
+      summary: Registrar la salida (HU-33 · RF-MOV-09..12)
+      x-permiso: movimientos.crear
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [idPuerta], properties: { idPuerta: { type: integer }, ticketExtraviado: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: 'Movimiento cerrado con minutosEstadia y liquidacion: null (spec 009)', content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaMovimiento' } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { description: 'MOVIMIENTO_NO_ABIERTO «El vehículo no tiene una entrada registrada»' }
+        '409': { description: 'PUERTA_NO_VALIDA (de solo entrada, inactiva o de otro parqueadero)' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /movimientos/{id}/anulacion:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch:
+      tags: [Movimientos]
+      summary: Anular una entrada errónea (HU-35 · RF-MOV-15..17)
+      x-permiso: movimientos.anular
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [motivo], properties: { motivo: { type: string, minLength: 10, maxLength: 200 } } }, example: { motivo: Placa mal digitada } } }
+      responses:
+        '200': { description: Anulado; celda disponible y ticket inválido, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaMovimiento' } } } }
+        '403': { description: 'SIN_PERMISO · SOLO_ADMIN_ANULA (Operador después de 15 minutos)' }
+        '404': { description: MOVIMIENTO_NO_ENCONTRADO }
+        '409': { description: 'MOVIMIENTO_NO_ANULABLE (cerrado o ya anulado)' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /tickets/{codigo}:
+    parameters: [{ $ref: '#/components/parameters/codigo' }]
+    get:
+      tags: [Tickets]
+      summary: Consultar un ticket y su movimiento (HU-32 · RF-MOV-06, RF-MOV-08)
+      x-permiso: movimientos.ver
+      responses:
+        '200':
+          description: Ticket con el movimiento (cualquier estado) y el parqueadero
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { const: true }
+                  data:
+                    type: object
+                    properties:
+                      codigo: { type: string }
+                      fechaEmision: { type: string, format: date-time }
+                      valido: { type: boolean }
+                      extraviado: { type: boolean }
+                      tieneCorreo: { type: boolean, description: el propietario tiene correo (el correo no se devuelve) }
+                      parqueadero: { type: object, properties: { nombre: { type: string }, direccion: { type: string } } }
+                      movimiento: { $ref: '#/components/schemas/Movimiento' }
+        '404': { description: TICKET_NO_ENCONTRADO }
+
+  /tickets/{codigo}/envio:
+    parameters: [{ $ref: '#/components/parameters/codigo' }]
+    post:
+      tags: [Tickets]
+      summary: Enviar el ticket al correo del propietario (HU-32 · RF-MOV-07)
+      x-permiso: movimientos.crear
+      responses:
+        '200': { description: 'Enviado; { enviadoA: "a***@correo.co" }' }
+        '404': { description: TICKET_NO_ENCONTRADO }
+        '409': { description: 'SIN_CORREO (vehículo sin propietario o propietario sin correo)' }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    id: { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    codigo: { name: codigo, in: path, required: true, schema: { type: string, example: T-000001 } }
+  schemas:
+    Meta: { type: object, properties: { page: { type: integer }, limit: { type: integer }, total: { type: integer } } }
+    Ref: { type: [object, 'null'], properties: { id: { type: integer }, nombre: { type: string } } }
+    Movimiento:
+      type: object
+      properties:
+        idMovimiento: { type: integer }
+        estado: { type: string, enum: [abierto, cerrado, anulado] }
+        vehiculo: { type: object, properties: { idVehiculo: { type: integer }, placa: { type: string }, tipo: { type: string }, ocasional: { type: boolean } } }
+        parqueadero: { type: object, properties: { idParqueadero: { type: integer }, nombre: { type: string } } }
+        celda: { type: object, properties: { idCelda: { type: integer }, codigo: { type: string }, piso: { type: integer } } }
+        puertaEntrada: { type: object, properties: { idPuerta: { type: integer }, nombre: { type: string } } }
+        fechaHoraEntrada: { type: string, format: date-time }
+        operadorEntrada: { type: object, properties: { idUsuario: { type: integer }, nombre: { type: string } } }
+        puertaSalida: { type: [object, 'null'] }
+        fechaHoraSalida: { type: [string, 'null'], format: date-time }
+        operadorSalida: { type: [object, 'null'] }
+        minutosEstadia: { type: [integer, 'null'] }
+        minutosTranscurridos: { type: integer }
+        masDe24h: { type: boolean }
+        ticket: { type: object, properties: { codigo: { type: string }, valido: { type: boolean }, extraviado: { type: boolean } } }
+        anulacion: { type: [object, 'null'], properties: { motivo: { type: string }, usuario: { type: string }, fecha: { type: string } } }
+        liquidacion: { type: 'null', description: 'solo en la salida; la calcula la spec 009' }
+    RespuestaMovimiento: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Movimiento' } } }
+  responses:
+    NoAutenticado: { description: Sin sesión válida }
+    SinPermiso: { description: Sin permiso (403 SIN_PERMISO) }
+    Validacion: { description: Datos inválidos (422) con detalle por campo }
