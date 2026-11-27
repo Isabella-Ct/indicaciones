@@ -1,0 +1,437 @@
+openapi: 3.1.0
+info:
+  title: Parking Lot ABC — API v1 · 001 Roles y permisos
+  version: 1.0.0
+  description: |
+    Contrato de la spec 001-roles-permisos (SRS v2.0 Apéndice B.1 §4.1) y del login mínimo de la fundación.
+    Sobre de respuesta común `{ ok, data, meta, error }` (constitución §II).
+    Las operaciones marcadas `x-permiso` exigen ese permiso en el token (RNF-SEG-04): si falta → 403.
+servers:
+  - url: http://localhost:3000/api/v1
+tags:
+  - name: Auth
+    description: Login mínimo (R-05). La spec 003 completa el resto del acceso.
+  - name: Roles
+  - name: Permisos
+  - name: Salud
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [Salud]
+      summary: Estado del servidor y de la base de datos
+      security: []
+      responses:
+        '200':
+          description: Servidor y BD disponibles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaOk'
+              example: { ok: true, data: { estado: 'ok', baseDatos: 'ok', hora: '2026-11-26T10:15:00-05:00' } }
+        '503':
+          $ref: '#/components/responses/ServicioNoDisponible'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Iniciar sesión con documento y contraseña (HU-12, HU-13 — versión mínima)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginEntrada'
+            example: { tipoDocumento: 'CC', numeroDocumento: '1000000001', contrasena: 'Admin2026*' }
+      responses:
+        '200':
+          description: Sesión iniciada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaOk'
+                  - properties:
+                      data: { $ref: '#/components/schemas/Sesion' }
+        '401':
+          description: Credenciales incorrectas o usuario inactivo (mensaje genérico, RF-ACC-02)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RespuestaError' }
+              example: { ok: false, error: { code: 'CREDENCIALES_INVALIDAS', message: 'Documento o contraseña incorrectos.' } }
+        '422': { $ref: '#/components/responses/Validacion' }
+        '429': { $ref: '#/components/responses/DemasiadasPeticiones' }
+
+  /roles:
+    get:
+      tags: [Roles]
+      summary: Consultar y buscar roles (HU-01, HU-03 · RF-ROL-01, RF-ROL-07)
+      x-permiso: roles.ver
+      x-roles: [Administrador]
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/q'
+        - name: estado
+          in: query
+          schema: { type: string, enum: [activo, inactivo] }
+      responses:
+        '200':
+          description: Página de roles
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaOk'
+                  - properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/Rol' } }
+                      meta: { $ref: '#/components/schemas/Meta' }
+              example:
+                ok: true
+                data:
+                  - { idRol: 2, nombre: 'Operador', descripcion: 'Operación diaria de la caseta', esBase: true, estado: 'activo', usuariosAsignados: 2, usuariosActivos: 2 }
+                meta: { page: 1, limit: 10, total: 1 }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '422': { $ref: '#/components/responses/Validacion' }
+    post:
+      tags: [Roles]
+      summary: Registrar un rol con sus permisos (HU-02 · RF-ROL-04, RF-ROL-05, RF-ROL-06)
+      x-permiso: roles.crear
+      x-roles: [Administrador]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RolEntrada' }
+            example: { nombre: 'Supervisor', descripcion: 'Supervisa el turno', permisos: [10, 11, 25] }
+      responses:
+        '201':
+          description: Rol creado (estado activo, no base)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaOk'
+                  - properties:
+                      data: { $ref: '#/components/schemas/RolDetalle' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '409':
+          description: Nombre ya registrado (sin distinguir mayúsculas ni espacios)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RespuestaError' }
+              example: { ok: false, error: { code: 'ROL_DUPLICADO', message: 'Ya existe un rol con ese nombre.' } }
+        '422':
+          description: Validación (nombre 3–40, descripción ≤150, al menos un permiso existente)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RespuestaError' }
+              example:
+                ok: false
+                error:
+                  code: 'VALIDACION'
+                  message: 'Hay datos inválidos en la solicitud.'
+                  details: [{ campo: 'permisos', mensaje: 'El rol debe tener al menos un permiso.' }]
+
+  /roles/{id}:
+    parameters:
+      - $ref: '#/components/parameters/id'
+    get:
+      tags: [Roles]
+      summary: Consultar detalle del rol (HU-03 · RF-ROL-08)
+      x-permiso: roles.ver
+      x-roles: [Administrador]
+      responses:
+        '200':
+          description: Rol con permisos agrupados por módulo y usuarios asignados
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaOk'
+                  - properties:
+                      data: { $ref: '#/components/schemas/RolDetalle' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/RolNoEncontrado' }
+        '422': { $ref: '#/components/responses/Validacion' }
+    put:
+      tags: [Roles]
+      summary: Actualizar un rol y sus permisos (HU-04 · RF-ROL-09, RF-ROL-10, RF-ROL-11)
+      description: |
+        Reemplaza nombre, descripción y el conjunto completo de permisos. En roles base el nombre no puede
+        cambiar (RF-ROL-03). Al rol Administrador no se le pueden quitar los permisos de gestión de roles y
+        usuarios (RF-ROL-11). Los permisos nuevos aplican desde el siguiente inicio de sesión (RF-ROL-10).
+      x-permiso: roles.editar
+      x-roles: [Administrador]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RolEntrada' }
+            example: { nombre: 'Supervisor', descripcion: 'Supervisa el turno y ve reportes', permisos: [10, 11, 25, 60] }
+      responses:
+        '200':
+          description: Rol actualizado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaOk'
+                  - properties:
+                      data: { $ref: '#/components/schemas/RolDetalle' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/RolNoEncontrado' }
+        '409':
+          description: Nombre duplicado, renombrar un rol base o quitar permisos protegidos del Administrador
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RespuestaError' }
+              examples:
+                duplicado: { value: { ok: false, error: { code: 'ROL_DUPLICADO', message: 'Ya existe un rol con ese nombre.' } } }
+                base: { value: { ok: false, error: { code: 'ROL_BASE_INMUTABLE', message: 'Los roles base no se pueden modificar.' } } }
+                admin: { value: { ok: false, error: { code: 'PERMISOS_ADMIN_PROTEGIDOS', message: 'El rol Administrador no puede perder los permisos de gestión de roles y usuarios.' } } }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /roles/{id}/estado:
+    parameters:
+      - $ref: '#/components/parameters/id'
+    patch:
+      tags: [Roles]
+      summary: Activar o inactivar un rol (HU-05 · RF-ROL-12, RF-ROL-13, RF-ROL-14)
+      x-permiso: roles.cambiar_estado
+      x-roles: [Administrador]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [estado]
+              additionalProperties: false
+              properties:
+                estado: { type: string, enum: [activo, inactivo] }
+            example: { estado: 'inactivo' }
+      responses:
+        '200':
+          description: Estado actualizado (o sin cambios si ya tenía ese estado)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaOk'
+                  - properties:
+                      data: { $ref: '#/components/schemas/Rol' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/RolNoEncontrado' }
+        '409':
+          description: Rol base o con usuarios activos
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RespuestaError' }
+              examples:
+                base: { value: { ok: false, error: { code: 'ROL_BASE_INMUTABLE', message: 'Los roles base no se pueden modificar.' } } }
+                usuarios: { value: { ok: false, error: { code: 'ROL_CON_USUARIOS_ACTIVOS', message: 'El rol tiene 3 usuarios activos.' } } }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /permisos:
+    get:
+      tags: [Permisos]
+      summary: Consultar el catálogo de permisos agrupado por módulo (HU-06 · RF-ROL-15)
+      x-permiso: roles.ver
+      x-roles: [Administrador]
+      responses:
+        '200':
+          description: Catálogo agrupado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaOk'
+                  - properties:
+                      data: { type: array, items: { $ref: '#/components/schemas/GrupoPermisos' } }
+              example:
+                ok: true
+                data:
+                  - modulo: 'roles'
+                    permisos:
+                      - { idPermiso: 1, codigo: 'roles.ver', accion: 'ver', descripcion: 'Consultar roles y permisos' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+    page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+    q:
+      name: q
+      in: query
+      description: Texto contenido en el nombre, sin distinguir mayúsculas
+      schema: { type: string, maxLength: 60 }
+
+  schemas:
+    RespuestaOk:
+      type: object
+      required: [ok, data]
+      properties:
+        ok: { const: true }
+        data: {}
+        meta: { $ref: '#/components/schemas/Meta' }
+    RespuestaError:
+      type: object
+      required: [ok, error]
+      properties:
+        ok: { const: false }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, description: 'Código estable en MAYÚSCULAS' }
+            message: { type: string }
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  campo: { type: [string, 'null'] }
+                  mensaje: { type: string }
+    Meta:
+      type: object
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+    LoginEntrada:
+      type: object
+      required: [tipoDocumento, numeroDocumento, contrasena]
+      additionalProperties: false
+      properties:
+        tipoDocumento: { type: string, enum: [CC, CE, TI, PAS, NIT] }
+        numeroDocumento: { type: string, minLength: 3, maxLength: 20 }
+        contrasena: { type: string, minLength: 1, maxLength: 72 }
+    Sesion:
+      type: object
+      properties:
+        token: { type: string }
+        expiraEn: { type: string, format: date-time }
+        usuario:
+          type: object
+          properties:
+            idUsuario: { type: integer }
+            nombreCompleto: { type: string }
+            rol: { type: string }
+            debeCambiarContrasena: { type: boolean }
+        permisos: { type: array, items: { type: string }, example: ['roles.ver', 'roles.crear'] }
+    RolEntrada:
+      type: object
+      required: [nombre, permisos]
+      additionalProperties: false
+      properties:
+        nombre: { type: string, minLength: 3, maxLength: 40, description: 'Se recorta; único sin distinguir mayúsculas' }
+        descripcion: { type: [string, 'null'], maxLength: 150 }
+        permisos:
+          type: array
+          minItems: 1
+          items: { type: integer, minimum: 1 }
+          description: Ids del catálogo; los repetidos se guardan una vez
+    Rol:
+      type: object
+      properties:
+        idRol: { type: integer }
+        nombre: { type: string }
+        descripcion: { type: [string, 'null'] }
+        esBase: { type: boolean }
+        estado: { type: string, enum: [activo, inactivo] }
+        usuariosAsignados: { type: integer }
+        usuariosActivos: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    RolDetalle:
+      allOf:
+        - $ref: '#/components/schemas/Rol'
+        - type: object
+          properties:
+            permisos: { type: array, items: { $ref: '#/components/schemas/GrupoPermisos' } }
+            usuarios:
+              type: array
+              items:
+                type: object
+                properties:
+                  idUsuario: { type: integer }
+                  nombreCompleto: { type: string }
+                  estado: { type: string, enum: [activo, inactivo] }
+    GrupoPermisos:
+      type: object
+      properties:
+        modulo: { type: string }
+        permisos:
+          type: array
+          items:
+            type: object
+            properties:
+              idPermiso: { type: integer }
+              codigo: { type: string }
+              accion: { type: string, enum: [ver, crear, editar, cambiar_estado, anular, exportar] }
+              descripcion: { type: string }
+
+  responses:
+    NoAutenticado:
+      description: Sin token, token inválido, vencido o revocado, o usuario inactivo
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/RespuestaError' }
+          example: { ok: false, error: { code: 'NO_AUTENTICADO', message: 'Sesión no válida o vencida.' } }
+    SinPermiso:
+      description: El rol del usuario no tiene el permiso requerido (RNF-SEG-04)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/RespuestaError' }
+          example: { ok: false, error: { code: 'SIN_PERMISO', message: 'No tiene permiso para esta acción.' } }
+    RolNoEncontrado:
+      description: El rol no existe
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/RespuestaError' }
+          example: { ok: false, error: { code: 'ROL_NO_ENCONTRADO', message: 'Rol no encontrado.' } }
+    Validacion:
+      description: Datos inválidos (constitución §II → 422)
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/RespuestaError' }
+          example: { ok: false, error: { code: 'VALIDACION', message: 'Hay datos inválidos en la solicitud.', details: [{ campo: 'limit', mensaje: 'Debe ser máximo 100.' }] } }
+    DemasiadasPeticiones:
+      description: Límite de peticiones de login por IP excedido
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/RespuestaError' }
+          example: { ok: false, error: { code: 'DEMASIADAS_PETICIONES', message: 'Demasiados intentos. Intente más tarde.' } }
+    ServicioNoDisponible:
+      description: La base de datos no responde
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/RespuestaError' }
+          example: { ok: false, error: { code: 'BD_NO_DISPONIBLE', message: 'La base de datos no está disponible.' } }
