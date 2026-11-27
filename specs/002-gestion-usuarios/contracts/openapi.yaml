@@ -1,0 +1,334 @@
+openapi: 3.1.0
+info:
+  title: Parking Lot ABC — API v1 · 002 Gestión de usuarios
+  version: 1.0.0
+  description: |
+    Contrato de la spec 002-gestion-usuarios (SRS v2.0 Apéndice B.1 §4.2) más GET /usuarios/{id}/foto [Propuesta].
+    Sobre común { ok, data, meta, error } (constitución §II); los esquemas de error y paginación son los de
+    specs/001-roles-permisos/contracts/openapi.yaml. `x-permiso` indica el permiso exigido (RNF-SEG-04).
+    Alcance del Operador (RF-USR-04/08): solo usuarios con rol Cliente; fuera de su alcance → 403.
+servers:
+  - url: http://localhost:3000/api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Usuarios
+  - name: Mi perfil
+
+paths:
+  /usuarios:
+    post:
+      tags: [Usuarios]
+      summary: Registrar un usuario (HU-07 · RF-USR-01..05)
+      x-permiso: usuarios.crear
+      x-roles: [Administrador, Operador (solo rol Cliente)]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UsuarioEntrada' }
+            example:
+              tipoDocumento: CC
+              numeroDocumento: '1020304050'
+              nombreCompleto: María Fernanda Ríos
+              correo: maria.rios@correo.co
+              celular: '3104567890'
+              idRol: 3
+              aceptaTratamientoDatos: true
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/UsuarioEntrada'
+                - type: object
+                  properties:
+                    foto: { type: string, format: binary, description: 'JPG o PNG, máximo 2 MB (RNF-PRI-03)' }
+      responses:
+        '201':
+          description: Usuario registrado (activo, con contraseña temporal enviada al correo)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { const: true }
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/Usuario'
+                      - type: object
+                        properties:
+                          correoEnviado: { type: boolean }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '409':
+          description: Documento o correo ya registrados
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RespuestaError' }
+              examples:
+                documento: { value: { ok: false, error: { code: DOCUMENTO_DUPLICADO, message: El documento ya está registrado. } } }
+                correo: { value: { ok: false, error: { code: CORREO_DUPLICADO, message: El correo ya está registrado. } } }
+        '422': { $ref: '#/components/responses/Validacion' }
+    get:
+      tags: [Usuarios]
+      summary: Consultar y buscar usuarios (HU-08 · RF-USR-06, RF-USR-08)
+      x-permiso: usuarios.ver
+      x-roles: [Administrador, Operador (solo Clientes)]
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 10 } }
+        - { name: q, in: query, description: 'Documento, nombre o correo (contiene, sin mayúsculas)', schema: { type: string, maxLength: 60 } }
+        - { name: rol, in: query, description: 'id del rol', schema: { type: integer, minimum: 1 } }
+        - { name: estado, in: query, schema: { type: string, enum: [activo, inactivo] } }
+      responses:
+        '200':
+          description: Página de usuarios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { const: true }
+                  data: { type: array, items: { $ref: '#/components/schemas/Usuario' } }
+                  meta: { $ref: '#/components/schemas/Meta' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /usuarios/me:
+    get:
+      tags: [Mi perfil]
+      summary: Consultar mis datos (HU-11 · RF-USR-15)
+      x-permiso: perfil.ver
+      x-roles: [Administrador, Operador, Cliente]
+      responses:
+        '200':
+          description: Mis datos
+          content:
+            application/json:
+              schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Usuario' } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+    put:
+      tags: [Mi perfil]
+      summary: Actualizar mis datos personales (HU-11 · RF-USR-15, RF-USR-16, RF-USR-17)
+      description: Solo nombre, correo, celular y foto. Enviar documento, rol, estado o código → 422. Notifica a los Administradores.
+      x-permiso: perfil.editar
+      x-roles: [Administrador, Operador, Cliente]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PerfilEntrada' }
+            example: { nombreCompleto: Andrea Salcedo Ríos, correo: andrea.salcedo@correo.co, celular: '3109998877' }
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/PerfilEntrada'
+                - type: object
+                  properties: { foto: { type: string, format: binary } }
+      responses:
+        '200':
+          description: Datos actualizados (o sin cambios)
+          content:
+            application/json:
+              schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Usuario' } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '409': { description: Correo ya registrado, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaError' } } } }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /usuarios/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: [Usuarios]
+      summary: Consultar el detalle de un usuario (HU-08 · RF-USR-07)
+      x-permiso: usuarios.ver
+      x-roles: [Administrador, Operador (solo Clientes)]
+      responses:
+        '200':
+          description: Detalle con vehículos y membresía vigente
+          content:
+            application/json:
+              schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/UsuarioDetalle' } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/UsuarioNoEncontrado' }
+    put:
+      tags: [Usuarios]
+      summary: Actualizar los datos de cualquier usuario (HU-09 · RF-USR-09..11)
+      x-permiso: usuarios.editar
+      x-roles: [Administrador]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UsuarioEdicion' }
+            example: { tipoDocumento: CC, numeroDocumento: '1000000004', nombreCompleto: Andrea Salcedo Ríos, correo: andrea.salcedo@correo.co, celular: '3109998877', idRol: 3 }
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/UsuarioEdicion'
+                - type: object
+                  properties: { foto: { type: string, format: binary } }
+      responses:
+        '200':
+          description: Usuario actualizado
+          content:
+            application/json:
+              schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/UsuarioDetalle' } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/UsuarioNoEncontrado' }
+        '409': { description: Documento o correo duplicados, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaError' } } } }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /usuarios/{id}/estado:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    patch:
+      tags: [Usuarios]
+      summary: Activar o inactivar un usuario (HU-10 · RF-USR-12..14)
+      x-permiso: usuarios.cambiar_estado
+      x-roles: [Administrador]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [estado], additionalProperties: false, properties: { estado: { type: string, enum: [activo, inactivo] } } }
+            example: { estado: inactivo }
+      responses:
+        '200':
+          description: Estado actualizado; al inactivar se revocan las sesiones abiertas
+          content:
+            application/json:
+              schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Usuario' } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/UsuarioNoEncontrado' }
+        '409':
+          description: Inactivar la propia cuenta
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RespuestaError' }
+              example: { ok: false, error: { code: AUTOINACTIVACION, message: No puede inactivar su propia cuenta. } }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /usuarios/{id}/foto:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    get:
+      tags: [Usuarios]
+      summary: '[Propuesta] Fotografía del usuario (RNF-PRI-03)'
+      description: La puede ver el propio usuario o quien tenga usuarios.ver dentro de su alcance.
+      x-permiso: perfil.ver (propia) | usuarios.ver
+      responses:
+        '200':
+          description: Imagen
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/png: { schema: { type: string, format: binary } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404':
+          description: Usuario sin foto o inexistente
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RespuestaError' }
+              example: { ok: false, error: { code: FOTO_NO_ENCONTRADA, message: El usuario no tiene foto. } }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    Meta:
+      type: object
+      properties: { page: { type: integer }, limit: { type: integer }, total: { type: integer } }
+    RespuestaError:
+      type: object
+      properties:
+        ok: { const: false }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details: { type: array, items: { type: object, properties: { campo: { type: [string, 'null'] }, mensaje: { type: string } } } }
+    UsuarioEntrada:
+      type: object
+      additionalProperties: false
+      required: [tipoDocumento, numeroDocumento, nombreCompleto, correo, celular, idRol, aceptaTratamientoDatos]
+      properties:
+        tipoDocumento: { type: string, enum: [CC, CE, TI, PAS, NIT] }
+        numeroDocumento: { type: string, description: '5–20 dígitos (PAS: letras y dígitos); se quitan espacios, puntos y guiones' }
+        nombreCompleto: { type: string, minLength: 3, maxLength: 100 }
+        correo: { type: string, format: email, maxLength: 120 }
+        celular: { type: string, pattern: '^3[0-9]{9}$' }
+        idRol: { type: integer, minimum: 1, description: 'Rol activo; el Operador solo puede usar el rol Cliente' }
+        aceptaTratamientoDatos: { const: true, description: Ley 1581 de 2012 }
+    UsuarioEdicion:
+      type: object
+      additionalProperties: false
+      required: [tipoDocumento, numeroDocumento, nombreCompleto, correo, celular, idRol]
+      properties:
+        tipoDocumento: { type: string, enum: [CC, CE, TI, PAS, NIT] }
+        numeroDocumento: { type: string }
+        nombreCompleto: { type: string, minLength: 3, maxLength: 100 }
+        correo: { type: string, format: email, maxLength: 120 }
+        celular: { type: string, pattern: '^3[0-9]{9}$' }
+        idRol: { type: integer, minimum: 1 }
+        quitarFoto: { type: boolean, description: true elimina la foto actual }
+    PerfilEntrada:
+      type: object
+      additionalProperties: false
+      required: [nombreCompleto, correo, celular]
+      properties:
+        nombreCompleto: { type: string, minLength: 3, maxLength: 100 }
+        correo: { type: string, format: email, maxLength: 120 }
+        celular: { type: string, pattern: '^3[0-9]{9}$' }
+        quitarFoto: { type: boolean }
+    Usuario:
+      type: object
+      properties:
+        idUsuario: { type: integer, description: Código del usuario }
+        tipoDocumento: { type: string }
+        numeroDocumento: { type: string }
+        nombreCompleto: { type: string }
+        correo: { type: string }
+        celular: { type: string }
+        fotoUrl: { type: [string, 'null'], example: /api/v1/usuarios/4/foto }
+        rol: { type: object, properties: { idRol: { type: integer }, nombre: { type: string } } }
+        estado: { type: string, enum: [activo, inactivo] }
+        debeCambiarContrasena: { type: boolean }
+        aceptaTratamientoDatos: { type: boolean }
+        fechaAutorizacion: { type: [string, 'null'], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    UsuarioDetalle:
+      allOf:
+        - $ref: '#/components/schemas/Usuario'
+        - type: object
+          properties:
+            vehiculos:
+              type: array
+              items: { type: object, properties: { idVehiculo: { type: integer }, placa: { type: string }, tipo: { type: string }, marca: { type: string }, color: { type: string }, estado: { type: string } } }
+            membresiaVigente:
+              type: [object, 'null']
+              properties: { idMembresia: { type: integer }, plan: { type: string }, placa: { type: string }, fechaInicio: { type: string, format: date }, fechaFin: { type: string, format: date } }
+  responses:
+    NoAutenticado:
+      description: Sin sesión válida
+      content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaError' }, example: { ok: false, error: { code: NO_AUTENTICADO, message: Sesión no válida o vencida. } } } }
+    SinPermiso:
+      description: Sin permiso o fuera del alcance (Operador con usuario que no es Cliente)
+      content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaError' }, example: { ok: false, error: { code: SIN_PERMISO, message: No tiene permiso para esta acción. } } } }
+    UsuarioNoEncontrado:
+      description: El usuario no existe
+      content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaError' }, example: { ok: false, error: { code: USUARIO_NO_ENCONTRADO, message: Usuario no encontrado. } } } }
+    Validacion:
+      description: Datos inválidos (422) con detalle por campo
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/RespuestaError' }
+          example: { ok: false, error: { code: VALIDACION, message: Hay datos inválidos en la solicitud., details: [{ campo: correo, mensaje: Ingrese un correo válido. }] } }

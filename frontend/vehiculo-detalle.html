@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PARKO · Detalle del vehículo</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    />
+    <link rel="stylesheet" href="/css/estilos.css" />
+    <script type="module" src="/js/views/vehiculo-detalle.view.js"></script>
+  </head>
+  <body>
+    <div class="template-app-layout hidden" id="app">
+      <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+      <!-- organism-header -->
+      <header class="organism-header">
+        <div class="organism-header-inner">
+          <a class="molecule-brand molecule-brand--link" href="/">
+            <span class="atom-brand-mark" aria-hidden="true">P</span>
+            <div>PARKO<small>Parking Lot ABC</small></div>
+          </a>
+          <div class="molecule-shift">
+            <div>Fecha<strong id="marco-fecha">—</strong></div>
+            <div>Hora<strong id="marco-hora">—</strong></div>
+          </div>
+          <div class="molecule-user-menu" id="menu-usuario">
+            <button
+              class="molecule-user-menu-button"
+              id="menu-usuario-boton"
+              type="button"
+              aria-expanded="false"
+              aria-controls="menu-usuario-lista"
+              aria-haspopup="true"
+            >
+              <span class="atom-avatar" aria-hidden="true"><span id="menu-usuario-iniciales"></span></span>
+              <span class="molecule-user-menu-name"
+                ><span id="menu-usuario-nombre"></span><small id="menu-usuario-rol"></small
+              ></span>
+              <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-chevron-down"></use></svg>
+            </button>
+            <ul class="molecule-user-menu-list hidden" id="menu-usuario-lista">
+              <li>
+                <a class="molecule-user-menu-item" href="/mi-perfil.html"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-user"></use></svg>Mi perfil</a>
+              </li>
+              <li>
+                <a class="molecule-user-menu-item" href="/cambiar-contrasena.html"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-key"></use></svg>Cambiar contraseña</a>
+              </li>
+              <li>
+                <button class="molecule-user-menu-item" id="menu-usuario-salir" type="button">
+                  <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-logout"></use></svg>Cerrar sesión
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </header>
+
+      <!-- organism-navbar (navbar.js oculta los ítems sin permiso) -->
+      <nav class="organism-navbar" id="navbar" aria-label="Principal">
+        <div class="organism-navbar-inner">
+          <div class="organism-navbar-bar">
+            <span class="organism-navbar-current">Detalle del vehículo</span>
+            <button
+              class="atom-icon-button"
+              id="navbar-alternar"
+              type="button"
+              aria-label="Abrir menú de navegación"
+              title="Menú"
+              aria-expanded="false"
+              aria-controls="navbar-lista"
+            >
+              <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-menu"></use></svg>
+            </button>
+          </div>
+          <ul class="organism-navbar-list" id="navbar-lista">
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="movimientos" href="/movimientos.html">Movimientos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="celdas" href="/celdas.html">Celdas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="disponibilidad" href="/disponibilidad.html">Disponibilidad</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item is-active" data-id="vehiculos" href="/vehiculos.html" aria-current="page">Vehículos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mis-vehiculos" href="/mis-vehiculos.html">Mis vehículos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="usuarios" href="/usuarios.html">Usuarios</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="parqueaderos" href="/parqueaderos.html">Parqueaderos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="pico-placa" href="/pico-placa.html">Pico y placa</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="roles" href="/roles.html">Roles</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="permisos" href="/permisos.html">Permisos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mi-perfil" href="/mi-perfil.html">Mi perfil</a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <div class="atom-hazard-strip" aria-hidden="true"></div>
+
+      <div class="template-app-layout-page hidden" id="sin-permiso">
+        <div class="molecule-empty-state">
+          <strong>No tiene permiso para ver esta pantalla</strong>
+          <p>Use el menú para ir a las secciones de su perfil.</p>
+        </div>
+      </div>
+
+      <main class="template-app-layout-page hidden" id="contenido" tabindex="-1">
+        <div class="molecule-page-head">
+          <div>
+            <h1><span class="atom-plate atom-plate--large" id="detalle-placa">Vehículo</span></h1>
+            <p id="detalle-subtitulo">// Vehículos › Detalle</p>
+          </div>
+          <div class="molecule-page-head-actions">
+            <a class="atom-button atom-button--ghost" href="/vehiculos.html"><span>← Volver a vehículos</span></a>
+            <button class="atom-button hidden" type="button" id="accion-editar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-key"></use></svg><span>Editar</span></button>
+          </div>
+        </div>
+
+        <div class="molecule-empty-state hidden" id="detalle-no-encontrado">
+          <strong>Vehículo no encontrado</strong>
+          <p>El vehículo que busca no está registrado.</p>
+          <div class="molecule-empty-state-action"><a class="atom-button" href="/vehiculos.html"><span>Ver vehículos</span></a></div>
+        </div>
+
+        <div class="template-app-layout-stack hidden" id="detalle-contenido" aria-live="polite">
+          <section class="molecule-panel" aria-labelledby="detalle-datos-titulo">
+            <div class="molecule-panel-head"><h2 id="detalle-datos-titulo">Datos del vehículo</h2></div>
+            <div class="molecule-panel-body">
+              <dl class="molecule-data-list">
+                <div><dt>Tipo</dt><dd id="detalle-tipo"></dd></div>
+                <div><dt>Marca</dt><dd id="detalle-marca"></dd></div>
+                <div><dt>Color</dt><dd id="detalle-color"></dd></div>
+                <div><dt>Modelo</dt><dd id="detalle-modelo"></dd></div>
+                <div><dt>Presencia</dt><dd><span class="atom-status-chip" id="detalle-dentro"></span></dd></div>
+                <div class="hidden" id="detalle-celda-fila"><dt>Celda actual</dt><dd id="detalle-celda"></dd></div>
+              </dl>
+            </div>
+          </section>
+
+          <section class="molecule-panel" aria-labelledby="detalle-propietario-titulo">
+            <div class="molecule-panel-head">
+              <h2 id="detalle-propietario-titulo">Propietario</h2>
+              <div class="molecule-page-head-actions">
+                <button class="atom-button atom-button--sm hidden" type="button" id="accion-asociar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-user"></use></svg><span>Asociar propietario</span></button>
+                <button class="atom-button atom-button--sm hidden" type="button" id="accion-reasignar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-user"></use></svg><span>Reasignar</span></button>
+                <button class="atom-button atom-button--ghost atom-button--sm hidden" type="button" id="accion-quitar"><span>Quitar propietario</span></button>
+              </div>
+            </div>
+            <div class="molecule-panel-body">
+              <p id="detalle-sin-propietario">Sin propietario (vehículo de visitante).</p>
+              <dl class="molecule-data-list hidden" id="detalle-propietario">
+                <div><dt>Nombre</dt><dd><a class="atom-link" id="detalle-propietario-nombre" href="#"></a></dd></div>
+                <div><dt>Documento</dt><dd id="detalle-propietario-documento"></dd></div>
+                <div><dt>Estado</dt><dd><span class="atom-status-chip" id="detalle-propietario-estado"></span></dd></div>
+              </dl>
+            </div>
+          </section>
+
+          <section class="molecule-panel" aria-labelledby="detalle-historial-titulo">
+            <div class="molecule-panel-head"><h2 id="detalle-historial-titulo">Historial de propietarios</h2></div>
+            <div class="molecule-panel-body">
+
+          <div class="organism-data-table" id="tabla-historial">
+            <div class="organism-data-table-scroll" tabindex="0" role="region" aria-label="Historial de propietarios">
+              <table class="organism-log-table organism-data-table-table organism-data-table-table--w480">
+                <caption class="visually-hidden">Historial de propietarios</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Propietario</th>
+                    <th scope="col">Desde</th>
+                    <th scope="col">Hasta</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="molecule-empty-state hidden">
+              <strong>Sin historial</strong>
+              <p>El vehículo nunca ha tenido propietario.</p>
+            </div>
+            <nav class="molecule-pagination hidden" aria-label="Paginación">
+              <button class="atom-button atom-button--ghost atom-button--sm" type="button"><span>Anterior</span></button>
+              <p class="molecule-pagination-status" aria-live="polite"></p>
+              <button class="atom-button atom-button--ghost atom-button--sm" type="button"><span>Siguiente</span></button>
+            </nav>
+            <div class="organism-data-table-loading hidden">
+              <span class="atom-spinner" role="status"><span class="visually-hidden">Cargando datos…</span></span>
+            </div>
+          </div>
+            </div>
+          </section>
+
+          <section class="molecule-panel" aria-labelledby="detalle-movimientos-titulo">
+            <div class="molecule-panel-head"><h2 id="detalle-movimientos-titulo">Últimos 10 movimientos</h2></div>
+            <div class="molecule-panel-body">
+
+          <div class="organism-data-table" id="tabla-movimientos">
+            <div class="organism-data-table-scroll" tabindex="0" role="region" aria-label="Últimos movimientos">
+              <table class="organism-log-table organism-data-table-table organism-data-table-table--w600">
+                <caption class="visually-hidden">Últimos movimientos</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Entrada</th>
+                    <th scope="col">Salida</th>
+                    <th scope="col">Celda</th>
+                    <th scope="col" class="organism-log-table-right">Tiempo</th>
+                    <th scope="col">Estado</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="molecule-empty-state hidden">
+              <strong>Sin movimientos</strong>
+              <p>El vehículo aún no registra entradas.</p>
+            </div>
+            <nav class="molecule-pagination hidden" aria-label="Paginación">
+              <button class="atom-button atom-button--ghost atom-button--sm" type="button"><span>Anterior</span></button>
+              <p class="molecule-pagination-status" aria-live="polite"></p>
+              <button class="atom-button atom-button--ghost atom-button--sm" type="button"><span>Siguiente</span></button>
+            </nav>
+            <div class="organism-data-table-loading hidden">
+              <span class="atom-spinner" role="status"><span class="visually-hidden">Cargando datos…</span></span>
+            </div>
+          </div>
+            </div>
+          </section>
+        </div>
+
+        <template id="tpl-historial">
+          <tr>
+            <td class="js-nombre"></td>
+            <td class="organism-data-table-cell-nowrap js-desde"></td>
+            <td class="organism-data-table-cell-nowrap js-hasta"></td>
+          </tr>
+        </template>
+        <template id="tpl-movimiento">
+          <tr>
+            <td class="organism-data-table-cell-nowrap js-entrada"></td>
+            <td class="organism-data-table-cell-nowrap js-salida"></td>
+            <td class="js-celda"></td>
+            <td class="organism-log-table-right js-tiempo"></td>
+            <td><span class="atom-status-chip js-estado"></span></td>
+          </tr>
+        </template>
+      </main>
+
+      <!-- organism-footer -->
+      <footer class="organism-footer">
+        <div class="organism-footer-inner">
+          <p class="organism-footer-brand">PARKO</p>
+          <p>© <span id="pie-anio"></span> PARKO · Sistema de Gestión de Parqueadero · Parking Lot ABC</p>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Diálogo de confirmación (constitución §V: <dialog>) -->
+    <dialog class="organism-modal organism-modal--sm" id="dialogo-confirmar" aria-labelledby="confirmar-titulo">
+      <header class="organism-modal-head">
+        <div><h2 id="confirmar-titulo"></h2></div>
+        <button class="atom-icon-button" type="button" data-cerrar aria-label="Cerrar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-x"></use></svg></button>
+      </header>
+      <div class="organism-modal-body"><p id="confirmar-mensaje"></p></div>
+      <footer class="organism-modal-foot">
+        <button class="atom-button atom-button--ghost" type="button" data-cerrar><span>Cancelar</span></button>
+        <button class="atom-button atom-button--dark" id="confirmar-aceptar" type="button"><span>Confirmar</span></button>
+      </footer>
+    </dialog>
+
+    <dialog class="organism-modal" id="dialogo-vehiculo" aria-labelledby="dialogo-vehiculo-titulo">
+      <header class="organism-modal-head">
+        <div><h2 id="dialogo-vehiculo-titulo">Editar vehículo</h2><p>// Solo el Administrador actualiza los datos (RN-02)</p></div>
+        <button class="atom-icon-button" type="button" data-cerrar aria-label="Cerrar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-x"></use></svg></button>
+      </header>
+      <div class="organism-modal-body">
+        <form class="organism-form--grid" id="form-vehiculo" novalidate>
+          <div class="molecule-alert molecule-alert--error molecule-field--full hidden" id="vehiculo-alerta" aria-live="assertive">
+            <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-alert"></use></svg><p></p>
+          </div>
+          <div class="molecule-field molecule-field--full">
+            <label for="vehiculo-placa">Placa<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input atom-input--plate" id="vehiculo-placa" type="text" maxlength="9" required autocomplete="off" spellcheck="false" placeholder="ABC123" aria-describedby="vehiculo-placa-hint vehiculo-placa-error" />
+            <p class="molecule-field-hint" id="vehiculo-placa-hint">Carro: 3 letras y 3 dígitos (ABC123).</p>
+            <p class="molecule-field-error" id="vehiculo-placa-error" aria-live="polite"></p>
+          </div>
+          
+          <fieldset class="molecule-field molecule-field--full" id="vehiculo-tipo">
+            <legend>Tipo de vehículo<span class="molecule-field-required" aria-hidden="true"> *</span></legend>
+            <div class="molecule-tiles molecule-tiles--2">
+              <label class="molecule-tile"><input type="radio" name="vehiculo-tipo" id="vehiculo-tipo-carro" value="carro" checked aria-describedby="vehiculo-tipo-carro-error" /><span><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-car"></use></svg>Carro</span></label>
+              <label class="molecule-tile"><input type="radio" name="vehiculo-tipo" value="moto" /><span><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-moto"></use></svg>Moto</span></label>
+            </div>
+            <p class="molecule-field-error" id="vehiculo-tipo-carro-error" aria-live="polite"></p>
+          </fieldset>
+          <div class="molecule-field">
+            <label for="vehiculo-color">Color<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="vehiculo-color" type="text" maxlength="30" required autocomplete="off" aria-describedby="vehiculo-color-error" />
+            <p class="molecule-field-error" id="vehiculo-color-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="vehiculo-marca">Marca<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="vehiculo-marca" type="text" maxlength="40" required autocomplete="off" aria-describedby="vehiculo-marca-error" />
+            <p class="molecule-field-error" id="vehiculo-marca-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="vehiculo-modelo">Modelo (año)<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="vehiculo-modelo" type="number" required min="1950" step="1" inputmode="numeric" aria-describedby="vehiculo-modelo-error" />
+            <p class="molecule-field-error" id="vehiculo-modelo-error" aria-live="polite"></p>
+          </div>
+          
+        </form>
+      </div>
+      <footer class="organism-modal-foot">
+        <button class="atom-button atom-button--ghost" type="button" data-cerrar><span>Cancelar</span></button>
+        <button class="atom-button" type="submit" form="form-vehiculo" id="vehiculo-guardar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-check"></use></svg><span>Guardar</span></button>
+      </footer>
+    </dialog>
+
+    <dialog class="organism-modal" id="dialogo-propietario" aria-labelledby="dialogo-propietario-titulo">
+      <header class="organism-modal-head">
+        <div><h2 id="dialogo-propietario-titulo">Asociar propietario</h2><p>// El usuario debe estar registrado y activo</p></div>
+        <button class="atom-icon-button" type="button" data-cerrar aria-label="Cerrar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-x"></use></svg></button>
+      </header>
+      <div class="organism-modal-body">
+        <form class="organism-form--grid" id="form-propietario" novalidate>
+          <div class="molecule-alert molecule-alert--error molecule-field--full hidden" id="propietario-alerta" aria-live="assertive">
+            <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-alert"></use></svg><p></p>
+          </div>
+          <div class="molecule-field">
+            <label for="propietario-tipo-documento">Tipo de documento<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <select class="atom-select" id="propietario-tipo-documento" required aria-describedby="propietario-tipo-documento-error">
+              <option value="CC">Cédula de ciudadanía (CC)</option>
+              <option value="CE">Cédula de extranjería (CE)</option>
+              <option value="TI">Tarjeta de identidad (TI)</option>
+              <option value="PAS">Pasaporte (PAS)</option>
+              <option value="NIT">NIT</option>
+            </select>
+            <p class="molecule-field-error" id="propietario-tipo-documento-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="propietario-numero-documento">Número de documento<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="propietario-numero-documento" type="text" maxlength="20" required inputmode="numeric" autocomplete="off" aria-describedby="propietario-numero-documento-error" />
+            <p class="molecule-field-error" id="propietario-numero-documento-error" aria-live="polite"></p>
+          </div>
+        </form>
+      </div>
+      <footer class="organism-modal-foot">
+        <button class="atom-button atom-button--ghost" type="button" data-cerrar><span>Cancelar</span></button>
+        <button class="atom-button" type="submit" form="form-propietario" id="propietario-guardar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-check"></use></svg><span>Asociar</span></button>
+      </footer>
+    </dialog>
+    <div class="molecule-toast-region" id="avisos" aria-live="polite"></div>
+
+    <template id="tpl-aviso">
+      <div class="molecule-toast" role="status">
+        <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-info"></use></svg>
+        <p></p>
+        <button class="molecule-toast-close" type="button" aria-label="Cerrar aviso"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-x"></use></svg></button>
+      </div>
+    </template>
+  </body>
+</html>
