@@ -31,18 +31,18 @@
 
 ## Fase 6: Interfaz (Atomic Design)
 
-- [ ] T009 [P] Átomo `ponerChipTarifa` en `atomos/chip-estado.js`, molécula `moleculas/precio.js` y organismo `organismos/tabla-tarifas.js`
-- [ ] T010 [P] Servicio `js/services/tarifas.service.js`
-- [ ] T011 `herramientas/paginas-008.js` + regenerar: menú «Tarifas» (`tarifas.ver`, grupo Configuración); `MENU` en `config.js`
-- [ ] T012 [US1] [US2] `tarifas.html` + `views/tarifas.view.js` (listado con filtros, nueva, editar, cambiar estado, cierre de la anterior, confirmación)
-- [ ] T013 [US3] Sección «Tarifas» en `index.html` + `views/inicio.view.js`
+- [X] T009 [P] Átomo `ponerChipTarifa` en `atomos/chip-estado.js`, molécula `moleculas/precio.js` y organismo `organismos/tabla-tarifas.js`
+- [X] T010 [P] Servicio `js/services/tarifas.service.js`
+- [X] T011 `herramientas/paginas-008.js` + regenerar: menú «Tarifas» (`tarifas.ver`, grupo Configuración); `MENU` en `config.js`
+- [X] T012 [US1] [US2] `tarifas.html` + `views/tarifas.view.js` (listado con filtros, nueva, editar, cambiar estado, cierre de la anterior, confirmación)
+- [X] T013 [US3] Sección «Tarifas» en `index.html` + `views/inicio.view.js`
 
 ## Fase 7: Pulido
 
-- [ ] T014 Carpeta Postman `casos/008-tarifas.js`; `npm run test:api` en verde dos veces seguidas
-- [ ] T015 [P] `README.md` (endpoints y pantallas)
-- [ ] T016 Cobertura del service ≥ 80 %, lint, `herramientas/verificar-front.js`, revisión de que no queden textos en inglés, medición de `GET /tarifas?vigentes=true` y prueba manual en escritorio y a 375 px
-- [ ] T017 Verificar que cada escenario HU-36..HU-38 tenga su prueba y su caso Postman, y marcar `[X]`
+- [X] T014 Carpeta Postman `casos/008-tarifas.js`; `npm run test:api` en verde dos veces seguidas
+- [X] T015 [P] `README.md` (endpoints y pantallas)
+- [X] T016 Cobertura del service ≥ 80 %, lint, `herramientas/verificar-front.js`, revisión de que no queden textos en inglés, medición de `GET /tarifas?vigentes=true` y prueba manual en escritorio y a 375 px — prueba manual en el navegador pendiente (usuaria)
+- [X] T017 Verificar que cada escenario HU-36..HU-38 tenga su prueba y su caso Postman, y marcar `[X]`
 
 ## Dependencias
 

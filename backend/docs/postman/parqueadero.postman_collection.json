@@ -8703,6 +8703,823 @@
           }
         }
       ]
+    },
+    {
+      "name": "008 Tarifas",
+      "description": "SRS B.1 §4.8 — HU-36..HU-38. Ejecutar con la BD sembrada.",
+      "item": [
+        {
+          "name": "HU-38 GET /tarifas?vigentes=true — 200 público, sin datos internos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('las 4 combinaciones vigentes', () => pm.expect(new Set(cuerpo.data.filter((t) => t.situacion === 'vigente').map((t) => t.tipoVehiculo + ' ' + t.tipoCliente)).size).to.eql(4));",
+                  "pm.test('sin estado ni usada', () => cuerpo.data.forEach((t) => { pm.expect(t).to.not.have.property('estado'); pm.expect(t).to.not.have.property('usada'); }));",
+                  "pm.test('no-store', () => pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas?vigentes=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas"
+              ],
+              "query": [
+                {
+                  "key": "vigentes",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /tarifas?vigentes=true&tipoVehiculo=bus — 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas?vigentes=true&tipoVehiculo=bus",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas"
+              ],
+              "query": [
+                {
+                  "key": "vigentes",
+                  "value": "true"
+                },
+                {
+                  "key": "tipoVehiculo",
+                  "value": "bus"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-37 GET /tarifas — 200 listado administrativo con usada y situación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('usada y situación', () => cuerpo.data.forEach((t) => pm.expect(t).to.include.keys('usada', 'situacion')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas?limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /tarifas — 401 sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code NO_AUTENTICADO', () => pm.expect(cuerpo.error.code).to.eql('NO_AUTENTICADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-36 POST /tarifas — 409 superpuesta con la tarifa abierta",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.environment.get('baseUrl');",
+                  "pm.sendRequest({ url: base + '/tarifas?tipoVehiculo=moto&tipoCliente=ocasional&estado=activo&limit=100', header: { Authorization: 'Bearer ' + pm.collectionVariables.get('tokenAdmin') } }, (err, res) => {",
+                  "  const inicios = res.json().data.map((t) => t.vigenteDesde.slice(0, 10)).sort();",
+                  "  const hoy = new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10);",
+                  "  const base = inicios.length && inicios[inicios.length - 1] > hoy ? inicios[inicios.length - 1] : hoy;",
+                  "  const [a, m, d] = base.split('-').map(Number);",
+                  "  pm.collectionVariables.set('tarifaDesde', new Date(Date.UTC(a, m - 1, d + 1)).toISOString().slice(0, 10));",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code TARIFA_SUPERPUESTA', () => pm.expect(cuerpo.error.code).to.eql('TARIFA_SUPERPUESTA'));",
+                  "pm.test('indica la existente', () => pm.expect(cuerpo.error.details[0].campo).to.eql('idTarifa'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Moto ocasional (Postman)\",\n  \"tipoVehiculo\": \"moto\",\n  \"tipoCliente\": \"ocasional\",\n  \"valorPrimeraHora\": 2500,\n  \"minutosFraccion\": 15,\n  \"valorFraccion\": 600,\n  \"topeDiario\": 13000,\n  \"minutosGracia\": 10,\n  \"vigenteDesde\": \"{{tarifaDesde}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-36 POST /tarifas — 201 programada cerrando la anterior",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('programada', () => pm.expect(cuerpo.data).to.include({ situacion: 'programada', estado: 'activo', valorPrimeraHora: 2500 }));",
+                  "pm.collectionVariables.set('idTarifa', cuerpo.data.idTarifa);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Moto ocasional (Postman)\",\n  \"tipoVehiculo\": \"moto\",\n  \"tipoCliente\": \"ocasional\",\n  \"valorPrimeraHora\": 2500,\n  \"minutosFraccion\": 15,\n  \"valorFraccion\": 600,\n  \"topeDiario\": 13000,\n  \"minutosGracia\": 10,\n  \"vigenteDesde\": \"{{tarifaDesde}}\",\n  \"cerrarAnterior\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-36 POST /tarifas — 422 primera hora 0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Moto ocasional (Postman)\",\n  \"tipoVehiculo\": \"moto\",\n  \"tipoCliente\": \"ocasional\",\n  \"valorPrimeraHora\": 0,\n  \"minutosFraccion\": 15,\n  \"valorFraccion\": 600,\n  \"topeDiario\": 13000,\n  \"minutosGracia\": 10,\n  \"vigenteDesde\": \"2030-06-01\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-36 POST /tarifas — 403 operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Moto ocasional (Postman)\",\n  \"tipoVehiculo\": \"moto\",\n  \"tipoCliente\": \"ocasional\",\n  \"valorPrimeraHora\": 2500,\n  \"minutosFraccion\": 15,\n  \"valorFraccion\": 600,\n  \"topeDiario\": 13000,\n  \"minutosGracia\": 10,\n  \"vigenteDesde\": \"2030-06-01\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-37 PUT /tarifas/:id — 200 cambia la fracción",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('fracción 700', () => pm.expect(cuerpo.data.valorFraccion).to.eql(700));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas/{{idTarifa}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas",
+                "{{idTarifa}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Moto ocasional (Postman)\",\n  \"tipoVehiculo\": \"moto\",\n  \"tipoCliente\": \"ocasional\",\n  \"valorPrimeraHora\": 2500,\n  \"minutosFraccion\": 15,\n  \"valorFraccion\": 700,\n  \"topeDiario\": 13000,\n  \"minutosGracia\": 10,\n  \"vigenteDesde\": \"{{tarifaDesde}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-37 PUT /tarifas/:id — 422 tope menor que la primera hora",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas/{{idTarifa}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas",
+                "{{idTarifa}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Moto ocasional (Postman)\",\n  \"tipoVehiculo\": \"moto\",\n  \"tipoCliente\": \"ocasional\",\n  \"valorPrimeraHora\": 2500,\n  \"minutosFraccion\": 15,\n  \"valorFraccion\": 600,\n  \"topeDiario\": 100,\n  \"minutosGracia\": 10,\n  \"vigenteDesde\": \"{{tarifaDesde}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PUT /tarifas/999999 — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code TARIFA_NO_ENCONTRADA', () => pm.expect(cuerpo.error.code).to.eql('TARIFA_NO_ENCONTRADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas",
+                "999999"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Moto ocasional (Postman)\",\n  \"tipoVehiculo\": \"moto\",\n  \"tipoCliente\": \"ocasional\",\n  \"valorPrimeraHora\": 2500,\n  \"minutosFraccion\": 15,\n  \"valorFraccion\": 600,\n  \"topeDiario\": 13000,\n  \"minutosGracia\": 10,\n  \"vigenteDesde\": \"{{tarifaDesde}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PUT /tarifas/:id — 403 operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas/{{idTarifa}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas",
+                "{{idTarifa}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Moto ocasional (Postman)\",\n  \"tipoVehiculo\": \"moto\",\n  \"tipoCliente\": \"ocasional\",\n  \"valorPrimeraHora\": 2500,\n  \"minutosFraccion\": 15,\n  \"valorFraccion\": 600,\n  \"topeDiario\": 13000,\n  \"minutosGracia\": 10,\n  \"vigenteDesde\": \"{{tarifaDesde}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-37 PATCH /tarifas/2/estado — 409 única vigente (carro registrado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code UNICA_TARIFA_VIGENTE', () => pm.expect(cuerpo.error.code).to.eql('UNICA_TARIFA_VIGENTE'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas/2/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas",
+                "2",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"inactivo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-37 PATCH /tarifas/2/estado — 200 inactiva con confirmación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('inactiva', () => pm.expect(cuerpo.data.situacion).to.eql('inactiva'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas/2/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas",
+                "2",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"inactivo\",\n  \"confirmar\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-37 PATCH /tarifas/2/estado — 200 se reactiva",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('vigente otra vez', () => pm.expect(cuerpo.data.situacion).to.eql('vigente'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas/2/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas",
+                "2",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"activo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PATCH /tarifas/999999/estado — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code TARIFA_NO_ENCONTRADA', () => pm.expect(cuerpo.error.code).to.eql('TARIFA_NO_ENCONTRADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas/999999/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas",
+                "999999",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"activo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-38 GET /tarifas?vigentes=true&tipoVehiculo=moto — 200 incluye la programada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('programada con su fecha', () => pm.expect(cuerpo.data.find((t) => t.idTarifa === pm.collectionVariables.get('idTarifa')).situacion).to.eql('programada'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tarifas?vigentes=true&tipoVehiculo=moto&tipoCliente=ocasional",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tarifas"
+              ],
+              "query": [
+                {
+                  "key": "vigentes",
+                  "value": "true"
+                },
+                {
+                  "key": "tipoVehiculo",
+                  "value": "moto"
+                },
+                {
+                  "key": "tipoCliente",
+                  "value": "ocasional"
+                }
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
