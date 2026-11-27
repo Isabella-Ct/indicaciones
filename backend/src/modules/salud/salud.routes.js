@@ -1,9 +1,9 @@
+// GET /api/v1/health — [Propuesta] (prompt §3.12, monitoreo de RNF-CAL-01). Público.
 const { Router } = require('express');
 const controller = require('./salud.controller');
 
 const router = Router();
 
-// GET /api/v1/salud — estado del servidor y de la conexión a MySQL
-router.get('/', controller.obtener);
+router.get('/', controller.estado);
 
 module.exports = router;
