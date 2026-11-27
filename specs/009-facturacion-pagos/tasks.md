@@ -46,21 +46,21 @@
 
 ## Fase 9: Interfaz (Atomic Design)
 
-- [ ] T015 [P] Átomo `ponerChipFactura`, molécula `moleculas/cobro.js`, organismo `organismos/comprobante.js` (+ CSS por nivel)
-- [ ] T016 [P] Servicios `js/services/facturas.service.js` y `caja.service.js`
-- [ ] T017 `herramientas/paginas-009.js` + regenerar: menú «Facturación» (`facturas.ver`), «Caja» (`caja.ver`), «Mis facturas» (`perfil.ver`, oculto con `facturas.ver`); panel de cobro en `movimientos.html`
-- [ ] T018 [US1] [US2] Cobro en `movimientos.view.js` (liquidación tras la salida, método, cambio en vivo, referencia, tercero, enlace al comprobante)
-- [ ] T019 [US3] `factura.html` + `views/factura.view.js` (80 mm, PDF, envío, tercero)
-- [ ] T020 [US4] [US5] `facturas.html` + `views/facturas.view.js` (filtros, total filtrado, anular)
-- [ ] T021 [P] [US5] `mis-facturas.html` + `views/mis-facturas.view.js`
-- [ ] T022 [US6] `caja.html` + `views/caja.view.js` (cuadre, cierre, cierres)
+- [X] T015 [P] Átomo `ponerChipFactura`, molécula `moleculas/cobro.js`, organismo `organismos/comprobante.js` (+ CSS por nivel)
+- [X] T016 [P] Servicios `js/services/facturas.service.js` y `caja.service.js`
+- [X] T017 `herramientas/paginas-009.js` + regenerar: menú «Facturación» (`facturas.ver`), «Caja» (`caja.ver`), «Mis facturas» (`perfil.ver`, oculto con `facturas.ver`); panel de cobro en `movimientos.html`
+- [X] T018 [US1] [US2] Cobro en `movimientos.view.js` (liquidación tras la salida, método, cambio en vivo, referencia, tercero, enlace al comprobante)
+- [X] T019 [US3] `factura.html` + `views/factura.view.js` (80 mm, PDF, envío, tercero)
+- [X] T020 [US4] [US5] `facturas.html` + `views/facturas.view.js` (filtros, total filtrado, anular)
+- [X] T021 [P] [US5] `mis-facturas.html` + `views/mis-facturas.view.js`
+- [X] T022 [US6] `caja.html` + `views/caja.view.js` (cuadre, cierre, cierres)
 
 ## Fase 10: Pulido
 
-- [ ] T023 Carpeta Postman `casos/009-facturacion-pagos.js`; `npm run test:api` en verde dos veces seguidas
-- [ ] T024 [P] `README.md` (endpoints y pantallas)
-- [ ] T025 Cobertura de los services ≥ 80 %, lint, `herramientas/verificar-front.js`, revisión de que no queden textos en inglés, medición de la salida con liquidación (RNF-REN-01) y prueba manual en escritorio y a 375 px
-- [ ] T026 Verificar que cada escenario HU-39..HU-44 tenga su prueba y su caso Postman, y marcar `[X]`
+- [X] T023 Carpeta Postman `casos/009-facturacion-pagos.js`; `npm run test:api` en verde dos veces seguidas
+- [X] T024 [P] `README.md` (endpoints y pantallas)
+- [X] T025 Cobertura de los services ≥ 80 %, lint, `herramientas/verificar-front.js`, revisión de que no queden textos en inglés, medición de la salida con liquidación (RNF-REN-01) y prueba manual en escritorio y a 375 px — prueba manual en el navegador pendiente (usuaria)
+- [X] T026 Verificar que cada escenario HU-39..HU-44 tenga su prueba y su caso Postman, y marcar `[X]`
 
 ## Dependencias
 

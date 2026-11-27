@@ -25,7 +25,8 @@ Se construye con **Spec-Driven Development (GitHub spec-kit)** y **Gitflow**, un
 | `006-pico-y-placa` | Restricción de pico y placa: tabla semanal, superposición, aviso de hoy y evaluación de placas | ✅ implementada |
 | `007-control-ingreso-salida` | Entradas con pico y placa y ticket, salidas con tiempo de estadía, vehículos dentro y anulación (esquema 2.2.0) | ✅ implementada |
 | `008-tarifas` | Tarifas por tipo de vehículo y cliente, superposición con cierre de la anterior y consulta pública | ✅ implementada |
-| `009`–`015` | pico y placa, movimientos, tarifas, facturación, membresías, descuentos, reservas, incidencias, monitoreo, reportes | pendientes |
+| `009-facturacion-pagos` | Liquidación (RN-20), pago con factura numerada, comprobante PDF de 80 mm, anulación, consultas y caja | ✅ implementada |
+| `010`–`015` | pico y placa, movimientos, tarifas, facturación, membresías, descuentos, reservas, incidencias, monitoreo, reportes | pendientes |
 | `016-festivos-pico-placa` | API externa Nager.Date (festivos para pico y placa, TBD-03) | pendiente |
 
 La versión anterior (PARKO v1, trazabilidad `REQ-`) se conserva en el tag `v0.9.0-legado`.
@@ -186,6 +187,17 @@ Autenticación con `Authorization: Bearer <token>`. Listados con `?page&limit&q`
 | POST | `/api/v1/tarifas` (`cerrarAnterior` opcional) | `tarifas.crear` | HU-36 |
 | PUT | `/api/v1/tarifas/:id` (si ya se usó: solo nombre y cierre) | `tarifas.editar` | HU-37 |
 | PATCH | `/api/v1/tarifas/:id/estado` (`confirmar` para la única vigente) | `tarifas.cambiar_estado` | HU-37 |
+| GET | `/api/v1/movimientos/:id/liquidacion` (abierto: vista previa) | `movimientos.ver` | HU-39 |
+| POST | `/api/v1/pagos` (crea la factura `FV-` en la misma transacción) | `facturas.crear` | HU-40 |
+| POST | `/api/v1/facturas` (emite el comprobante: tercero y PDF al correo) | `facturas.crear` | HU-41 |
+| GET | `/api/v1/facturas?q&desde&hasta&metodo&estado&page&limit` (`meta.sumaTotal`) | `facturas.ver` | HU-43 |
+| GET | `/api/v1/facturas/:id` | `facturas.ver` | HU-41 |
+| GET | `/api/v1/facturas/:id/pdf` (80 mm) | `facturas.ver` o el Cliente dueño | HU-41, HU-43 |
+| PATCH | `/api/v1/facturas/:id/anulacion` | `facturas.anular` | HU-42 |
+| GET | `/api/v1/usuarios/me/facturas` | `perfil.ver` | HU-43 |
+| GET | `/api/v1/caja/turno-actual` | `caja.ver` | HU-44 |
+| POST | `/api/v1/caja/cierres` | `caja.crear` | HU-44 |
+| GET | `/api/v1/caja/cierres` (Administrador: todos; los demás: los suyos) | `caja.ver` | HU-44 |
 
 Pantallas de la 004: `celdas.html` (mapa por piso que se refresca cada 10 s; personal), `parqueaderos.html`, `parqueadero-detalle.html` (puertas), `disponibilidad.html` (Cliente) y la portada `index.html` (cupos por tipo con «Lleno», sin sesión). El paso de la celda a ocupada y a disponible con cada entrada y salida (HU-23) lo usan los movimientos de la spec 007.
 
@@ -196,6 +208,8 @@ Pantallas de la 006: `pico-placa.html` (Configuración › tabla semanal por dí
 Pantallas de la 007: `movimientos.html` (caseta: entrada con el aviso de pico y placa, salida por placa o ticket, vehículos dentro con más de 24 h resaltados y anulación) y `ticket.html` (vista de impresión de 80 mm y envío por correo). El esquema pasa a **2.2.0** (`ticket.extraviado`, `ingreso_rechazado`); para una BD existente se aplica `migrations/002_ingresos_rechazados_y_ticket_extraviado.sql`. La hora de entrada y salida la pone el servidor (`utils/reloj.js`); el valor a pagar lo calcula la spec 009.
 
 Pantallas de la 008: `tarifas.html` (Configuración › Tarifas; solo lectura para Operador y Cliente) y la sección «Tarifas» de la portada pública (vigentes y programadas).
+
+Pantallas de la 009: cobro en `movimientos.html` (liquidación con su detalle, método de pago, cambio en vivo y tercero), `facturas.html` (filtros y total filtrado), `factura.html` (comprobante de 80 mm, PDF, envío por correo, tercero y anulación), `caja.html` (cuadre del turno y cierres) y `mis-facturas.html` (Cliente). La facturación electrónica DIAN no se integra (TBD-02): las facturas quedan «pendientes de envío electrónico».
 
 El contrato completo de cada spec está en `specs/NNN-*/contracts/openapi.yaml`.
 
