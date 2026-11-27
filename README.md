@@ -168,7 +168,7 @@ backend/
   src/{app.js, server.js, config/, middlewares/, utils/}
   src/modules/<modulo>/      # .routes · .controller · .service · .repository · .validator
   database/                  # schema.sql, seed.sql, CAMBIOS.md, reset.js
-  docs/postman/              # colección y entorno de Newman
+  docs/postman/              # colección y entorno de Newman (generada desde casos/*.js)
   tests/{unit, integration, setup}
 frontend/
   index.html, login.html, <pantalla>.html
@@ -201,3 +201,8 @@ Formato de los commits: `feat(<modulo>): <descripción> [HU-xx][RF-XXX-yy]`.
 ## Fuera de alcance
 
 Facturación electrónica DIAN, pasarela de pagos, motor OCR de placas y control de hardware (barreras). Ver SRS §1.4.
+
+## Herramientas de desarrollo
+
+- `node herramientas/armar-paginas.js "$(pwd)/frontend"`: vuelve a escribir las páginas internas con el marco común (encabezado, navbar, pie, diálogos). Cada spec agrega su `paginas-NNN.js`.
+- `node herramientas/verificar-front.js "$(pwd)/frontend"`: comprueba que los imports y exports de `frontend/js` existan y que cada vista use ids presentes en su página.
