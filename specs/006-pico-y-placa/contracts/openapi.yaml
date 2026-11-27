@@ -1,0 +1,129 @@
+openapi: 3.1.0
+info:
+  title: Parking Lot ABC — API v1 · 006 Restricción de pico y placa
+  version: 1.0.0
+  description: |
+    Contrato de la spec 006 (SRS v2.0 Apéndice B.1 §4.6). Sobre común { ok, data, meta, error }; errores y paginación
+    como en specs/001-roles-permisos/contracts/openapi.yaml. `x-permiso`: permiso exigido (RNF-SEG-04).
+    La evaluación de una placa (RN-13) es una operación de dominio que usa POST /movimientos (spec 007).
+servers:
+  - url: http://localhost:3000/api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Pico y placa
+
+paths:
+  /restricciones-placa:
+    get:
+      tags: [Pico y placa]
+      summary: Listar restricciones para la tabla semanal (HU-29 · RF-PYP-01)
+      x-permiso: restricciones.ver
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+        - { name: tipo, in: query, schema: { type: string, enum: [carro, moto] } }
+        - { name: dia, in: query, schema: { type: integer, minimum: 1, maximum: 7 } }
+        - { name: estado, in: query, schema: { type: string, enum: [activo, inactivo] } }
+      responses:
+        '200': { description: Página ordenada por día y tipo, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/Restriccion' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '422': { $ref: '#/components/responses/Validacion' }
+    post:
+      tags: [Pico y placa]
+      summary: Registrar una restricción (HU-29 · RF-PYP-01..03)
+      x-permiso: restricciones.crear
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/RestriccionEntrada' }, example: { diaSemana: 1, tipoVehiculo: carro, digitos: [6, 9], horaInicio: '05:00', horaFin: '20:00' } } }
+      responses:
+        '201': { description: Creada activa, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaRestriccion' } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '409': { $ref: '#/components/responses/Superpuesta' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /restricciones-placa/hoy:
+    get:
+      tags: [Pico y placa]
+      summary: Restricción vigente hoy por tipo de vehículo (HU-30 · RF-PYP-05)
+      x-permiso: restricciones.ver
+      responses:
+        '200':
+          description: Vigentes hoy (hora de Bogotá)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { const: true }
+                  data:
+                    type: object
+                    properties:
+                      fecha: { type: string, format: date }
+                      diaSemana: { type: integer }
+                      nombreDia: { type: string }
+                      tipos: { type: object, properties: { carro: { oneOf: [{ $ref: '#/components/schemas/Restriccion' }, { type: 'null' }] }, moto: { oneOf: [{ $ref: '#/components/schemas/Restriccion' }, { type: 'null' }] } } }
+                      mensaje: { type: [string, 'null'], description: '«Sin restricción hoy» si no hay ninguna' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+
+  /restricciones-placa/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    put:
+      tags: [Pico y placa]
+      summary: Actualizar o reactivar una restricción (HU-29 · RF-PYP-04)
+      x-permiso: restricciones.editar
+      description: Cambiar `estado` exige además restricciones.cambiar_estado.
+      requestBody:
+        required: true
+        content: { application/json: { schema: { allOf: [{ $ref: '#/components/schemas/RestriccionEntrada' }, { type: object, properties: { estado: { type: string, enum: [activo, inactivo] } } }] } } }
+      responses:
+        '200': { description: Actualizada, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaRestriccion' } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { $ref: '#/components/responses/Superpuesta' }
+        '422': { $ref: '#/components/responses/Validacion' }
+    delete:
+      tags: [Pico y placa]
+      summary: Eliminar (inactivación lógica) una restricción (HU-29 · RF-PYP-04)
+      x-permiso: restricciones.cambiar_estado
+      responses:
+        '200': { description: Inactiva, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaRestriccion' } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    id: { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+  schemas:
+    Meta: { type: object, properties: { page: { type: integer }, limit: { type: integer }, total: { type: integer } } }
+    RestriccionEntrada:
+      type: object
+      required: [diaSemana, tipoVehiculo, digitos, horaInicio, horaFin]
+      properties:
+        diaSemana: { type: integer, minimum: 1, maximum: 7, description: 1 lunes … 7 domingo }
+        tipoVehiculo: { type: string, enum: [carro, moto] }
+        digitos: { type: array, minItems: 1, maxItems: 5, uniqueItems: true, items: { type: integer, minimum: 0, maximum: 9 } }
+        posicionDigito: { type: string, enum: [ultimo, primero], description: 'por defecto ultimo (carro) / primero (moto)' }
+        horaInicio: { type: string, pattern: '^([01]\d|2[0-3]):[0-5]\d$' }
+        horaFin: { type: string, pattern: '^([01]\d|2[0-3]):[0-5]\d$', description: mayor que horaInicio }
+        vigenteDesde: { type: string, format: date, description: por defecto hoy }
+        vigenteHasta: { type: [string, 'null'], format: date }
+    Restriccion:
+      allOf:
+        - $ref: '#/components/schemas/RestriccionEntrada'
+        - type: object
+          properties:
+            idRestriccion: { type: integer }
+            nombreDia: { type: string }
+            estado: { type: string, enum: [activo, inactivo] }
+    RespuestaRestriccion: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Restriccion' } } }
+  responses:
+    NoAutenticado: { description: Sin sesión válida }
+    SinPermiso: { description: Sin permiso (403 SIN_PERMISO) }
+    NoEncontrado: { description: 'No existe (404 RESTRICCION_NO_ENCONTRADA)' }
+    Superpuesta: { description: '409 RESTRICCION_SUPERPUESTA «Ya existe una restricción para ese día y tipo»; details[0].mensaje = id de la existente' }
+    Validacion: { description: Datos inválidos (422) con detalle por campo }
