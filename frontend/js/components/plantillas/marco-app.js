@@ -1,11 +1,13 @@
 /**
  * Plantilla · template-app-layout: marco de las páginas internas (organism-header con el reloj del
  * turno y el menú de usuario, organism-navbar, hazard-strip, contenido y organism-footer), todo
- * escrito en el HTML de cada página. Exige sesión y muestra el contenido solo si la sesión tiene
- * el permiso de la página; si no, muestra el bloque #sin-permiso (HU-06 E2).
- * No llama a la API: la página le pasa el callback de cierre de sesión.
+ * escrito en el HTML de cada página. Exige sesión y aplica las reglas de acceso de la spec 003:
+ *   - contraseña temporal pendiente → cambiar-contrasena.html (RF-ACC-04);
+ *   - página sin permiso para el rol → primera pantalla permitida (HU-13 E3);
+ *   - volver atrás después de cerrar sesión → inicio de sesión (HU-16 E2).
+ * No llama a la API: la página le pasa el callback de cierre de sesión (alSalir).
  */
-import { RUTA_LOGIN } from '../../config/config.js';
+import { RUTA_LOGIN, RUTA_CAMBIAR_CONTRASENA, paginaInicial } from '../../config/config.js';
 import { leerSesion } from '../../utils/sesion.js';
 import { formatearFecha, formatearHora } from '../../utils/formato.js';
 import { alAvisar } from '../../api/http.js';
@@ -26,9 +28,11 @@ function iniciarReloj() {
   setInterval(actualizar, 30 * 1000);
 }
 
+const enPagina = (ruta) => location.pathname === ruta;
+
 /**
  * @param {{ permiso?: string, alSalir?: () => Promise<void> }} opciones
- * @returns {{ sesion: object, permitido: boolean } | null}
+ * @returns {{ sesion: object, permitido: boolean } | null} null si la página redirige
  */
 export function montarMarco({ permiso, alSalir } = {}) {
   const sesion = leerSesion();
@@ -36,6 +40,22 @@ export function montarMarco({ permiso, alSalir } = {}) {
     location.replace(`${RUTA_LOGIN}?volver=${encodeURIComponent(location.pathname + location.search)}`);
     return null;
   }
+  if (sesion.usuario.debeCambiarContrasena && !enPagina(RUTA_CAMBIAR_CONTRASENA)) {
+    location.replace(RUTA_CAMBIAR_CONTRASENA);
+    return null;
+  }
+  const permitido = !permiso || sesion.permisos.includes(permiso);
+  const inicio = paginaInicial(sesion.permisos);
+  if (!permitido && !enPagina(inicio)) {
+    location.replace(inicio);
+    return null;
+  }
+
+  // Al volver con «Atrás» el navegador puede mostrar la página desde su caché: sin sesión, al login.
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted && !leerSesion()) location.replace(RUTA_LOGIN);
+  });
+
   alAvisar(mostrarAviso);
   iniciarReloj();
   prepararNavbar(sesion.permisos);
@@ -43,12 +63,11 @@ export function montarMarco({ permiso, alSalir } = {}) {
     try {
       await alSalir?.();
     } finally {
-      location.assign(RUTA_LOGIN);
+      location.replace(RUTA_LOGIN);
     }
   });
   $('pie-anio').textContent = String(new Date().getFullYear());
 
-  const permitido = !permiso || sesion.permisos.includes(permiso);
   $('contenido').classList.toggle('hidden', !permitido);
   $('sin-permiso')?.classList.toggle('hidden', permitido);
   $('app').classList.remove('hidden');

@@ -8,6 +8,7 @@ import {
   obtenerFoto,
 } from '../services/usuarios.service.js';
 import { listarRoles } from '../services/roles.service.js';
+import { cerrarSesion } from '../services/auth.service.js';
 import { montarMarco } from '../components/plantillas/marco-app.js';
 import { conectarTabla } from '../components/organismos/tabla-datos.js';
 import { abrirDialogo, cerrarDialogo, confirmar } from '../components/organismos/modal.js';
@@ -23,7 +24,7 @@ import { clonar } from '../utils/plantillas.js';
 import { tienePermiso } from '../utils/sesion.js';
 import { $, parametro, mostrar } from '../utils/dom.js';
 
-const marco = montarMarco({ permiso: 'usuarios.ver' });
+const marco = montarMarco({ permiso: 'usuarios.ver', alSalir: cerrarSesion });
 
 const puede = {
   crear: tienePermiso('usuarios.crear'),

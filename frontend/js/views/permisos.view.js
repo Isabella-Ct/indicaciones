@@ -1,5 +1,6 @@
 // Página · Configuración › Permisos (HU-06 · RF-ROL-15): catálogo de solo lectura agrupado por módulo.
 import { listarPermisos, nombreModulo } from '../services/roles.service.js';
+import { cerrarSesion } from '../services/auth.service.js';
 import { montarMarco } from '../components/plantillas/marco-app.js';
 import { clonar } from '../utils/plantillas.js';
 import { mostrarAviso } from '../components/moleculas/aviso.js';
@@ -14,7 +15,7 @@ const ACCIONES = {
   exportar: 'Exportar',
 };
 
-const marco = montarMarco({ permiso: 'roles.ver' });
+const marco = montarMarco({ permiso: 'roles.ver', alSalir: cerrarSesion });
 
 async function iniciar() {
   const cargando = $('catalogo-cargando');

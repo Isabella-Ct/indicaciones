@@ -8,6 +8,7 @@ import {
   listarPermisos,
   nombreModulo,
 } from '../services/roles.service.js';
+import { cerrarSesion } from '../services/auth.service.js';
 import { montarMarco } from '../components/plantillas/marco-app.js';
 import { conectarTabla } from '../components/organismos/tabla-datos.js';
 import { conectarBusqueda } from '../components/moleculas/buscador.js';
@@ -22,7 +23,7 @@ import { tienePermiso } from '../utils/sesion.js';
 import { $, parametro } from '../utils/dom.js';
 import { texto, plural } from '../utils/formato.js';
 
-const marco = montarMarco({ permiso: 'roles.ver' });
+const marco = montarMarco({ permiso: 'roles.ver', alSalir: cerrarSesion });
 
 const estado = { page: 1, q: '', estado: '', catalogo: null, editando: null };
 const puede = {

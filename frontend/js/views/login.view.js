@@ -1,6 +1,6 @@
 // Página · Pantalla de inicio de sesión (HU-12, HU-13 — versión mínima de la spec 001).
 import { iniciarSesion } from '../services/auth.service.js';
-import { paginaInicial } from '../config/config.js';
+import { paginaInicial, RUTA_CAMBIAR_CONTRASENA } from '../config/config.js';
 import { leerSesion } from '../utils/sesion.js';
 import { $, parametro } from '../utils/dom.js';
 import { marcarCampo, limpiarErrores, pintarErroresApi } from '../components/moleculas/campo.js';
@@ -15,15 +15,19 @@ const contrasena = $('contrasena');
 const boton = $('login-boton');
 
 /** Solo rutas internas del mismo sitio (evita redirecciones abiertas). */
-function destino(permisos) {
+function destino(permisos, { debeCambiarContrasena } = {}) {
+  // RF-ACC-04: con contraseña temporal, primero se cambia.
+  if (debeCambiarContrasena) return RUTA_CAMBIAR_CONTRASENA;
   const volver = parametro('volver');
   if (volver && volver.startsWith('/') && !volver.startsWith('//')) return volver;
   return paginaInicial(permisos);
 }
 
 const sesion = leerSesion();
-if (sesion) location.replace(destino(sesion.permisos));
+if (sesion) location.replace(destino(sesion.permisos, sesion.usuario));
 if (parametro('vencida')) mostrarAlerta(alerta, 'Su sesión venció. Inicie sesión de nuevo.', 'info');
+if (parametro('registrado')) mostrarAlerta(alerta, 'Cuenta creada. Ya puede iniciar sesión.', 'success');
+if (parametro('restablecida')) mostrarAlerta(alerta, 'Contraseña actualizada. Inicie sesión con su nueva contraseña.', 'success');
 
 $('mostrar-contrasena').addEventListener('change', (e) => {
   contrasena.type = e.target.checked ? 'text' : 'password';
@@ -51,7 +55,7 @@ formulario.addEventListener('submit', async (e) => {
       numeroDocumento: documento.value.trim(),
       contrasena: contrasena.value,
     });
-    location.assign(destino(datos.permisos));
+    location.assign(destino(datos.permisos, datos.usuario));
   } catch (error) {
     const sinCampo = pintarErroresApi(error, {
       tipoDocumento: 'tipo-documento',

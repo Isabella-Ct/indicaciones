@@ -1,6 +1,6 @@
 // Cliente fetch único (constitución §V; frontend-integration §3): Bearer, sobre
 // { ok, data, meta, error }, timeout con AbortController, 401 → login, 403 → aviso.
-import { API_BASE, TIEMPO_ESPERA_MS, RUTA_LOGIN } from '../config/config.js';
+import { API_BASE, TIEMPO_ESPERA_MS, RUTA_LOGIN, RUTA_CAMBIAR_CONTRASENA } from '../config/config.js';
 import { tokenActual, borrarSesion } from '../utils/sesion.js';
 
 export class ErrorApi extends Error {
@@ -77,6 +77,9 @@ export async function solicitar(ruta, { method = 'GET', body, query, publica = f
   if (respuesta.status === 401 && !publica) {
     borrarSesion();
     location.assign(`${RUTA_LOGIN}?vencida=1`);
+  } else if (fallo.code === 'CAMBIO_CONTRASENA_REQUERIDO') {
+    // Contraseña temporal pendiente (spec 003 RF-ACC-04): solo se puede cambiarla.
+    location.assign(RUTA_CAMBIAR_CONTRASENA);
   } else if (respuesta.status === 403) {
     avisar(fallo.message, 'error');
   }

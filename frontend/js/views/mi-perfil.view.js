@@ -1,6 +1,7 @@
 // Página · Mi perfil (HU-11 · RF-USR-15..17): documento, código y rol de solo lectura; nombre, correo,
 // celular y foto editables. El servidor avisa al Administrador de cada cambio (RF-USR-16).
 import { misDatos, actualizarMisDatos, obtenerFoto } from '../services/usuarios.service.js';
+import { cerrarSesion } from '../services/auth.service.js';
 import { montarMarco } from '../components/plantillas/marco-app.js';
 import { conectarFoto } from '../components/moleculas/foto.js';
 import { marcarCampo, limpiarErrores, pintarErroresApi } from '../components/moleculas/campo.js';
@@ -10,7 +11,7 @@ import { ponerChipActivo } from '../components/atomos/chip-estado.js';
 import { botonCargando } from '../components/atomos/boton.js';
 import { $ } from '../utils/dom.js';
 
-const marco = montarMarco({ permiso: 'perfil.ver' });
+const marco = montarMarco({ permiso: 'perfil.ver', alSalir: cerrarSesion });
 
 const formulario = $('form-perfil');
 const alerta = $('perfil-alerta');

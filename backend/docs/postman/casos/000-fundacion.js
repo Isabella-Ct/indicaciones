@@ -22,10 +22,10 @@ module.exports = {
       ],
     },
     {
-      nombre: 'POST /auth/login — 401 contraseña errada',
+      nombre: 'POST /auth/login — 401 credenciales incorrectas (documento aleatorio)',
       metodo: 'POST',
       ruta: '/auth/login',
-      body: { tipoDocumento: 'CC', numeroDocumento: '1000000001', contrasena: 'incorrecta' },
+      body: { tipoDocumento: 'CC', numeroDocumento: '6{{$timestamp}}', contrasena: 'incorrecta' },
       status: 401,
       code: 'CREDENCIALES_INVALIDAS',
     },

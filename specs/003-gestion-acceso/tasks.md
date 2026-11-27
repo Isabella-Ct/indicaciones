@@ -72,21 +72,21 @@ description: "Lista de tareas de 003-gestion-acceso"
 
 ## Fase 8: Interfaz (Atomic Design)
 
-- [ ] T016 [P] Molécula `frontend/js/components/moleculas/contrasena.js` (`conectarContrasena(input, { casillaMostrar, ayuda })`: mostrar/ocultar y estado en línea de las reglas)
-- [ ] T017 `frontend/js/services/auth.service.js` (`cerrarSesion` con la API, `cambiarContrasena`, `registrarme`, `recuperarContrasena`, `restablecerContrasena`) y `frontend/js/api/http.js` (403 `CAMBIO_CONTRASENA_REQUERIDO` → `cambiar-contrasena.html`)
-- [ ] T018 `frontend/js/components/plantillas/marco-app.js`: contraseña temporal → `cambiar-contrasena.html`; sin permiso → `paginaInicial`; `pageshow` sin sesión → login; `alSalir: cerrarSesion` en todas las vistas internas
-- [ ] T019 [US1] [US2] `frontend/login.html` + `login.view.js` (enlaces, `CUENTA_BLOQUEADA`, destino según `debeCambiarContrasena`) y `frontend/cambiar-contrasena.html` + `cambiar-contrasena.view.js`; ítem «Cambiar contraseña» en el menú de usuario de todas las páginas internas
-- [ ] T020 [P] [US3] `frontend/registro.html` + `registro.view.js` (aviso de privacidad, casilla obligatoria, confirmación; `CUENTA_EXISTENTE` con enlace a recuperar); enlace «Crear cuenta» en `index.html` y `login.html`
-- [ ] T021 [P] [US4] `frontend/recuperar.html` + `recuperar.view.js` y `frontend/restablecer.html` + `restablecer.view.js`
+- [X] T016 [P] Molécula `frontend/js/components/moleculas/contrasena.js` (`conectarContrasena(input, { casillaMostrar, ayuda })`: mostrar/ocultar y estado en línea de las reglas)
+- [X] T017 `frontend/js/services/auth.service.js` (`cerrarSesion` con la API, `cambiarContrasena`, `registrarme`, `recuperarContrasena`, `restablecerContrasena`) y `frontend/js/api/http.js` (403 `CAMBIO_CONTRASENA_REQUERIDO` → `cambiar-contrasena.html`)
+- [X] T018 `frontend/js/components/plantillas/marco-app.js`: contraseña temporal → `cambiar-contrasena.html`; sin permiso → `paginaInicial`; `pageshow` sin sesión → login; `alSalir: cerrarSesion` en todas las vistas internas
+- [X] T019 [US1] [US2] `frontend/login.html` + `login.view.js` (enlaces, `CUENTA_BLOQUEADA`, destino según `debeCambiarContrasena`) y `frontend/cambiar-contrasena.html` + `cambiar-contrasena.view.js`; ítem «Cambiar contraseña» en el menú de usuario de todas las páginas internas
+- [X] T020 [P] [US3] `frontend/registro.html` + `registro.view.js` (aviso de privacidad, casilla obligatoria, confirmación; `CUENTA_EXISTENTE` con enlace a recuperar); enlace «Crear cuenta» en `index.html` y `login.html`
+- [X] T021 [P] [US4] `frontend/recuperar.html` + `recuperar.view.js` y `frontend/restablecer.html` + `restablecer.view.js`
 
 ---
 
 ## Fase 9: Pulido y transversales
 
-- [ ] T022 Carpeta Postman `backend/docs/postman/casos/003-gestion-acceso.js`; el caso de error de `000-fundacion.js` pasa a un documento aleatorio (evita bloquear al administrador tras 5 corridas); `npm run test:api` en verde dos veces seguidas
-- [ ] T023 [P] `README.md`: endpoints de acceso, `URL_PUBLICA`, bloqueo y recuperación
-- [ ] T024 Cobertura de `auth.service.js` ≥ 80 %, `npm run lint`, `node --check`, verificación de imports e ids, revisión de que no queden textos en inglés y prueba manual en escritorio y a 375 px
-- [ ] T025 Verificar que cada escenario HU-12..HU-16 tenga su prueba y su caso Postman, y marcar `[X]`
+- [X] T022 Carpeta Postman `backend/docs/postman/casos/003-gestion-acceso.js`; el caso de error de `000-fundacion.js` pasa a un documento aleatorio (evita bloquear al administrador tras 5 corridas); `npm run test:api` en verde dos veces seguidas
+- [X] T023 [P] `README.md`: endpoints de acceso, `URL_PUBLICA`, bloqueo y recuperación
+- [ ] T024 Cobertura de `auth.service.js` ≥ 80 %, `npm run lint`, `node --check`, verificación de imports e ids, revisión de que no queden textos en inglés y prueba manual en escritorio y a 375 px — **Hecho:** cobertura de auth.service 98,8 %, lint, `node --check`, imports e ids verificados y revisión de textos en inglés. **Pendiente:** prueba manual en navegador (escritorio y 375 px).
+- [X] T025 Verificar que cada escenario HU-12..HU-16 tenga su prueba y su caso Postman, y marcar `[X]`
 
 ## Dependencias y orden de ejecución
 

@@ -19,7 +19,8 @@ Se construye con **Spec-Driven Development (GitHub spec-kit)** y **Gitflow**, un
 |---|---|---|
 | `001-roles-permisos` | Roles y permisos + fundación del backend v2 | ✅ implementada |
 | `002-gestion-usuarios` | Usuarios, foto, mis datos y avisos al administrador | ✅ implementada |
-| `003`–`015` | Acceso, celdas, vehículos, pico y placa, movimientos, tarifas, facturación, membresías, descuentos, reservas, incidencias, monitoreo, reportes | pendientes |
+| `003-gestion-acceso` | Bloqueo por intentos, cambio de contraseña, autorregistro, recuperación y cierre de sesión | ✅ implementada |
+| `004`–`015` | celdas, vehículos, pico y placa, movimientos, tarifas, facturación, membresías, descuentos, reservas, incidencias, monitoreo, reportes | pendientes |
 | `016-festivos-pico-placa` | API externa Nager.Date (festivos para pico y placa, TBD-03) | pendiente |
 
 La versión anterior (PARKO v1, trazabilidad `REQ-`) se conserva en el tag `v0.9.0-legado`.
@@ -63,7 +64,8 @@ node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 | `BCRYPT_COSTO` | Costo de bcrypt (≥ 10) | `10` |
 | `CORS_ORIGIN` | Solo si el frontend se sirve desde otro origen | vacío |
 | `TRUST_PROXY` | Proxies HTTPS delante de Express | `0` |
-| `LOGIN_LIMITE_IP` | Intentos de login por IP cada 15 min | `20` |
+| `LOGIN_LIMITE_IP` | Peticiones por IP cada 15 min a login, registro, recuperar y restablecer (en desarrollo, 200 para correr Newman varias veces) | `20` |
+| `URL_PUBLICA` | Base de los enlaces de recuperación que llegan por correo | `http://localhost:3000` |
 | `CORREO_TRANSPORTE` | `smtp`, `archivo` (`.eml` en `backend/correos/`) o `memoria` (pruebas) | `archivo` |
 | `CORREO_REMITENTE` | Remitente de los correos | `Parking Lot ABC <no-responder@…>` |
 | `SMTP_HOST`, `SMTP_PUERTO`, `SMTP_SEGURO`, `SMTP_USUARIO`, `SMTP_CLAVE` | Servidor SMTP (solo con `smtp`; TBD-09) | — |
@@ -86,7 +88,7 @@ Todos inician sesión con **tipo y número de documento + contraseña**.
 
 Para regenerar los hashes de la semilla: `npm run db:seed:generar`.
 
-Los usuarios que registra el administrador u operador reciben por correo una **contraseña temporal**. Con `CORREO_TRANSPORTE=archivo`, ese correo queda en `backend/correos/*.eml` (ábralo con cualquier cliente de correo).
+Los usuarios que registra el administrador u operador reciben por correo una **contraseña temporal** y, hasta cambiarla, la API solo les permite cambiarla o cerrar sesión (403 `CAMBIO_CONTRASENA_REQUERIDO`). Cualquier persona puede crear su cuenta de cliente en `/registro.html` y recuperar la contraseña en `/recuperar.html` (el enlace dura 30 minutos y sirve una sola vez). Con `CORREO_TRANSPORTE=archivo`, ese correo queda en `backend/correos/*.eml` (ábralo con cualquier cliente de correo).
 
 ## Scripts (`backend/`)
 
@@ -121,7 +123,12 @@ Autenticación con `Authorization: Bearer <token>`. Listados con `?page&limit&q`
 | Método | Ruta | Permiso | HU |
 |---|---|---|---|
 | GET | `/api/v1/health` | público | — |
-| POST | `/api/v1/auth/login` | público | HU-12, HU-13 (mínimo) |
+| POST | `/api/v1/auth/login` | público (bloqueo: 5 fallos en 15 min → 429) | HU-12, HU-13 |
+| PUT | `/api/v1/auth/contrasena` | token (también con contraseña temporal) | HU-12 |
+| POST | `/api/v1/auth/registro` | público | HU-14 |
+| POST | `/api/v1/auth/recuperar` | público | HU-15 |
+| POST | `/api/v1/auth/restablecer` | público | HU-15 |
+| POST | `/api/v1/auth/logout` | token | HU-16 |
 | GET | `/api/v1/roles?page&limit&q&estado` | `roles.ver` | HU-01, HU-03 |
 | POST | `/api/v1/roles` | `roles.crear` | HU-02 |
 | GET | `/api/v1/roles/:id` | `roles.ver` | HU-03 |

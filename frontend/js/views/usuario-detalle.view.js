@@ -1,5 +1,6 @@
 // Página · Usuarios › Detalle (HU-08 E4 · RF-USR-07): datos, foto, vehículos y membresía vigente.
 import { obtenerUsuario, obtenerFoto } from '../services/usuarios.service.js';
+import { cerrarSesion } from '../services/auth.service.js';
 import { montarMarco } from '../components/plantillas/marco-app.js';
 import { conectarTabla } from '../components/organismos/tabla-datos.js';
 import { mostrarAviso } from '../components/moleculas/aviso.js';
@@ -9,7 +10,7 @@ import { tienePermiso } from '../utils/sesion.js';
 import { $, parametro, mostrar } from '../utils/dom.js';
 import { formatearFecha, formatearFechaHora } from '../utils/formato.js';
 
-const marco = montarMarco({ permiso: 'usuarios.ver' });
+const marco = montarMarco({ permiso: 'usuarios.ver', alSalir: cerrarSesion });
 
 const tablaVehiculos = conectarTabla($('tabla-vehiculos-usuario'), {
   plantilla: 'tpl-vehiculo-usuario',

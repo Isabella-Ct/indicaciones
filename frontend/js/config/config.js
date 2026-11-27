@@ -4,6 +4,7 @@ export const TIEMPO_ESPERA_MS = 15000;
 
 export const RUTA_LOGIN = '/login.html';
 export const RUTA_INICIO_PUBLICO = '/';
+export const RUTA_CAMBIAR_CONTRASENA = '/cambiar-contrasena.html';
 
 /**
  * Menú principal (SRS §3.1). Cada ítem se muestra solo si la sesión tiene su permiso
