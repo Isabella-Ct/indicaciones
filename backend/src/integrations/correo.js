@@ -29,15 +29,18 @@ function crearTransporte() {
 }
 
 /**
- * @param {{ para: string, asunto: string, texto: string }} correo
+ * @param {{ para: string, asunto: string, texto: string,
+ *           adjuntos?: Array<{ nombre: string, contenido: Buffer, tipo: string }> }} correo
+ *   adjuntos: p. ej. el PDF de la factura (spec 009, RF-FAC-10).
  * @returns {Promise<boolean>}
  */
-async function enviarCorreo({ para, asunto, texto }) {
+async function enviarCorreo({ para, asunto, texto, adjuntos = [] }) {
   try {
     transporte ??= crearTransporte();
-    const info = await transporte.sendMail({ from: env.CORREO_REMITENTE, to: para, subject: asunto, text: texto });
+    const attachments = adjuntos.map((a) => ({ filename: a.nombre, content: a.contenido, contentType: a.tipo }));
+    const info = await transporte.sendMail({ from: env.CORREO_REMITENTE, to: para, subject: asunto, text: texto, attachments });
     if (env.CORREO_TRANSPORTE === 'memoria') {
-      bandeja.push({ para, asunto, texto, fecha: new Date() });
+      bandeja.push({ para, asunto, texto, adjuntos: adjuntos.map((a) => ({ nombre: a.nombre, tipo: a.tipo, bytes: a.contenido.length })), fecha: new Date() });
     } else if (env.CORREO_TRANSPORTE === 'archivo') {
       await fs.mkdir(CARPETA_CORREOS, { recursive: true });
       const nombre = `${new Date().toISOString().replace(/[:.]/g, '-')}-${crypto.randomUUID().slice(0, 8)}.eml`;

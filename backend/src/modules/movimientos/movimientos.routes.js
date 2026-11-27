@@ -2,6 +2,7 @@
 // montar el router (app.js).
 const { Router } = require('express');
 const controller = require('./movimientos.controller');
+const liquidaciones = require('../liquidaciones/liquidaciones.controller');
 const esquemas = require('./movimientos.validator');
 const { authorize } = require('../../middlewares/authorize');
 const { validate } = require('../../middlewares/validate');
@@ -29,5 +30,8 @@ router.patch(
   validate({ params: esquemas.params, body: esquemas.anulacion }),
   controller.anular
 );
+
+// GET /api/v1/movimientos/:id/liquidacion — HU-39 · RF-FAC-01..04 (spec 009)
+router.get('/:id/liquidacion', authorize('movimientos.ver'), validate({ params: esquemas.params }), liquidaciones.liquidar);
 
 module.exports = router;

@@ -8,41 +8,41 @@
 
 ## Fase 1: Preparación
 
-- [ ] T001 `backend/src/integrations/correo.js`: `adjuntos` en `enviarCorreo` (nodemailer `attachments`; el transporte en memoria guarda sus nombres); nota en `CAMBIOS.md` (sin cambios de esquema)
+- [X] T001 `backend/src/integrations/correo.js`: `adjuntos` en `enviarCorreo` (nodemailer `attachments`; el transporte en memoria guarda sus nombres); nota en `CAMBIOS.md` (sin cambios de esquema)
 
 ## Fase 2: Fundacional
 
-- [ ] T002 [P] `backend/src/modules/liquidaciones/liquidaciones.reglas.js` (`calcular`, `valorTramo`, `explicacion`; research R-02) + `backend/tests/unit/liquidaciones.reglas.test.js` (gracia, 60 min, fracción exacta e iniciada, tope, varios días, sin tope, membresía)
+- [X] T002 [P] `backend/src/modules/liquidaciones/liquidaciones.reglas.js` (`calcular`, `valorTramo`, `explicacion`; research R-02) + `backend/tests/unit/liquidaciones.reglas.test.js` (gracia, 60 min, fracción exacta e iniciada, tope, varios días, sin tope, membresía)
 
 ## Fase 3: US1 — Liquidar (P1) — HU-39
 
-- [ ] T003 [US1] `backend/tests/integration/liquidaciones.test.js` HU-39 E1–E6 (membresía insertada por SQL; tarifa de moto inactivada y restaurada dentro de la prueba)
-- [ ] T004 [US1] `backend/src/modules/liquidaciones/` repository (liquidación por movimiento, insertar, membresía vigente, alerta sin tarifa), service `liquidar` (R-03; data-model.md Liquidacion.minutos_cobrados, Liquidacion.valor_bruto, Liquidacion.cubierto_por_membresia, Liquidacion.valor_total), controller y `GET /movimientos/:id/liquidacion` en `movimientos.routes.js`; la salida de `movimientos.service` devuelve la liquidación
+- [X] T003 [US1] `backend/tests/integration/liquidaciones.test.js` HU-39 E1–E6 (membresía insertada por SQL; tarifa de moto inactivada y restaurada dentro de la prueba)
+- [X] T004 [US1] `backend/src/modules/liquidaciones/` repository (liquidación por movimiento, insertar, membresía vigente, alerta sin tarifa), service `liquidar` (R-03; data-model.md Liquidacion.minutos_cobrados, Liquidacion.valor_bruto, Liquidacion.cubierto_por_membresia, Liquidacion.valor_total), controller y `GET /movimientos/:id/liquidacion` en `movimientos.routes.js`; la salida de `movimientos.service` devuelve la liquidación
 
 ## Fase 4: US2 — Pago (P1) — HU-40
 
-- [ ] T005 [US2] `backend/tests/integration/pagos.test.js` HU-40 E1–E5
-- [ ] T006 [US2] `backend/src/modules/facturas/` validator (data-model.md Pago.metodo, Pago.valor_recibido, Pago.referencia, Factura.tercero_documento, Factura.tercero_nombre), repository y service `pagar` (R-04 con `FOR UPDATE` y consecutivo); `POST /pagos` (router `pagosRouter`); registro en `rutasProtegidas()`
+- [X] T005 [US2] `backend/tests/integration/pagos.test.js` HU-40 E1–E5
+- [X] T006 [US2] `backend/src/modules/facturas/` validator (data-model.md Pago.metodo, Pago.valor_recibido, Pago.referencia, Factura.tercero_documento, Factura.tercero_nombre), repository y service `pagar` (R-04 con `FOR UPDATE` y consecutivo); `POST /pagos` (router `pagosRouter`); registro en `rutasProtegidas()`
 
 ## Fase 5: US3 — Comprobante (P1) — HU-41
 
-- [ ] T007 [US3] `backend/tests/integration/facturas.test.js` bloque HU-41 E1–E4 (correo en memoria con el PDF adjunto)
-- [ ] T008 [US3] `factura.pdf.js` (R-06), service `obtener`, `emitir` (R-05) y `pdf` (dueño o `facturas.ver`); `POST /facturas`, `GET /facturas/:id`, `GET /facturas/:id/pdf`
+- [X] T007 [US3] `backend/tests/integration/facturas.test.js` bloque HU-41 E1–E4 (correo en memoria con el PDF adjunto)
+- [X] T008 [US3] `factura.pdf.js` (R-06), service `obtener`, `emitir` (R-05) y `pdf` (dueño o `facturas.ver`); `POST /facturas`, `GET /facturas/:id`, `GET /facturas/:id/pdf`
 
 ## Fase 6: US4 — Anular (P2) — HU-42
 
-- [ ] T009 [US4] Bloque HU-42 E1–E3 en `facturas.test.js`
-- [ ] T010 [US4] Service `anular` (R-07; data-model.md Factura.estado, Factura.motivo_anulacion); `PATCH /facturas/:id/anulacion`
+- [X] T009 [US4] Bloque HU-42 E1–E3 en `facturas.test.js`
+- [X] T010 [US4] Service `anular` (R-07; data-model.md Factura.estado, Factura.motivo_anulacion); `PATCH /facturas/:id/anulacion`
 
 ## Fase 7: US5 — Consultar (P2) — HU-43
 
-- [ ] T011 [US5] Bloque HU-43 E1–E3 en `facturas.test.js`
-- [ ] T012 [US5] Repository `listar` (R-08) con `sumaTotal`; service `listar`, `misFacturas`; `GET /facturas` y `GET /usuarios/me/facturas` (antes de `/:id` en `usuarios.routes.js`)
+- [X] T011 [US5] Bloque HU-43 E1–E3 en `facturas.test.js`
+- [X] T012 [US5] Repository `listar` (R-08) con `sumaTotal`; service `listar`, `misFacturas`; `GET /facturas` y `GET /usuarios/me/facturas` (antes de `/:id` en `usuarios.routes.js`)
 
 ## Fase 8: US6 — Caja (P2) — HU-44
 
-- [ ] T013 [US6] `backend/tests/integration/caja.test.js` HU-44 E1–E4 (operador propio de la prueba para aislar su turno)
-- [ ] T014 [US6] `backend/src/modules/caja/` (R-09; data-model.md CierreCaja.total_sistema_por_metodo, CierreCaja.efectivo_contado, CierreCaja.diferencia, Pago.id_cierre): `GET /caja/turno-actual`, `POST /caja/cierres`, `GET /caja/cierres`
+- [X] T013 [US6] `backend/tests/integration/caja.test.js` HU-44 E1–E4 (operador propio de la prueba para aislar su turno)
+- [X] T014 [US6] `backend/src/modules/caja/` (R-09; data-model.md CierreCaja.total_sistema_por_metodo, CierreCaja.efectivo_contado, CierreCaja.diferencia, Pago.id_cierre): `GET /caja/turno-actual`, `POST /caja/cierres`, `GET /caja/cierres`
 
 ## Fase 9: Interfaz (Atomic Design)
 

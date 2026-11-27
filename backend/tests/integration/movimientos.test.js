@@ -150,7 +150,8 @@ describe('HU-33 Registrar la salida de un vehículo', () => {
       fechaHoraSalida: '2026-11-29T10:25:00-05:00',
       minutosEstadia: 135,
       ticket: { extraviado: false },
-      liquidacion: null,
+      // Desde la spec 009 la salida trae la liquidación (135 min de carro ocasional = $ 9.000).
+      liquidacion: { persistida: true, minutos: 135, total: 9000 },
     });
     expect(await estadoCelda(m.celda.idCelda)).toEqual({ estado: 'disponible', id_vehiculo_actual: null });
   });

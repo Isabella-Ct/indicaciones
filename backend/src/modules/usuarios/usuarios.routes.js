@@ -15,6 +15,14 @@ router.get('/me', authorize('perfil.ver'), controller.misDatos);
 // GET /api/v1/usuarios/me/vehiculos — HU-28 · RF-VEH-12 (spec 005)
 router.get('/me/vehiculos', authorize('perfil.ver'), require('../vehiculos/vehiculos.controller').misVehiculos);
 
+// GET /api/v1/usuarios/me/facturas — HU-43 · RF-FAC-16 (spec 009)
+router.get(
+  '/me/facturas',
+  authorize('perfil.ver'),
+  validate({ query: require('../facturas/facturas.validator').listar }),
+  require('../facturas/facturas.controller').misFacturas
+);
+
 // PUT /api/v1/usuarios/me — HU-11 · RF-USR-15, RF-USR-16, RF-USR-17
 router.put(
   '/me',

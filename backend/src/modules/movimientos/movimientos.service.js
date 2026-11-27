@@ -17,6 +17,9 @@ const { ROL_ADMINISTRADOR } = require('../../config/constantes');
 const { placaValida, mensajeFormato } = require('../vehiculos/vehiculos.reglas');
 const { minutosEstadia, masDe24h, puedeAnularOperador, mensajePicoPlaca } = require('./movimientos.reglas');
 
+// Carga diferida: liquidaciones usa reglas de movimientos (evita un ciclo de require).
+const liquidaciones = () => require('../liquidaciones/liquidaciones.service');
+
 const SIN_REGISTRAR = 'Sin registrar';
 const NO_ABIERTO = () => new AppError(404, 'MOVIMIENTO_NO_ABIERTO', 'El vehículo no tiene una entrada registrada');
 
@@ -149,8 +152,15 @@ async function registrarSalida(id, { idPuerta, ticketExtraviado }, actor) {
     await celdas.liberar(conexion, movimiento.celda.idCelda);
     await bitacora(conexion, actor, 'registrar_salida', 'movimiento', id, { idPuerta, minutosEstadia: minutos, ticketExtraviado });
   });
-  // La liquidación (valor a pagar) la calcula la spec 009: GET /movimientos/:id/liquidacion.
-  return { ...publico(await repositorio.obtenerPorId(id), ahora), liquidacion: null };
+  // Spec 009: la salida devuelve la liquidación (RF-MOV-11, RF-FAC-01). Si no hay tarifa vigente, la salida
+  // queda registrada igual y la liquidación queda pendiente (con alerta al Administrador).
+  const movimiento = publico(await repositorio.obtenerPorId(id), ahora);
+  try {
+    return { ...movimiento, liquidacion: await liquidaciones().liquidar(id, actor) };
+  } catch (error) {
+    if (error.code !== 'SIN_TARIFA') throw error;
+    return { ...movimiento, liquidacion: null, liquidacionError: { code: error.code, message: error.message } };
+  }
 }
 
 // ---------------------------------------------------------------- HU-34

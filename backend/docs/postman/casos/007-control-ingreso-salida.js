@@ -216,14 +216,15 @@ module.exports = {
       code: 'PUERTA_NO_VALIDA',
     },
     {
-      nombre: 'HU-33 POST /movimientos/:id/salida — 200 cerrado con minutos y ticket extraviado',
+      nombre: 'HU-33 POST /movimientos/:id/salida — 200 cerrado con minutos, liquidación y ticket extraviado',
       metodo: 'POST',
       ruta: '/movimientos/{{idMovimiento}}/salida',
       token: 'tokenOperador',
       body: { idPuerta: 3, ticketExtraviado: true },
       status: 200,
       pruebas: [
-        "pm.test('cerrado', () => pm.expect(cuerpo.data).to.include({ estado: 'cerrado', liquidacion: null }));",
+        "pm.test('cerrado', () => pm.expect(cuerpo.data.estado).to.eql('cerrado'));",
+        "pm.test('con su liquidación (spec 009)', () => pm.expect(cuerpo.data.liquidacion.total).to.be.a('number'));",
         "pm.test('minutos de estadía', () => pm.expect(cuerpo.data.minutosEstadia).to.be.a('number'));",
         "pm.test('ticket extraviado', () => pm.expect(cuerpo.data.ticket.extraviado).to.eql(true));",
       ],

@@ -39,6 +39,10 @@ function rutasProtegidas() {
     { ruta: '/tickets', router: require('./modules/tickets/tickets.routes') },
     // spec 008-tarifas (GET ?vigentes=true es público: ver arriba)
     { ruta: '/tarifas', router: require('./modules/tarifas/tarifas.routes').tarifasRouter },
+    // spec 009-facturacion-pagos
+    { ruta: '/pagos', router: require('./modules/facturas/facturas.routes').pagosRouter },
+    { ruta: '/facturas', router: require('./modules/facturas/facturas.routes').facturasRouter },
+    { ruta: '/caja', router: require('./modules/caja/caja.routes') },
   ];
 }
 
