@@ -33,4 +33,4 @@
 
 - Iteración 1: pasan todos los ítems.
 - Los códigos de respuesta (401/403/404/409/422) y los códigos de permiso (`roles.ver`, …) se mantienen a propósito, porque vienen literales de los criterios de aceptación de las HU y del SRS (Definición de Terminado). Son parte del contrato que se verifica, no una decisión de implementación.
-- La lista exacta de permisos del catálogo y de los permisos protegidos del Administrador se tomó como supuesto. Se confirma en `/speckit-clarify`.
+- `/speckit-clarify` (2026-11-26): 4 aclaraciones resueltas con los documentos fuente (permisos editables de los roles base, permisos protegidos, semilla del Operador y del Cliente, códigos 409/422). Todos los ítems siguen pasando.

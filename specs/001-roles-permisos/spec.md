@@ -12,6 +12,17 @@
 
 **Depende de**: ninguna spec (es la base del control de acceso). **La usan**: todas las demás specs, porque cada operación exige un permiso de este catálogo.
 
+## Clarifications
+
+### Session 2026-11-26
+
+La usuaria indicó resolver cada pregunta según los documentos entregados. Cada respuesta cita su fuente.
+
+- Q: ¿El Administrador puede cambiar la descripción y los permisos de los roles base, o los roles base quedan fijos? → A: Puede editar la descripción y los permisos. El nombre y el estado quedan fijos, y el rol Administrador conserva siempre sus permisos de gestión. *Fuente:* RF-ROL-03 solo prohíbe eliminar, inactivar y renombrar; el criterio 4 de HU-04 supone que los permisos del rol Administrador se pueden editar.
+- Q: ¿Qué permisos protege RF-ROL-11 en el rol Administrador? → A: Todos los de los módulos `roles` y `usuarios`: `roles.ver`, `roles.crear`, `roles.editar`, `roles.cambiar_estado`, `usuarios.ver`, `usuarios.crear`, `usuarios.editar` y `usuarios.cambiar_estado`. *Fuente:* RF-ROL-11 («permisos de gestión de roles y usuarios») y el criterio 4 de HU-04.
+- Q: ¿Qué permisos tienen en la semilla el Operador y el Cliente? → A: El **Operador** puede registrar y consultar clientes y vehículos; registrar entradas, salidas, pagos, tickets y su cuadre de caja; gestionar reservas e incidencias; y consultar celdas, disponibilidad, tarifas, restricciones de pico y placa, planes y descuentos. No tiene permisos de configuración (roles, parqueaderos, tarifas, descuentos, planes, restricciones) ni de reportes. El **Cliente** puede consultar la disponibilidad, sus vehículos, reservas, membresías, facturas y notificaciones; crear y cancelar sus reservas; y actualizar sus datos. *Fuente:* SRS §2.3 (clases de usuario), RF-ROL-02, criterio 2 de HU-01 y RN-02.
+- Q: ¿Con qué código se rechaza un rol sin permisos o un campo inválido? → A: 422 (validación) para campos inválidos y para la falta de permisos; 409 para nombre duplicado, cambios sobre roles base y roles con usuarios activos. *Fuente:* constitución §II (409 conflicto o regla de negocio, 422 validación de campos) y criterios de HU-02 y HU-04.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Contar con los perfiles iniciales del sistema (Priority: P1) — HU-01
@@ -139,7 +150,10 @@ Como Administrador, quiero ver todos los permisos disponibles agrupados por mód
 **Roles base (HU-01)**
 
 - **FR-001** (RF-ROL-01): El sistema MUST crear en su parametrización inicial exactamente tres roles base activos: Administrador, Operador y Cliente.
-- **FR-002** (RF-ROL-02): El sistema MUST asignar a cada rol base el conjunto de permisos de los datos semilla: Administrador tiene todos; Operador tiene la operación diaria (usuarios clientes, vehículos, movimientos, pagos y caja de su turno, reservas, incidencias, consulta de celdas, tarifas y restricciones); Cliente tiene sus consultas propias, las reservas y la actualización de sus datos.
+- **FR-002** (RF-ROL-02): El sistema MUST asignar a cada rol base el conjunto de permisos de los datos semilla:
+  - **Administrador:** todos los permisos del catálogo.
+  - **Operador:** la operación diaria según la sesión de clarificación (registrar y consultar clientes y vehículos, movimientos, tickets, pagos y caja de su turno, reservas, incidencias, y consultar celdas, tarifas, restricciones, planes y descuentos), sin permisos de configuración ni de reportes.
+  - **Cliente:** sus consultas propias, sus reservas y la actualización de sus datos.
 - **FR-003** (RF-ROL-03, RN-01): El sistema MUST impedir inactivar o renombrar un rol base. No existe una operación para eliminar roles.
 
 **Registro (HU-02)**
@@ -198,8 +212,7 @@ Como Administrador, quiero ver todos los permisos disponibles agrupados por mód
 ## Assumptions
 
 - **Catálogo fijo de permisos**: el catálogo se crea con los datos semilla, con la forma `modulo.accion`, para los módulos de las 15 specs y las acciones de 6.1 (`ver`, `crear`, `editar`, `cambiar_estado`, `anular`, `exportar`), solo en las combinaciones que tienen sentido. El SRS no prevé crear permisos desde la aplicación.
-- **Permisos protegidos del Administrador** (RF-ROL-11): son `roles.ver`, `roles.crear`, `roles.editar`, `roles.cambiar_estado`, `usuarios.ver`, `usuarios.crear`, `usuarios.editar` y `usuarios.cambiar_estado`.
-- **Roles base editables en parte**: RF-ROL-03 prohíbe eliminar, inactivar y renombrar los roles base, pero no cambiar su descripción ni sus permisos. Se permite editar ambos, respetando RF-ROL-11.
+- Los permisos protegidos del Administrador, la posibilidad de editar en parte los roles base y los permisos semilla del Operador y del Cliente quedaron resueltos en la sección **Clarifications**.
 - **Sin borrado**: el Apéndice B.1 no define borrar roles. Retirar un rol equivale a inactivarlo.
 - **Permisos en la sesión**: los permisos del usuario quedan fijos al iniciar sesión (ver spec 003). Por eso RF-ROL-10 se cumple sin invalidar las sesiones abiertas.
 - **Login mínimo**: para probar este módulo hace falta un inicio de sesión con documento y contraseña. Esta spec incluye una versión mínima solo para el Administrador y el Operador; la spec 003 la completa con bloqueo por intentos, cambio de contraseña, autorregistro, recuperación y cierre de sesión.
