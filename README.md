@@ -20,7 +20,8 @@ Se construye con **Spec-Driven Development (GitHub spec-kit)** y **Gitflow**, un
 | `001-roles-permisos` | Roles y permisos + fundación del backend v2 | ✅ implementada |
 | `002-gestion-usuarios` | Usuarios, foto, mis datos y avisos al administrador | ✅ implementada |
 | `003-gestion-acceso` | Bloqueo por intentos, cambio de contraseña, autorregistro, recuperación y cierre de sesión | ✅ implementada |
-| `004`–`015` | celdas, vehículos, pico y placa, movimientos, tarifas, facturación, membresías, descuentos, reservas, incidencias, monitoreo, reportes | pendientes |
+| `004-parqueaderos-celdas` | Parqueaderos, puertas, celdas, mapa por piso y disponibilidad pública | ✅ implementada |
+| `005`–`015` | vehículos, pico y placa, movimientos, tarifas, facturación, membresías, descuentos, reservas, incidencias, monitoreo, reportes | pendientes |
 | `016-festivos-pico-placa` | API externa Nager.Date (festivos para pico y placa, TBD-03) | pendiente |
 
 La versión anterior (PARKO v1, trazabilidad `REQ-`) se conserva en el tag `v0.9.0-legado`.
@@ -143,6 +144,24 @@ Autenticación con `Authorization: Bearer <token>`. Listados con `?page&limit&q`
 | PATCH | `/api/v1/usuarios/:id/estado` | `usuarios.cambiar_estado` | HU-10 |
 | GET | `/api/v1/usuarios/me` | `perfil.ver` | HU-11 |
 | PUT | `/api/v1/usuarios/me` | `perfil.editar` | HU-11 |
+| POST | `/api/v1/parqueaderos` | `parqueaderos.crear` | HU-17 |
+| GET | `/api/v1/parqueaderos?page&limit&q&estado` | `parqueaderos.ver` | HU-17 |
+| GET | `/api/v1/parqueaderos/:id` (con puertas y resumen por piso) | `parqueaderos.ver` | HU-17 |
+| PUT | `/api/v1/parqueaderos/:id` (`estado` exige `parqueaderos.cambiar_estado`) | `parqueaderos.editar` | HU-18 |
+| DELETE | `/api/v1/parqueaderos/:id` (inactiva) | `parqueaderos.cambiar_estado` | HU-18 |
+| GET | `/api/v1/parqueaderos/:id/puertas?uso&estado` | `parqueaderos.ver` | HU-19 |
+| POST | `/api/v1/parqueaderos/:id/puertas` | `parqueaderos.editar` | HU-19 |
+| PUT | `/api/v1/puertas/:id` | `parqueaderos.editar` | HU-19 |
+| POST | `/api/v1/celdas` | `celdas.crear` | HU-20 |
+| POST | `/api/v1/celdas/lote` (máximo 200) | `celdas.crear` | HU-20 |
+| GET | `/api/v1/celdas?parqueadero&piso&tipo&estado&q&page&limit` | `celdas.ver` (placa solo con `movimientos.ver`) | HU-22 |
+| GET | `/api/v1/celdas/:id` | `celdas.ver` | HU-22 |
+| PUT | `/api/v1/celdas/:id` | `celdas.editar` | HU-21 |
+| PATCH | `/api/v1/celdas/:id/estado` | `celdas.cambiar_estado` | HU-21 |
+| DELETE | `/api/v1/celdas/:id` (inhabilita) | `celdas.cambiar_estado` | HU-21 |
+| GET | `/api/v1/disponibilidad?parqueadero` | público, `Cache-Control: no-store` | HU-24 |
+
+Pantallas de la 004: `celdas.html` (mapa por piso que se refresca cada 10 s; personal), `parqueaderos.html`, `parqueadero-detalle.html` (puertas), `disponibilidad.html` (Cliente) y la portada `index.html` (cupos por tipo con «Lleno», sin sesión). El paso de la celda a ocupada y a disponible con cada entrada y salida (HU-23) lo usan los movimientos de la spec 007.
 
 El contrato completo de cada spec está en `specs/NNN-*/contracts/openapi.yaml`.
 

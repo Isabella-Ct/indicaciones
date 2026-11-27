@@ -4,6 +4,20 @@ Historial de `schema.sql` y de las migraciones en `migrations/`. Cada entrada in
 
 ---
 
+## 2.0.0 (sin cambios en el esquema; semilla ampliada) — 2026-11-27 · spec `004-parqueaderos-celdas`
+
+La spec 004 usa `parqueadero`, `puerta_acceso` y `celda` tal como están en la 2.0.0. Solo cambia `seed.sql` (generado con `generar-seed.js`, research R-11):
+
+| Dato | Contenido |
+|---|---|
+| `parqueadero` | 1 «Parqueadero ABC» (Carrera 43 # 47-53, Medellín; 2 pisos; 24 horas; activo) · 2 «Parqueadero ABC · Zona anexa» (inactivo) |
+| `puerta_acceso` | Carrera 43 (mixta), Calle 47 (entrada), Calle 48 (salida) y Portón anexo (mixta, zona anexa) |
+| `celda` | 40: A-01..A-11 carros piso 1 y A-12 inhabilitada («Mantenimiento de la demarcación»); M-01..M-12 motos piso 1; B-01..B-12 carros piso 2; Z-01..Z-04 de la zona anexa, inhabilitadas («Parqueadero inactivo») |
+
+Inactivar un parqueadero pone sus celdas libres en `inhabilitada` con el motivo «Parqueadero inactivo» y reactivarlo devuelve a `disponible` solo esas (RF-CLD-07, research R-03).
+
+---
+
 ## 2.0.0 (sin cambios) — 2026-11-27 · spec `002-gestion-usuarios`
 
 La spec 002 no cambia el esquema: usa `usuario`, `sesion`, `notificacion` y `bitacora` tal como quedaron en la 2.0.0. Las fotos se guardan fuera de la BD (`backend/uploads/usuarios/`); en `usuario.foto_url` va solo la clave relativa (RNF-PRI-03).

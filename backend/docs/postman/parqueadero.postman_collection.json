@@ -3291,6 +3291,2200 @@
           }
         }
       ]
+    },
+    {
+      "name": "004 Parqueaderos y celdas",
+      "description": "SRS B.1 §4.3 — HU-17..HU-24. Ejecutar con la BD sembrada.",
+      "item": [
+        {
+          "name": "HU-17 POST /parqueaderos — 201 activo con horario por defecto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('activo, 24 horas y sin celdas', () => pm.expect(cuerpo.data).to.deep.include({ estado: 'activo', horario: '24 horas', celdas: { carro: 0, moto: 0, total: 0 } }));",
+                  "pm.collectionVariables.set('idParqueadero', cuerpo.data.idParqueadero);",
+                  "pm.collectionVariables.set('parqueaderoNombre', cuerpo.data.nombre);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Sede Postman {{$timestamp}}\",\n  \"direccion\": \"Calle 50 # 40-20\",\n  \"pisos\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-17 POST /parqueaderos — 409 nombre repetido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code PARQUEADERO_DUPLICADO', () => pm.expect(cuerpo.error.code).to.eql('PARQUEADERO_DUPLICADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"PARQUEADERO abc\",\n  \"direccion\": \"Calle 1 # 2-3\",\n  \"pisos\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-17 POST /parqueaderos — 422 dirección vacía y 0 pisos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Sin datos {{$timestamp}}\",\n  \"direccion\": \"\",\n  \"pisos\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /parqueaderos — 403 operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"No permitido\",\n  \"direccion\": \"Calle 1 # 2-3\",\n  \"pisos\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-17 GET /parqueaderos?q=abc — 200 con celdas por tipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('meta de paginación', () => pm.expect(cuerpo.meta).to.include({ page: 1, limit: 10 }));",
+                  "pm.test('Parqueadero ABC con celdas', () => pm.expect(cuerpo.data.find((p) => p.nombre === 'Parqueadero ABC').celdas.total).to.be.above(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos?q=abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "abc"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /parqueaderos — 401 sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code NO_AUTENTICADO', () => pm.expect(cuerpo.error.code).to.eql('NO_AUTENTICADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /parqueaderos — 403 cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-17 GET /parqueaderos/1 — 200 con puertas y resumen",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('puertas de la semilla', () => pm.expect(cuerpo.data.puertas.map((p) => p.nombre)).to.include.members(['Carrera 43', 'Calle 47', 'Calle 48']));",
+                  "pm.test('resumen por piso', () => pm.expect(cuerpo.data.resumen.length).to.be.above(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /parqueaderos/9999 — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code PARQUEADERO_NO_ENCONTRADO', () => pm.expect(cuerpo.error.code).to.eql('PARQUEADERO_NO_ENCONTRADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos/9999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos",
+                "9999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-18 PUT /parqueaderos/:id — 200 cambia el horario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('horario nuevo', () => pm.expect(cuerpo.data).to.include({ horario: '6:00 a. m. – 10:00 p. m.', pisos: 3 }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos/{{idParqueadero}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos",
+                "{{idParqueadero}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{parqueaderoNombre}}\",\n  \"direccion\": \"Calle 50 # 40-20\",\n  \"pisos\": 3,\n  \"horario\": \"6:00 a. m. – 10:00 p. m.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-18 PUT /parqueaderos/:id — 409 nombre de otro parqueadero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code PARQUEADERO_DUPLICADO', () => pm.expect(cuerpo.error.code).to.eql('PARQUEADERO_DUPLICADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos/{{idParqueadero}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos",
+                "{{idParqueadero}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Parqueadero ABC\",\n  \"direccion\": \"Calle 50 # 40-20\",\n  \"pisos\": 3\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-18 PUT /parqueaderos/9999 — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code PARQUEADERO_NO_ENCONTRADO', () => pm.expect(cuerpo.error.code).to.eql('PARQUEADERO_NO_ENCONTRADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos/9999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos",
+                "9999"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"No existe {{$timestamp}}\",\n  \"direccion\": \"Calle 1 # 2-3\",\n  \"pisos\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-19 POST /parqueaderos/:id/puertas — 201 puerta mixta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('activa y mixta', () => pm.expect(cuerpo.data).to.include({ tipo: 'mixta', estado: 'activo' }));",
+                  "pm.collectionVariables.set('idPuerta', cuerpo.data.idPuerta);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos/{{idParqueadero}}/puertas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos",
+                "{{idParqueadero}}",
+                "puertas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Carrera 43\",\n  \"tipo\": \"mixta\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-19 POST /parqueaderos/1/puertas — 409 nombre repetido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code PUERTA_DUPLICADA', () => pm.expect(cuerpo.error.code).to.eql('PUERTA_DUPLICADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos/1/puertas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos",
+                "1",
+                "puertas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"carrera 43\",\n  \"tipo\": \"entrada\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-19 POST /parqueaderos/2/puertas — 409 parqueadero inactivo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code PARQUEADERO_INACTIVO', () => pm.expect(cuerpo.error.code).to.eql('PARQUEADERO_INACTIVO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos/2/puertas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos",
+                "2",
+                "puertas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Nueva\",\n  \"tipo\": \"mixta\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-19 GET /parqueaderos/1/puertas?uso=entrada — 200 sin las de salida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('sin Calle 48 (solo salida)', () => pm.expect(cuerpo.data.map((p) => p.nombre)).to.not.include('Calle 48'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos/1/puertas?uso=entrada",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos",
+                "1",
+                "puertas"
+              ],
+              "query": [
+                {
+                  "key": "uso",
+                  "value": "entrada"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /parqueaderos/1/puertas?uso=lateral — 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos/1/puertas?uso=lateral",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos",
+                "1",
+                "puertas"
+              ],
+              "query": [
+                {
+                  "key": "uso",
+                  "value": "lateral"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-19 PUT /puertas/:id — 200 edita e inactiva",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('inactiva', () => pm.expect(cuerpo.data).to.include({ nombre: 'Carrera 43 norte', estado: 'inactivo' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/puertas/{{idPuerta}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "puertas",
+                "{{idPuerta}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Carrera 43 norte\",\n  \"tipo\": \"salida\",\n  \"estado\": \"inactivo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PUT /puertas/9999 — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code PUERTA_NO_ENCONTRADA', () => pm.expect(cuerpo.error.code).to.eql('PUERTA_NO_ENCONTRADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/puertas/9999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "puertas",
+                "9999"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"X1\",\n  \"tipo\": \"mixta\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-20 POST /celdas — 201 código en mayúsculas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('A-01 disponible', () => pm.expect(cuerpo.data).to.include({ codigo: 'A-01', estado: 'disponible', area: 'A' }));",
+                  "pm.collectionVariables.set('idCelda', cuerpo.data.idCelda);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idParqueadero\": \"{{idParqueadero}}\",\n  \"codigo\": \" a-01 \",\n  \"tipoVehiculo\": \"carro\",\n  \"piso\": 1,\n  \"area\": \"a\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-20 POST /celdas — 409 celda repetida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code CELDA_DUPLICADA', () => pm.expect(cuerpo.error.code).to.eql('CELDA_DUPLICADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idParqueadero\": \"{{idParqueadero}}\",\n  \"codigo\": \"a-01\",\n  \"tipoVehiculo\": \"carro\",\n  \"piso\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-20 POST /celdas — 422 piso fuera del parqueadero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idParqueadero\": \"{{idParqueadero}}\",\n  \"codigo\": \"A-50\",\n  \"tipoVehiculo\": \"carro\",\n  \"piso\": 9\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /celdas — 403 operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idParqueadero\": \"{{idParqueadero}}\",\n  \"codigo\": \"Q-1\",\n  \"tipoVehiculo\": \"carro\",\n  \"piso\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-20 POST /celdas/lote — 201 M-01..M-10",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('10 creadas', () => pm.expect(cuerpo.data.creadas).to.have.length(10));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/lote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "lote"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idParqueadero\": \"{{idParqueadero}}\",\n  \"prefijo\": \"M-\",\n  \"desde\": 1,\n  \"hasta\": 10,\n  \"tipoVehiculo\": \"moto\",\n  \"piso\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-20 POST /celdas/lote — 201 informa las omitidas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('M-09 y M-10 omitidas', () => pm.expect(cuerpo.data.omitidas).to.eql(['M-09', 'M-10']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/lote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "lote"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idParqueadero\": \"{{idParqueadero}}\",\n  \"prefijo\": \"m-\",\n  \"desde\": 9,\n  \"hasta\": 12,\n  \"tipoVehiculo\": \"moto\",\n  \"piso\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /celdas/lote — 422 rango invertido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/lote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "lote"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idParqueadero\": \"{{idParqueadero}}\",\n  \"prefijo\": \"X-\",\n  \"desde\": 9,\n  \"hasta\": 1,\n  \"tipoVehiculo\": \"moto\",\n  \"piso\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-22 GET /celdas?parqueadero&piso&tipo=moto — 200 filtrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('12 motos', () => { pm.expect(cuerpo.meta.total).to.eql(12); cuerpo.data.forEach((c) => pm.expect(c.tipoVehiculo).to.eql('moto')); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas?parqueadero={{idParqueadero}}&piso=1&tipo=moto&limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas"
+              ],
+              "query": [
+                {
+                  "key": "parqueadero",
+                  "value": "{{idParqueadero}}"
+                },
+                {
+                  "key": "piso",
+                  "value": "1"
+                },
+                {
+                  "key": "tipo",
+                  "value": "moto"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-22 GET /celdas?estado=disponible — 200 cliente sin ocupante",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('sin datos del ocupante', () => cuerpo.data.forEach((c) => pm.expect(c.ocupante).to.eql(null)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas?estado=disponible&limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "disponible"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /celdas?estado=llena — 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas?estado=llena",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "llena"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /celdas — 401 sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code NO_AUTENTICADO', () => pm.expect(cuerpo.error.code).to.eql('NO_AUTENTICADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-22 GET /celdas/:id — 200 detalle",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('A-01', () => pm.expect(cuerpo.data.codigo).to.eql('A-01'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/{{idCelda}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "{{idCelda}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /celdas/999999 — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code CELDA_NO_ENCONTRADA', () => pm.expect(cuerpo.error.code).to.eql('CELDA_NO_ENCONTRADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-21 PUT /celdas/:id — 200 edita tipo, piso y área",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('piso 2 y área NORTE', () => pm.expect(cuerpo.data).to.include({ piso: 2, area: 'NORTE' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/{{idCelda}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "{{idCelda}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"A-01\",\n  \"tipoVehiculo\": \"carro\",\n  \"piso\": 2,\n  \"area\": \"norte\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-21 PUT /celdas/:id — 409 código de otra celda",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code CELDA_DUPLICADA', () => pm.expect(cuerpo.error.code).to.eql('CELDA_DUPLICADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/{{idCelda}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "{{idCelda}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"M-01\",\n  \"tipoVehiculo\": \"moto\",\n  \"piso\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-21 PATCH /celdas/:id/estado — 422 inhabilitar sin motivo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/{{idCelda}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "{{idCelda}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"inhabilitada\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-21 PATCH /celdas/:id/estado — 409 marcar ocupada a mano",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code CAMBIO_ESTADO_NO_PERMITIDO', () => pm.expect(cuerpo.error.code).to.eql('CAMBIO_ESTADO_NO_PERMITIDO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/{{idCelda}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "{{idCelda}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"ocupada\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-21 PATCH /celdas/:id/estado — 200 inhabilita con motivo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('inhabilitada', () => pm.expect(cuerpo.data).to.include({ estado: 'inhabilitada', motivoInhabilitacion: 'Mantenimiento' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/{{idCelda}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "{{idCelda}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"inhabilitada\",\n  \"motivo\": \"Mantenimiento\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PATCH /celdas/:id/estado — 403 operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/{{idCelda}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "{{idCelda}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"disponible\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-21 PATCH /celdas/:id/estado — 200 habilita",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('disponible sin motivo', () => pm.expect(cuerpo.data).to.include({ estado: 'disponible', motivoInhabilitacion: null }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/{{idCelda}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "{{idCelda}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"disponible\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-21 DELETE /celdas/:id — 200 inhabilita (no borra)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('inhabilitada', () => pm.expect(cuerpo.data.estado).to.eql('inhabilitada'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/{{idCelda}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "{{idCelda}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE /celdas/999999 — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code CELDA_NO_ENCONTRADA', () => pm.expect(cuerpo.error.code).to.eql('CELDA_NO_ENCONTRADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-24 GET /disponibilidad — 200 sin sesión y sin placas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('Parqueadero ABC con carros y motos', () => pm.expect(cuerpo.data.parqueaderos.find((p) => p.nombre === 'Parqueadero ABC').tipos).to.have.keys('carro', 'moto'));",
+                  "pm.test('sin datos personales', () => pm.expect(JSON.stringify(cuerpo)).to.not.match(/placa|documento|correo/i));",
+                  "pm.test('no-store', () => pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/disponibilidad",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "disponibilidad"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-24 GET /disponibilidad?parqueadero=:id — 200 cupos por tipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('carros: la única celda está inhabilitada (no cuenta)', () => pm.expect(cuerpo.data.parqueaderos[0].tipos.carro).to.eql({ disponibles: 0, total: 0, lleno: false }));",
+                  "pm.test('motos: 12 libres', () => pm.expect(cuerpo.data.parqueaderos[0].tipos.moto).to.eql({ disponibles: 12, total: 12, lleno: false }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/disponibilidad?parqueadero={{idParqueadero}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "disponibilidad"
+              ],
+              "query": [
+                {
+                  "key": "parqueadero",
+                  "value": "{{idParqueadero}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /disponibilidad?parqueadero=abc — 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/disponibilidad?parqueadero=abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "disponibilidad"
+              ],
+              "query": [
+                {
+                  "key": "parqueadero",
+                  "value": "abc"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-18 DELETE /parqueaderos/:id — 403 operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos/{{idParqueadero}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos",
+                "{{idParqueadero}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-18 DELETE /parqueaderos/:id — 200 inactiva",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('inactivo', () => pm.expect(cuerpo.data.estado).to.eql('inactivo'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos/{{idParqueadero}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos",
+                "{{idParqueadero}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-20 POST /celdas — 409 parqueadero inactivo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code PARQUEADERO_INACTIVO', () => pm.expect(cuerpo.error.code).to.eql('PARQUEADERO_INACTIVO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idParqueadero\": \"{{idParqueadero}}\",\n  \"codigo\": \"Z-99\",\n  \"tipoVehiculo\": \"carro\",\n  \"piso\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-18 PUT /parqueaderos/:id — 200 reactiva",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('activo', () => pm.expect(cuerpo.data.estado).to.eql('activo'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parqueaderos/{{idParqueadero}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parqueaderos",
+                "{{idParqueadero}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{parqueaderoNombre}}\",\n  \"direccion\": \"Calle 50 # 40-20\",\n  \"pisos\": 3,\n  \"estado\": \"activo\"\n}"
+            }
+          }
+        }
+      ]
     }
   ]
 }

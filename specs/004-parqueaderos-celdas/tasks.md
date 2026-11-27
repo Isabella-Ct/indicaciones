@@ -74,21 +74,21 @@ description: "Lista de tareas de 004-parqueaderos-celdas"
 
 ## Fase 11: Interfaz (Atomic Design)
 
-- [ ] T019 [P] Átomo `ponerChipCelda` en `atomos/chip-estado.js`; moléculas `moleculas/consulta-periodica.js`, `pestanas.js` y `kpi.js`; organismo `organismos/mapa-celdas.js`, con el CSS que haga falta por nivel
-- [ ] T020 [P] Servicios `js/services/parqueaderos.service.js`, `celdas.service.js` y `disponibilidad.service.js`
-- [ ] T021 `herramientas/paginas-004.js` + regenerar: menú «Celdas» (`celdas.ver` con `movimientos.ver`), «Parqueaderos» (`parqueaderos.ver`) y «Disponibilidad» (Cliente); `MENU` en `config.js`
-- [ ] T022 [US1] [US2] `parqueaderos.html` + `views/parqueaderos.view.js` (listado, nuevo, editar, inactivar y reactivar)
-- [ ] T023 [US3] `parqueadero-detalle.html` + vista (datos, resumen y puertas con diálogo)
-- [ ] T024 [US4] [US5] [US6] [US7] `celdas.html` + `views/celdas.view.js` (selector de parqueadero, pestañas por piso, filtros, mapa, detalle con el ocupante, nueva, rango, editar, inhabilitar y habilitar, consulta cada 10 s)
-- [ ] T025 [P] [US6] `disponibilidad.html` + vista del Cliente (celdas disponibles por piso y área, consulta cada 10 s)
-- [ ] T026 [P] [US8] `index.html` + `views/inicio.view.js` (tarjetas por tipo con «Lleno» y la hora, consulta cada 10 s)
+- [X] T019 [P] Átomo `ponerChipCelda` en `atomos/chip-estado.js`; moléculas `moleculas/consulta-periodica.js`, `pestanas.js` y `kpi.js`; organismo `organismos/mapa-celdas.js`, con el CSS que haga falta por nivel
+- [X] T020 [P] Servicios `js/services/parqueaderos.service.js`, `celdas.service.js` y `disponibilidad.service.js`
+- [X] T021 `herramientas/paginas-004.js` + regenerar: menú «Celdas» (`celdas.ver` con `movimientos.ver`), «Parqueaderos» (`parqueaderos.ver`) y «Disponibilidad» (Cliente); `MENU` en `config.js`
+- [X] T022 [US1] [US2] `parqueaderos.html` + `views/parqueaderos.view.js` (listado, nuevo, editar, inactivar y reactivar)
+- [X] T023 [US3] `parqueadero-detalle.html` + vista (datos, resumen y puertas con diálogo)
+- [X] T024 [US4] [US5] [US6] [US7] `celdas.html` + `views/celdas.view.js` (selector de parqueadero, pestañas por piso, filtros, mapa, detalle con el ocupante, nueva, rango, editar, inhabilitar y habilitar, consulta cada 10 s)
+- [X] T025 [P] [US6] `disponibilidad.html` + vista del Cliente (celdas disponibles por piso y área, consulta cada 10 s)
+- [X] T026 [P] [US8] `index.html` + `views/inicio.view.js` (tarjetas por tipo con «Lleno» y la hora, consulta cada 10 s)
 
 ## Fase 12: Pulido y transversales
 
-- [ ] T027 Carpeta Postman `casos/004-parqueaderos-celdas.js`; `npm run test:api` en verde dos veces seguidas
-- [ ] T028 [P] `README.md` (endpoints, pantallas) y `CAMBIOS.md` (semilla 2.0.0 con la infraestructura)
-- [ ] T029 Cobertura de los services ≥ 80 %, lint, `node --check`, `herramientas/verificar-front.js`, revisión de que no queden textos en inglés, medición de `GET /celdas` y `/disponibilidad` y prueba manual en escritorio y a 375 px
-- [ ] T030 Verificar que cada escenario HU-17..HU-24 tenga su prueba y su caso Postman, y marcar `[X]`
+- [X] T027 Carpeta Postman `casos/004-parqueaderos-celdas.js`; `npm run test:api` en verde dos veces seguidas
+- [X] T028 [P] `README.md` (endpoints, pantallas) y `CAMBIOS.md` (semilla 2.0.0 con la infraestructura)
+- [X] T029 Cobertura de los services ≥ 80 %, lint, `node --check`, `herramientas/verificar-front.js`, revisión de que no queden textos en inglés, medición de `GET /celdas` y `/disponibilidad` y prueba manual en escritorio y a 375 px — prueba manual en el navegador pendiente (usuaria)
+- [X] T030 Verificar que cada escenario HU-17..HU-24 tenga su prueba y su caso Postman, y marcar `[X]`
 
 ## Dependencias y orden de ejecución
 
