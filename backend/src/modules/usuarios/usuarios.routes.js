@@ -1,123 +1,53 @@
-// Usuarios — REQ-USR-2, REQ-USR-3, REQ-USR-4, REQ-USR-5
+// /api/v1/usuarios — SRS Apéndice B.1 §4.2 (spec 002-gestion-usuarios) + /:id/foto [Propuesta].
+// authenticate se aplica al montar el router (app.js). Las rutas /me van antes de /:id.
 const { Router } = require('express');
-const { auth } = require('../../middlewares/auth');
-const { requirePermiso } = require('../../middlewares/require-permiso');
-const { validate } = require('../../middlewares/validate');
-const { subirImagen } = require('../../middlewares/upload');
-const esquemas = require('./usuarios.schemas');
 const controller = require('./usuarios.controller');
-const estadiasController = require('../estadias/estadias.controller');
-const esquemasEstadias = require('../estadias/estadias.schemas');
-const facturasController = require('../facturas/facturas.controller');
-const esquemasFacturas = require('../facturas/facturas.schemas');
-const membresiasController = require('../membresias/membresias.controller');
-const incidenciasController = require('../incidencias/incidencias.controller');
-const esquemasIncidencias = require('../incidencias/incidencias.schemas');
-const reservasController = require('../reservas/reservas.controller');
-const esquemasReservas = require('../reservas/reservas.schemas');
+const esquemas = require('./usuarios.validator');
+const { authorize } = require('../../middlewares/authorize');
+const { validate } = require('../../middlewares/validate');
+const { subirFoto } = require('../../middlewares/subir-foto');
 
 const router = Router();
-router.use(auth());
 
-// GET /api/v1/usuarios — listado completo, solo administrador
-router.get(
-  '/',
-  requirePermiso('usuarios.ver'),
-  validate({ query: esquemas.listar }),
-  controller.listar
-);
+// GET /api/v1/usuarios/me — HU-11 · RF-USR-15
+router.get('/me', authorize('perfil.ver'), controller.misDatos);
 
-// GET /api/v1/usuarios/buscar?documento= — clientes activos para el user-picker (admin/operador)
-router.get(
-  '/buscar',
-  requirePermiso('usuarios.buscar'),
-  validate({ query: esquemas.buscar }),
-  controller.buscar
-);
-
-// GET/PUT /api/v1/usuarios/me — mis datos (REQ-USR-4: notifica a los administradores)
-router.get('/me', controller.miPerfil);
+// PUT /api/v1/usuarios/me — HU-11 · RF-USR-15, RF-USR-16, RF-USR-17
 router.put(
   '/me',
-  requirePermiso('perfil.editar'),
-  subirImagen('foto'),
-  validate({ body: esquemas.editarMiPerfil }),
-  controller.actualizarMiPerfil
+  authorize('perfil.editar'),
+  subirFoto,
+  validate({ body: esquemas.perfilEntrada }),
+  controller.actualizarMisDatos
 );
 
-// GET /api/v1/usuarios/me/vehiculos — vehículos del usuario en sesión
-router.get('/me/vehiculos', controller.misVehiculos);
+// POST /api/v1/usuarios — HU-07 · RF-USR-01..05
+router.post('/', authorize('usuarios.crear'), subirFoto, validate({ body: esquemas.usuarioEntrada }), controller.crear);
 
-// GET /api/v1/usuarios/me/estadias — historial de entradas y salidas de mis vehículos
-router.get(
-  '/me/estadias',
-  validate({ query: esquemasEstadias.historial }),
-  estadiasController.misEstadias
-);
+// GET /api/v1/usuarios?page&limit&q&rol&estado — HU-08 · RF-USR-06, RF-USR-08
+router.get('/', authorize('usuarios.ver'), validate({ query: esquemas.listar }), controller.listar);
 
-// GET /api/v1/usuarios/me/facturas — mis facturas (REQ-FAC-2)
-router.get(
-  '/me/facturas',
-  validate({ query: esquemasFacturas.listar }),
-  facturasController.misFacturas
-);
+// GET /api/v1/usuarios/:id — HU-08 · RF-USR-07
+router.get('/:id', authorize('usuarios.ver'), validate({ params: esquemas.params }), controller.obtener);
 
-// GET /api/v1/usuarios/me/membresias — mis mensualidades
-router.get('/me/membresias', membresiasController.misMembresias);
+// GET /api/v1/usuarios/:id/foto — [Propuesta] RNF-PRI-03 (alcance verificado en el servicio)
+router.get('/:id/foto', validate({ params: esquemas.params }), controller.foto);
 
-// GET /api/v1/usuarios/me/reservas — mis reservas (REQ-RES-1)
-router.get('/me/reservas', validate({ query: esquemasReservas.listar }), reservasController.mias);
-
-// GET /api/v1/usuarios/me/incidencias — incidencias de mis vehículos (REQ-INCD-1)
-router.get(
-  '/me/incidencias',
-  validate({ query: esquemasIncidencias.listar }),
-  incidenciasController.mias
-);
-
-// GET /api/v1/usuarios/:id — administrador, o el propio usuario
-router.get('/:id', validate({ params: esquemas.params }), controller.obtener);
-
-// POST /api/v1/usuarios — REQ-USR-2 (multipart con foto opcional)
-router.post(
-  '/',
-  requirePermiso('usuarios.crear'),
-  subirImagen('foto'),
-  validate({ body: esquemas.crear }),
-  controller.crear
-);
-
-// PUT /api/v1/usuarios/:id — REQ-USR-5
+// PUT /api/v1/usuarios/:id — HU-09 · RF-USR-09, RF-USR-10, RF-USR-11
 router.put(
   '/:id',
-  requirePermiso('usuarios.editar'),
-  subirImagen('foto'),
-  validate({ params: esquemas.params, body: esquemas.editar }),
+  authorize('usuarios.editar'),
+  subirFoto,
+  validate({ params: esquemas.params, body: esquemas.usuarioEdicion }),
   controller.actualizar
 );
 
-// PATCH /api/v1/usuarios/:id/estado — REQ-USR-3
+// PATCH /api/v1/usuarios/:id/estado — HU-10 · RF-USR-12, RF-USR-13, RF-USR-14
 router.patch(
   '/:id/estado',
-  requirePermiso('usuarios.cambiar_estado'),
-  validate({ params: esquemas.params, body: esquemas.cambiarEstado }),
+  authorize('usuarios.cambiar_estado'),
+  validate({ params: esquemas.params, body: esquemas.cambioEstado }),
   controller.cambiarEstado
-);
-
-// DELETE /api/v1/usuarios/:id — borrado lógico (queda inactivo), REQ-USR-3
-router.delete(
-  '/:id',
-  requirePermiso('usuarios.cambiar_estado'),
-  validate({ params: esquemas.params }),
-  controller.eliminar
-);
-
-// PATCH /api/v1/usuarios/:id/contrasena — REQ-USR-5: contraseña temporal asignada por el admin
-router.patch(
-  '/:id/contrasena',
-  requirePermiso('usuarios.editar'),
-  validate({ params: esquemas.params, body: esquemas.restablecerContrasena }),
-  controller.restablecerContrasena
 );
 
 module.exports = router;

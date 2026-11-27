@@ -1,41 +1,37 @@
-// Configura Express: seguridad, parsers, estáticos del frontend, rutas /api/v1 y errores.
+// Configura Express: seguridad, parsers, API /api/v1, estáticos del frontend y errores (SRS 2.1:
+// un solo servidor expone la API y sirve el frontend).
 const path = require('node:path');
 const express = require('express');
 const helmet = require('helmet');
-const cookieParser = require('cookie-parser');
+const cors = require('cors');
 const env = require('./config/env');
-const { limiteApi } = require('./middlewares/rate-limit');
+const { authenticate } = require('./middlewares/authenticate');
 const { noEncontrado, errorHandler } = require('./middlewares/error-handler');
 
 const saludRoutes = require('./modules/salud/salud.routes');
 const authRoutes = require('./modules/auth/auth.routes');
-const parqueaderoRoutes = require('./modules/parqueadero/parqueadero.routes');
-const rolesRoutes = require('./modules/roles/roles.routes');
-const usuariosRoutes = require('./modules/usuarios/usuarios.routes');
-const vehiculosRoutes = require('./modules/vehiculos/vehiculos.routes');
-const pisosRoutes = require('./modules/pisos/pisos.routes');
-const celdasRoutes = require('./modules/celdas/celdas.routes');
-const puertasRoutes = require('./modules/puertas/puertas.routes');
-const publicoRoutes = require('./modules/publico/publico.routes');
-const picoPlacaRoutes = require('./modules/pico-placa/pico-placa.routes');
-const estadiasRoutes = require('./modules/estadias/estadias.routes');
-const accesosDenegadosRoutes = require('./modules/estadias/accesos-denegados.routes');
-const tarifasRoutes = require('./modules/tarifas/tarifas.routes');
-const descuentosRoutes = require('./modules/descuentos/descuentos.routes');
-const membresiasRoutes = require('./modules/membresias/membresias.routes');
-const facturasRoutes = require('./modules/facturas/facturas.routes');
-const notificacionesRoutes = require('./modules/notificaciones/notificaciones.routes');
-const incidenciasRoutes = require('./modules/incidencias/incidencias.routes');
-const tiposIncidenciaRoutes = require('./modules/incidencias/tipos-incidencia.routes');
-const reportesRoutes = require('./modules/reportes/reportes.routes');
-const reservasRoutes = require('./modules/reservas/reservas.routes');
-const dashboardRoutes = require('./modules/dashboard/dashboard.routes');
-const configuracionRoutes = require('./modules/configuracion/configuracion.routes');
-const { auth } = require('./middlewares/auth');
-const { requirePermiso } = require('./middlewares/require-permiso');
-const { CARPETA_UPLOADS } = require('./utils/archivos');
 
 const CARPETA_FRONTEND = path.join(__dirname, '..', '..', 'frontend');
+
+/**
+ * Rutas protegidas: cada módulo exporta { ruta, router }. Todas pasan por authenticate
+ * (RNF-SEG-03) y cada endpoint declara su permiso con authorize (RNF-SEG-04).
+ * Se cargan de forma diferida para que cada spec agregue la suya aquí.
+ */
+function rutasProtegidas() {
+  const { rolesRouter, permisosRouter } = require('./modules/roles/roles.routes');
+  return [
+    // spec 001-roles-permisos
+    { ruta: '/roles', router: rolesRouter },
+    { ruta: '/permisos', router: permisosRouter },
+    // spec 002-gestion-usuarios
+    { ruta: '/usuarios', router: require('./modules/usuarios/usuarios.routes') },
+    // spec 004-parqueaderos-celdas
+    { ruta: '/parqueaderos', router: require('./modules/parqueaderos/parqueaderos.routes').parqueaderosRouter },
+    { ruta: '/puertas', router: require('./modules/parqueaderos/parqueaderos.routes').puertasRouter },
+    { ruta: '/celdas', router: require('./modules/celdas/celdas.routes') },
+  ];
+}
 
 function crearApp() {
   const app = express();
@@ -53,61 +49,37 @@ function crearApp() {
           imgSrc: ["'self'", 'data:', 'blob:'],
           connectSrc: ["'self'"],
           objectSrc: ["'none'"],
-          // Mapa embebido de la página pública (OpenStreetMap, sin API key).
-          frameSrc: ['https://www.openstreetmap.org'],
           frameAncestors: ["'none'"],
-          // En local se sirve por http: no forzar https.
+          // En local se sirve por http: no forzar https (RNF-SEG-01 aplica en producción).
           upgradeInsecureRequests: env.NODE_ENV === 'production' ? [] : null,
         },
       },
     })
   );
+  // CORS solo si el frontend se sirve desde otro origen (constitución §III).
+  if (env.CORS_ORIGIN) {
+    app.use(
+      '/api',
+      cors({
+        origin: env.CORS_ORIGIN.split(',').map((o) => o.trim()),
+        allowedHeaders: ['Content-Type', 'Authorization'],
+      })
+    );
+  }
   app.use(express.json({ limit: '100kb' }));
-  app.use(cookieParser());
 
   // ---------- API ----------
   const api = express.Router();
-  if (env.NODE_ENV !== 'test') api.use(limiteApi);
-  api.use('/salud', saludRoutes);
+  // Públicas (RNF-SEG-03)
+  api.use('/health', saludRoutes);
   api.use('/auth', authRoutes);
-  api.use('/parqueadero', parqueaderoRoutes);
-  api.use('/roles', rolesRoutes);
-  api.use('/usuarios', usuariosRoutes);
-  api.use('/vehiculos', vehiculosRoutes);
-  api.use('/pisos', pisosRoutes);
-  api.use('/celdas', celdasRoutes);
-  api.use('/puertas', puertasRoutes);
-  api.use('/publico', publicoRoutes);
-  api.use('/pico-placa', picoPlacaRoutes);
-  api.use('/estadias', estadiasRoutes);
-  api.use('/accesos-denegados', accesosDenegadosRoutes);
-  api.use('/tarifas', tarifasRoutes);
-  api.use('/descuentos', descuentosRoutes);
-  api.use('/membresias', membresiasRoutes);
-  api.use('/facturas', facturasRoutes);
-  api.use('/notificaciones', notificacionesRoutes);
-  api.use('/incidencias', incidenciasRoutes);
-  api.use('/tipos-incidencia', tiposIncidenciaRoutes);
-  api.use('/reportes', reportesRoutes);
-  api.use('/reservas', reservasRoutes);
-  api.use('/dashboard', dashboardRoutes);
-  api.use('/configuracion', configuracionRoutes);
+  api.use('/disponibilidad', require('./modules/disponibilidad/disponibilidad.routes'));
+  // Protegidas
+  for (const { ruta, router } of rutasProtegidas()) api.use(ruta, authenticate, router);
   app.use('/api/v1', api);
-
-  // ---------- Archivos subidos (fotos): solo con sesión iniciada ----------
-  // Las fotos de lectura de placa (REQ-PLA-1) son solo para el personal.
-  app.use('/uploads/lecturas', auth(), requirePermiso('movimientos.ver'));
-  app.use(
-    '/uploads',
-    auth({ permitirCambioPendiente: true }),
-    express.static(CARPETA_UPLOADS, { index: false, dotfiles: 'deny' })
-  );
+  app.use('/api', noEncontrado);
 
   // ---------- Frontend estático ----------
-  // El catálogo de componentes es solo para desarrollo.
-  app.use('/app/_catalogo.html', (req, res, next) =>
-    env.NODE_ENV === 'production' ? noEncontrado(req, res) : next()
-  );
   app.use(express.static(CARPETA_FRONTEND, { index: 'index.html', extensions: ['html'] }));
 
   app.use(noEncontrado);
@@ -115,4 +87,4 @@ function crearApp() {
   return app;
 }
 
-module.exports = { crearApp };
+module.exports = { crearApp, rutasProtegidas };

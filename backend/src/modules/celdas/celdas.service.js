@@ -1,234 +1,223 @@
-// Reglas de negocio de celdas — REQ-CLD-01, REQ-CLD-02, REQ-CLD-03.
-const { enTransaccion } = require('../../config/db');
-const { AppError, errores } = require('../../utils/errores');
-const { publicarCambioCelda } = require('../../realtime/celdas-tiempo-real');
-const vehiculosService = require('../vehiculos/vehiculos.service');
-const repo = require('./celdas.repository');
-const { aPublico, puedeVerOcupantes } = require('./celdas.mapper');
-const { construirResumen } = require('./celdas.resumen');
+// Reglas de celdas (spec 004): RF-CLD-09..21, RN-09, RN-10, RNF-SAF-01. Además ofrece a la spec 007 las
+// operaciones de dominio ocupar, liberar y sugerir, que corren dentro de la transacción del movimiento.
+const { withTransaction } = require('../../config/db');
+const repositorio = require('./celdas.repository');
+const { codigosDelRango, transicionManual } = require('./celdas.reglas');
+const { errores, AppError } = require('../../utils/errores');
+const { registrarBitacora } = require('../../utils/bitacora');
+const { aLimites, meta } = require('../../utils/paginacion');
 
-const conflicto = (codigo, mensaje, detalles) => new AppError(409, codigo, mensaje, detalles);
+const NO_ENCONTRADA = () => errores.noEncontrado('Celda no encontrada.', 'CELDA_NO_ENCONTRADA');
+const MOTIVO_RETIRO = 'Retirada por el administrador';
 
-async function listar(filtros, solicitante) {
-  const verInactivas =
-    filtros.incluir_inactivas === '1' && solicitante.permisos.includes('celdas.gestionar');
-  const filas = await repo.listar({ ...filtros, incluirInactivas: verInactivas });
-  const verOcupantes = puedeVerOcupantes(solicitante);
-  const propios = verOcupantes ? null : await repo.vehiculosDeUsuario(solicitante.id);
-  return filas.map((f) => aPublico(f, verOcupantes, propios));
+/** RF-CLD-18 / RNF-PRI-02: la placa y la hora solo para quien tiene movimientos.ver. */
+function publica(celda, actor) {
+  if (!celda) return celda;
+  const { _ocupante, _parqueaderoEstado: _e, _pisos: _p, _idVehiculoActual: _v, ...resto } = celda;
+  const veOcupante = actor?.permisos?.includes('movimientos.ver');
+  return { ...resto, ocupante: veOcupante ? _ocupante : null };
 }
 
-async function obtener(id, solicitante) {
-  const fila = await repo.buscarDetalle(id);
-  if (!fila || (!fila.activa && !solicitante.permisos.includes('celdas.gestionar'))) {
-    throw errores.noEncontrado('La celda no existe.');
+function traducirDuplicado(error) {
+  if (error.code === 'ER_DUP_ENTRY' && String(error.message).includes('uq_celda_codigo')) {
+    throw errores.conflicto('La celda ya existe en este parqueadero.', 'CELDA_DUPLICADA');
   }
-  const verOcupantes = puedeVerOcupantes(solicitante);
-  const propios = verOcupantes ? null : await repo.vehiculosDeUsuario(solicitante.id);
-  return aPublico(fila, verOcupantes, propios);
+  throw error;
 }
 
-async function resumen() {
-  return construirResumen(await repo.filasResumen());
+/** Parqueadero existente, activo y con el piso dentro de 1..pisos (RF-CLD-11). */
+async function parqueaderoValido(idParqueadero, piso, conexion) {
+  const parqueadero = await repositorio.parqueaderoParaCeldas(idParqueadero, { conexion });
+  if (!parqueadero) throw errores.validacion([{ campo: 'idParqueadero', mensaje: 'El parqueadero no existe.' }]);
+  if (parqueadero.estado !== 'activo') throw errores.conflicto('El parqueadero está inactivo.', 'PARQUEADERO_INACTIVO');
+  if (piso > parqueadero.pisos) {
+    throw errores.validacion([{ campo: 'piso', mensaje: `El parqueadero tiene ${parqueadero.pisos} pisos.` }]);
+  }
+  return parqueadero;
 }
 
-/** Valida que el vehículo pueda ocupar la celda (mismo tipo, activo, sin otra celda). */
-async function validarOcupante(celda, vehiculoId, conexion) {
-  let vehiculo;
+const ocupadaPor = (celda) =>
+  errores.conflicto(`La celda está ocupada por ${celda._ocupante?.placa ?? 'un vehículo'}.`, 'CELDA_OCUPADA');
+
+const bitacora = (conexion, actor, accion, idRegistro, anterior, nuevo) =>
+  registrarBitacora(conexion, { idUsuario: actor.idUsuario, accion, entidad: 'celda', idRegistro, anterior, nuevo, ip: actor.ip });
+
+// ---------------------------------------------------------------- HU-20
+/** RF-CLD-09..11. */
+async function crear(datos, actor) {
   try {
-    vehiculo = await vehiculosService.obtener(vehiculoId);
-  } catch {
-    throw errores.validacion(
-      [{ campo: 'vehiculo_id', mensaje: 'El vehículo no existe.' }],
-      'El vehículo no existe.'
-    );
+    const id = await withTransaction(async (conexion) => {
+      await parqueaderoValido(datos.idParqueadero, datos.piso, conexion);
+      const idCelda = await repositorio.insertar(datos, { conexion });
+      await bitacora(conexion, actor, 'crear', idCelda, null, { ...datos, estado: 'disponible' });
+      return idCelda;
+    });
+    return publica(await repositorio.obtenerPorId(id), actor);
+  } catch (error) {
+    return traducirDuplicado(error);
   }
-  if (!vehiculo.activo) {
-    throw errores.validacion(
-      [{ campo: 'vehiculo_id', mensaje: 'El vehículo está inactivo.' }],
-      'El vehículo está inactivo.'
-    );
-  }
-  if (vehiculo.tipo !== celda.tipo) {
-    const mensaje = `La celda ${celda.codigo} es de ${celda.tipo} y el vehículo ${vehiculo.placa} es ${vehiculo.tipo}.`;
-    throw new AppError(422, 'TIPO_INCOMPATIBLE', mensaje, [{ campo: 'vehiculo_id', mensaje }]);
-  }
-  const otra = await repo.celdaDelVehiculo(vehiculoId, conexion);
-  if (otra && otra.id !== celda.id) {
-    throw conflicto(
-      'VEHICULO_YA_UBICADO',
-      `El vehículo ${vehiculo.placa} ya ocupa la celda ${otra.codigo}.`
-    );
-  }
-  return vehiculo;
 }
 
-/**
- * REQ-CLD-03: cambio manual de estado.
- * - ocupada: con un vehículo del mismo tipo que no esté en otra celda.
- * - disponible: nunca con una estadía en curso; si es celda fija de una
- *   mensualidad (o tiene reserva activa) vuelve a "reservada".
- * - fuera_servicio: con nota; no si está ocupada.
- */
-async function cambiarEstado(id, { estado, vehiculo_id, nota }) {
-  const resultado = await enTransaccion(async (conexion) => {
-    const celda = await repo.bloquear(id, conexion);
-    if (!celda) throw errores.noEncontrado('La celda no existe.');
-    if (!celda.activa)
-      throw conflicto('CELDA_INACTIVA', `La celda ${celda.codigo} está desactivada.`);
-
-    const membresia = await repo.membresiaFija(id, conexion);
-    const reserva = await repo.reservaActiva(id, conexion);
-
-    if (estado === 'ocupada') {
-      if (celda.estado === 'ocupada')
-        throw conflicto('CELDA_OCUPADA', `La celda ${celda.codigo} ya está ocupada.`);
-      if (celda.estado === 'fuera_servicio') {
-        throw conflicto(
-          'CELDA_FUERA_SERVICIO',
-          `La celda ${celda.codigo} está fuera de servicio: habilítala primero.`
-        );
-      }
-      const titular = membresia?.vehiculo_id ?? reserva?.vehiculo_id;
-      if (celda.estado === 'reservada' && titular && titular !== vehiculo_id) {
-        throw conflicto(
-          'CELDA_RESERVADA',
-          `La celda ${celda.codigo} está reservada para otro vehículo.`
-        );
-      }
-      await validarOcupante(celda, vehiculo_id, conexion);
-      try {
-        await repo.actualizarEstado(
-          id,
-          { estado: 'ocupada', vehiculo_actual_id: vehiculo_id },
-          conexion
-        );
-      } catch (err) {
-        if (err.code === 'ER_DUP_ENTRY')
-          throw conflicto('VEHICULO_YA_UBICADO', 'El vehículo ya ocupa otra celda.');
-        throw err;
-      }
-      return { estado: 'ocupada' };
+/** RF-CLD-12: crea las que no existen e informa las omitidas. */
+async function crearLote({ idParqueadero, prefijo, desde, hasta, tipoVehiculo, piso, area }, actor) {
+  let codigos;
+  try {
+    codigos = codigosDelRango(prefijo, desde, hasta);
+  } catch (error) {
+    throw errores.validacion([{ campo: error.campo, mensaje: error.message }]);
+  }
+  return withTransaction(async (conexion) => {
+    await parqueaderoValido(idParqueadero, piso, conexion);
+    const existentes = new Set(await repositorio.codigosExistentes(idParqueadero, codigos, { conexion }));
+    const creadas = codigos.filter((c) => !existentes.has(c));
+    const omitidas = codigos.filter((c) => existentes.has(c));
+    await repositorio.insertarVarias(idParqueadero, creadas, { tipoVehiculo, piso, area }, { conexion });
+    if (creadas.length) {
+      await registrarBitacora(conexion, {
+        idUsuario: actor.idUsuario,
+        accion: 'crear_lote',
+        entidad: 'celda',
+        idRegistro: idParqueadero,
+        nuevo: { creadas, tipoVehiculo, piso, area },
+        ip: actor.ip,
+      });
     }
-
-    if (estado === 'disponible') {
-      if (await repo.tieneEstadiaAbierta(id, conexion)) {
-        throw conflicto(
-          'ESTADIA_EN_CURSO',
-          `La celda ${celda.codigo} tiene un vehículo con estadía en curso: registra su salida para liberarla.`
-        );
-      }
-      const final = membresia || reserva ? 'reservada' : 'disponible';
-      if (celda.estado === final) {
-        throw conflicto(
-          'SIN_CAMBIO',
-          `La celda ${celda.codigo} ya está ${final === 'reservada' ? 'reservada' : 'disponible'}.`
-        );
-      }
-      await repo.actualizarEstado(id, { estado: final }, conexion);
-      return { estado: final };
-    }
-
-    // fuera_servicio
-    if (celda.estado === 'ocupada') {
-      throw conflicto(
-        'CELDA_OCUPADA',
-        `La celda ${celda.codigo} está ocupada: libérala antes de sacarla de servicio.`
-      );
-    }
-    await repo.actualizarEstado(id, { estado: 'fuera_servicio', nota }, conexion);
-    return { estado: 'fuera_servicio' };
+    return { creadas, omitidas };
   });
-
-  await publicarCambioCelda(id);
-  return resultado;
 }
 
-async function validarDatos(datos, excluirId = 0) {
-  const piso = await repo.obtenerPiso(datos.piso_id);
-  if (!piso) throw errores.validacion([{ campo: 'piso_id', mensaje: 'El piso no existe.' }]);
-  if (await repo.existeCodigo(piso.parqueadero_id, datos.codigo, excluirId)) {
-    throw conflicto('CODIGO_DUPLICADO', `Ya existe una celda con el código ${datos.codigo}.`, [
-      { campo: 'codigo', mensaje: 'Este código ya existe.' },
-    ]);
+// ---------------------------------------------------------------- HU-22
+/** RF-CLD-16..18. */
+async function listar({ page, limit, q, parqueadero, piso, tipo, estado }, actor) {
+  const { celdas, total } = await repositorio.listar({
+    idParqueadero: parqueadero,
+    piso,
+    tipo,
+    estado,
+    q,
+    ...aLimites({ page, limit }),
+  });
+  return { data: celdas.map((c) => publica(c, actor)), meta: meta({ page, limit }, total) };
+}
+
+async function obtener(id, actor) {
+  const celda = await repositorio.obtenerPorId(id);
+  if (!celda) throw NO_ENCONTRADA();
+  return publica(celda, actor);
+}
+
+// ---------------------------------------------------------------- HU-21
+/** RF-CLD-13: editar una celda que no esté ocupada. */
+async function actualizar(id, datos, actor) {
+  try {
+    await withTransaction(async (conexion) => {
+      const celda = await repositorio.obtenerPorId(id, { conexion, bloquear: true });
+      if (!celda) throw NO_ENCONTRADA();
+      if (celda.estado === 'ocupada') throw ocupadaPor(celda);
+      if (datos.piso > celda._pisos) {
+        throw errores.validacion([{ campo: 'piso', mensaje: `El parqueadero tiene ${celda._pisos} pisos.` }]);
+      }
+      const anterior = { codigo: celda.codigo, tipoVehiculo: celda.tipoVehiculo, piso: celda.piso, area: celda.area };
+      const cambiados = Object.keys(anterior).filter((k) => anterior[k] !== datos[k]);
+      if (cambiados.length === 0) return;
+      await repositorio.actualizar(id, datos, { conexion });
+      await bitacora(
+        conexion,
+        actor,
+        'editar',
+        id,
+        Object.fromEntries(cambiados.map((k) => [k, anterior[k]])),
+        Object.fromEntries(cambiados.map((k) => [k, datos[k]]))
+      );
+    });
+  } catch (error) {
+    return traducirDuplicado(error);
   }
-  const ocupante = await repo.celdaEnPosicion(
-    datos.piso_id,
-    datos.fila_mapa,
-    datos.posicion,
-    excluirId
-  );
-  if (ocupante) {
-    throw conflicto(
-      'POSICION_OCUPADA',
-      `La posición ${datos.posicion} de la fila ${datos.fila_mapa} en ${piso.nombre} ya la tiene la celda ${ocupante}.`,
-      [{ campo: 'posicion', mensaje: `Posición ocupada por ${ocupante}.` }]
+  return obtener(id, actor);
+}
+
+const MENSAJES_TRANSICION = {
+  CAMBIO_ESTADO_NO_PERMITIDO: () => 'La ocupación se registra con una entrada; la reserva, desde Reservas.',
+  CELDA_RESERVADA: () => 'La celda está reservada; se libera desde Reservas.',
+};
+
+/** RF-CLD-14/15, RN-09 (research R-05): solo inhabilitar y habilitar a mano. */
+async function cambiarEstado(id, { estado, motivo }, actor) {
+  await withTransaction(async (conexion) => {
+    const celda = await repositorio.obtenerPorId(id, { conexion, bloquear: true });
+    if (!celda) throw NO_ENCONTRADA();
+    const transicion = transicionManual(celda.estado, estado);
+    if (!transicion.permitido) {
+      if (transicion.code === 'CELDA_OCUPADA') throw ocupadaPor(celda);
+      throw errores.conflicto(MENSAJES_TRANSICION[transicion.code](), transicion.code);
+    }
+    if (transicion.sinCambios) return;
+    const nuevoMotivo = estado === 'inhabilitada' ? motivo : null;
+    await repositorio.cambiarEstado(id, estado, nuevoMotivo, { conexion });
+    await bitacora(
+      conexion,
+      actor,
+      'cambiar_estado',
+      id,
+      { estado: celda.estado, motivo: celda.motivoInhabilitacion },
+      { estado, motivo: nuevoMotivo }
     );
-  }
-  return piso;
+  });
+  return obtener(id, actor);
 }
 
-async function crear(datos, solicitante) {
-  const piso = await validarDatos(datos);
-  const id = await repo.insertar({ ...datos, parqueadero_id: piso.parqueadero_id });
-  await publicarCambioCelda(id);
-  return obtener(id, solicitante);
+/** DELETE /celdas/:id: inhabilitación lógica (RF-CLD-14). */
+const inhabilitar = (id, actor) => cambiarEstado(id, { estado: 'inhabilitada', motivo: MOTIVO_RETIRO }, actor);
+
+// ---------------------------------------------------------------- HU-23 · operaciones de dominio (spec 007)
+/**
+ * RF-CLD-19, RNF-SAF-01: ocupa la celda con el vehículo dentro de la transacción del movimiento.
+ * La celda debe estar disponible o reservada (la reserva del mismo vehículo la valida la spec 012),
+ * ser del tipo del vehículo y pertenecer a un parqueadero activo.
+ */
+async function ocupar(conexion, { idCelda, idVehiculo, tipoVehiculo }) {
+  const celda = await repositorio.obtenerPorId(idCelda, { conexion, bloquear: true });
+  if (!celda) throw NO_ENCONTRADA();
+  if (celda._parqueaderoEstado !== 'activo' || !['disponible', 'reservada'].includes(celda.estado)) {
+    throw errores.conflicto(`La celda ${celda.codigo} no está disponible.`, 'CELDA_NO_DISPONIBLE');
+  }
+  if (celda.tipoVehiculo !== tipoVehiculo) {
+    throw errores.conflicto(`La celda ${celda.codigo} es para ${celda.tipoVehiculo}.`, 'TIPO_CELDA_INCOMPATIBLE');
+  }
+  try {
+    await repositorio.ocupar(idCelda, idVehiculo, { conexion });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      throw errores.conflicto('El vehículo ya ocupa otra celda.', 'VEHICULO_EN_OTRA_CELDA');
+    }
+    throw error;
+  }
+  return celda;
 }
 
-async function actualizar(id, datos, solicitante) {
-  const actual = await repo.buscarDetalle(id);
-  if (!actual) throw errores.noEncontrado('La celda no existe.');
-  const piso = await validarDatos(datos, id);
-  if (
-    datos.tipo !== actual.tipo &&
-    (actual.estado === 'ocupada' || actual.membresia_id || actual.reserva_id)
-  ) {
-    throw conflicto(
-      'CELDA_EN_USO',
-      `No se puede cambiar el tipo de ${actual.codigo} mientras esté ocupada o asignada a una mensualidad o reserva.`
-    );
+/** RF-CLD-20: libera la celda (salida o anulación de la entrada). */
+async function liberar(conexion, idCelda) {
+  const celda = await repositorio.obtenerPorId(idCelda, { conexion, bloquear: true });
+  if (!celda) throw NO_ENCONTRADA();
+  if (celda.estado !== 'ocupada') {
+    throw new AppError(409, 'CELDA_NO_OCUPADA', `La celda ${celda.codigo} no está ocupada.`);
   }
-  await repo.actualizar(id, { ...datos, parqueadero_id: piso.parqueadero_id });
-  await publicarCambioCelda(id);
-  return obtener(id, solicitante);
+  await repositorio.liberar(idCelda, { conexion });
 }
 
-/** Borrado lógico: solo celdas libres o fuera de servicio y sin mensualidad/reserva. */
-async function cambiarActiva(id, activa, solicitante) {
-  const actual = await repo.buscarDetalle(id);
-  if (!actual) throw errores.noEncontrado('La celda no existe.');
-  if (Boolean(actual.activa) === activa) {
-    throw conflicto(
-      'SIN_CAMBIO',
-      `La celda ${actual.codigo} ya está ${activa ? 'activa' : 'desactivada'}.`
-    );
-  }
-  if (
-    !activa &&
-    (!['disponible', 'fuera_servicio'].includes(actual.estado) ||
-      actual.membresia_id ||
-      actual.reserva_id)
-  ) {
-    throw conflicto(
-      'CELDA_EN_USO',
-      `La celda ${actual.codigo} está en uso (ocupada, reservada o con mensualidad): no se puede desactivar.`
-    );
-  }
-  await repo.actualizarActiva(id, activa);
-  await publicarCambioCelda(id);
-  return obtener(id, solicitante);
-}
-
-/** Vehículos de un cliente (para el SSE del mapa). */
-const vehiculosDeUsuario = (usuarioId) => repo.vehiculosDeUsuario(usuarioId);
+/** RF-MOV-04: id de la celda disponible de menor código del tipo, o null si no hay. */
+const sugerir = (conexion, { idParqueadero, tipoVehiculo }) =>
+  repositorio.primeraDisponible(idParqueadero, tipoVehiculo, { conexion });
 
 module.exports = {
-  vehiculosDeUsuario,
+  crear,
+  crearLote,
   listar,
   obtener,
-  resumen,
-  cambiarEstado,
-  crear,
   actualizar,
-  cambiarActiva,
+  cambiarEstado,
+  inhabilitar,
+  ocupar,
+  liberar,
+  sugerir,
 };

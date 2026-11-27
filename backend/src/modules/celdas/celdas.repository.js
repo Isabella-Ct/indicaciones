@@ -1,218 +1,146 @@
-// Acceso a datos de celdas. La consulta de detalle une el vehículo actual, la
-// estadía abierta, la mensualidad con celda fija vigente y la reserva activa.
+// Único lugar con SQL de celdas. El ocupante (placa y hora de entrada) sale de vehiculo y del movimiento
+// abierto de la celda (research R-07). Acepta una conexión opcional para la transacción.
 const { pool } = require('../../config/db');
+const { escapeLike } = require('../../utils/sql');
+const { aIsoBogota } = require('../../utils/fechas');
 
-// Las columnas generadas *_abierta / *_activa (únicas) garantizan 0 o 1 fila por celda.
-const SELECT_DETALLE = `
-  SELECT c.id, c.parqueadero_id, c.piso_id, p.nombre AS piso_nombre, p.orden AS piso_orden,
-         c.codigo, c.area, c.tipo, c.es_accesible, c.fila_mapa, c.posicion, c.estado,
-         c.vehiculo_actual_id, c.nota, c.activa,
-         v.placa, v.marca, v.modelo, v.color,
-         CONCAT_WS(' ', uo.primer_nombre, uo.primer_apellido) AS propietario_nombre,
-         e.id AS estadia_id, e.codigo_ticket, e.fecha_hora_entrada, e.tipo_cliente,
-         m.id AS membresia_id, m.fecha_fin AS membresia_fin, m.vehiculo_id AS membresia_vehiculo_id,
-         vm.placa AS membresia_placa,
-         CONCAT_WS(' ', ut.primer_nombre, ut.primer_apellido) AS titular_nombre,
-         r.id AS reserva_id, r.fecha_hora_expiracion AS reserva_expira,
-         r.vehiculo_id AS reserva_vehiculo_id, vr.placa AS reserva_placa
-    FROM celdas c
-    JOIN pisos p ON p.id = c.piso_id
-    LEFT JOIN vehiculos v ON v.id = c.vehiculo_actual_id
-    LEFT JOIN usuarios uo ON uo.id = v.usuario_id
-    LEFT JOIN estadias e ON e.celda_estadia_abierta = c.id
-    LEFT JOIN membresias m ON m.id = (
-      SELECT m2.id FROM membresias m2
-       WHERE m2.celda_asignada_id = c.id AND m2.estado = 'activa'
-         AND CURDATE() BETWEEN m2.fecha_inicio AND m2.fecha_fin
-       ORDER BY m2.fecha_fin DESC LIMIT 1)
-    LEFT JOIN vehiculos vm ON vm.id = m.vehiculo_id
-    LEFT JOIN usuarios ut ON ut.id = m.usuario_id
-    LEFT JOIN reservas r ON r.celda_reserva_activa = c.id
-    LEFT JOIN vehiculos vr ON vr.id = r.vehiculo_id`;
+const COLUMNAS = `c.id_celda, c.id_parqueadero, p.nombre AS parqueadero, p.estado AS parqueadero_estado, p.pisos,
+  c.codigo, c.tipo_vehiculo, c.piso, c.area, c.estado, c.motivo_inhabilitacion, c.id_vehiculo_actual,
+  v.placa AS ocupante_placa, v.tipo AS ocupante_tipo, m.fecha_hora_entrada AS ocupante_entrada`;
 
-const ORDEN = 'ORDER BY p.orden, c.fila_mapa, c.posicion';
+const DESDE = `FROM celda c
+  JOIN parqueadero p ON p.id_parqueadero = c.id_parqueadero
+  LEFT JOIN vehiculo v ON v.id_vehiculo = c.id_vehiculo_actual
+  LEFT JOIN movimiento m ON m.id_celda = c.id_celda AND m.estado = 'abierto'`;
 
-async function listar({
-  id,
-  piso_id,
-  area,
-  tipo,
-  estado,
-  accesible,
-  incluirInactivas = false,
-} = {}) {
+function aCelda(f) {
+  return {
+    idCelda: f.id_celda,
+    idParqueadero: f.id_parqueadero,
+    parqueadero: f.parqueadero,
+    codigo: f.codigo,
+    tipoVehiculo: f.tipo_vehiculo,
+    piso: f.piso,
+    area: f.area,
+    estado: f.estado,
+    motivoInhabilitacion: f.motivo_inhabilitacion,
+    // Datos internos (el servicio decide si se muestran, RF-CLD-18).
+    _ocupante: f.ocupante_placa
+      ? { placa: f.ocupante_placa, tipo: f.ocupante_tipo, fechaHoraEntrada: aIsoBogota(f.ocupante_entrada) }
+      : null,
+    _parqueaderoEstado: f.parqueadero_estado,
+    _pisos: f.pisos,
+    _idVehiculoActual: f.id_vehiculo_actual,
+  };
+}
+
+/** RF-CLD-16/17: celdas filtradas, ordenadas por piso, área y código. */
+async function listar({ idParqueadero, piso, tipo, estado, q, limit, offset }) {
   const condiciones = [];
   const valores = [];
   const agregar = (sql, valor) => {
     condiciones.push(sql);
     valores.push(valor);
   };
-  if (id) agregar('c.id = ?', id);
-  if (piso_id) agregar('c.piso_id = ?', piso_id);
-  if (area) agregar('c.area = ?', area);
-  if (tipo) agregar('c.tipo = ?', tipo);
+  if (idParqueadero) agregar('c.id_parqueadero = ?', idParqueadero);
+  if (piso) agregar('c.piso = ?', piso);
+  if (tipo) agregar('c.tipo_vehiculo = ?', tipo);
   if (estado) agregar('c.estado = ?', estado);
-  if (accesible !== undefined) agregar('c.es_accesible = ?', Number(accesible));
-  if (!incluirInactivas) condiciones.push('c.activa = 1');
-  const where = condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '';
-  const [filas] = await pool.query(`${SELECT_DETALLE} ${where} ${ORDEN}`, valores);
-  return filas;
-}
-
-async function buscarDetalle(id) {
-  return (await listar({ id, incluirInactivas: true }))[0] ?? null;
-}
-
-/** Bloquea la celda para cambiar su estado dentro de una transacción. */
-async function bloquear(id, conexion) {
-  const [filas] = await conexion.query('SELECT * FROM celdas WHERE id = ? FOR UPDATE', [id]);
-  return filas[0] ?? null;
-}
-
-async function tieneEstadiaAbierta(celdaId, conexion = pool) {
-  const [filas] = await conexion.query(
-    'SELECT id FROM estadias WHERE celda_estadia_abierta = ? LIMIT 1',
-    [celdaId]
-  );
-  return filas.length > 0;
-}
-
-/** Mensualidad vigente con esta celda fija (o null). */
-async function membresiaFija(celdaId, conexion = pool) {
-  const [filas] = await conexion.query(
-    `SELECT id, vehiculo_id FROM membresias
-      WHERE celda_asignada_id = ? AND estado = 'activa'
-        AND CURDATE() BETWEEN fecha_inicio AND fecha_fin
-      ORDER BY fecha_fin DESC LIMIT 1`,
-    [celdaId]
-  );
-  return filas[0] ?? null;
-}
-
-async function reservaActiva(celdaId, conexion = pool) {
-  const [filas] = await conexion.query(
-    'SELECT id, vehiculo_id FROM reservas WHERE celda_reserva_activa = ? LIMIT 1',
-    [celdaId]
-  );
-  return filas[0] ?? null;
-}
-
-/** Celda donde está hoy un vehículo (o null). */
-async function celdaDelVehiculo(vehiculoId, conexion = pool) {
-  const [filas] = await conexion.query(
-    'SELECT id, codigo FROM celdas WHERE vehiculo_actual_id = ? LIMIT 1',
-    [vehiculoId]
-  );
-  return filas[0] ?? null;
-}
-
-async function actualizarEstado(id, { estado, vehiculo_actual_id, nota }, conexion = pool) {
-  await conexion.query(
-    'UPDATE celdas SET estado = ?, vehiculo_actual_id = ?, nota = ? WHERE id = ?',
-    [estado, vehiculo_actual_id ?? null, nota ?? null, id]
-  );
-}
-
-/** Filas mínimas para el resumen (solo celdas activas). */
-async function filasResumen() {
+  if (q) agregar('c.codigo LIKE ?', `%${escapeLike(q.toUpperCase())}%`);
+  const donde = condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '';
   const [filas] = await pool.query(
-    `SELECT c.estado, c.tipo, c.area, c.piso_id, p.nombre AS piso_nombre, p.orden AS piso_orden
-       FROM celdas c JOIN pisos p ON p.id = c.piso_id
-      WHERE c.activa = 1`
+    `SELECT ${COLUMNAS} ${DESDE} ${donde} ORDER BY p.nombre, c.piso, c.area, c.codigo LIMIT ? OFFSET ?`,
+    [...valores, limit, offset]
   );
-  return filas;
+  const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total FROM celda c ${donde}`, valores);
+  return { celdas: filas.map(aCelda), total: Number(total) };
 }
 
-async function obtenerPiso(id) {
-  const [filas] = await pool.query('SELECT id, parqueadero_id, nombre FROM pisos WHERE id = ?', [
+async function obtenerPorId(id, { conexion = pool, bloquear = false } = {}) {
+  if (bloquear) await conexion.query('SELECT id_celda FROM celda WHERE id_celda = ? FOR UPDATE', [id]);
+  const [filas] = await conexion.query(`SELECT ${COLUMNAS} ${DESDE} WHERE c.id_celda = ?`, [id]);
+  return filas[0] ? aCelda(filas[0]) : null;
+}
+
+/** Datos del parqueadero que se necesitan al crear celdas (bloqueado: no cambia de pisos o estado mientras tanto). */
+async function parqueaderoParaCeldas(idParqueadero, { conexion }) {
+  const [filas] = await conexion.query(
+    'SELECT id_parqueadero, pisos, estado FROM parqueadero WHERE id_parqueadero = ? FOR UPDATE',
+    [idParqueadero]
+  );
+  return filas[0] ?? null;
+}
+
+async function insertar({ idParqueadero, codigo, tipoVehiculo, piso, area }, { conexion }) {
+  const [r] = await conexion.query(
+    "INSERT INTO celda (id_parqueadero, codigo, tipo_vehiculo, piso, area, estado) VALUES (?, ?, ?, ?, ?, 'disponible')",
+    [idParqueadero, codigo, tipoVehiculo, piso, area]
+  );
+  return r.insertId;
+}
+
+/** Códigos que ya existen en el parqueadero (para el lote). */
+async function codigosExistentes(idParqueadero, codigos, { conexion }) {
+  if (codigos.length === 0) return [];
+  const [filas] = await conexion.query('SELECT codigo FROM celda WHERE id_parqueadero = ? AND codigo IN (?)', [idParqueadero, codigos]);
+  return filas.map((f) => f.codigo.toUpperCase());
+}
+
+async function insertarVarias(idParqueadero, codigos, { tipoVehiculo, piso, area }, { conexion }) {
+  if (codigos.length === 0) return;
+  await conexion.query('INSERT INTO celda (id_parqueadero, codigo, tipo_vehiculo, piso, area, estado) VALUES ?', [
+    codigos.map((codigo) => [idParqueadero, codigo, tipoVehiculo, piso, area, 'disponible']),
+  ]);
+}
+
+async function actualizar(id, { codigo, tipoVehiculo, piso, area }, { conexion }) {
+  await conexion.query('UPDATE celda SET codigo = ?, tipo_vehiculo = ?, piso = ?, area = ? WHERE id_celda = ?', [
+    codigo,
+    tipoVehiculo,
+    piso,
+    area,
     id,
   ]);
-  return filas[0] ?? null;
 }
 
-async function existeCodigo(parqueaderoId, codigo, excluirId = 0) {
-  const [filas] = await pool.query(
-    'SELECT 1 FROM celdas WHERE parqueadero_id = ? AND codigo = ? AND id <> ? LIMIT 1',
-    [parqueaderoId, codigo, excluirId]
-  );
-  return filas.length > 0;
+async function cambiarEstado(id, estado, motivo, { conexion }) {
+  await conexion.query('UPDATE celda SET estado = ?, motivo_inhabilitacion = ? WHERE id_celda = ?', [estado, motivo, id]);
 }
 
-/** Código de la celda que ya ocupa esa posición del mapa (o null). */
-async function celdaEnPosicion(pisoId, fila, posicion, excluirId = 0) {
-  const [filas] = await pool.query(
-    'SELECT codigo FROM celdas WHERE piso_id = ? AND fila_mapa = ? AND posicion = ? AND id <> ? LIMIT 1',
-    [pisoId, fila, posicion, excluirId]
-  );
-  return filas[0]?.codigo ?? null;
-}
-
-async function insertar(datos) {
-  const [resultado] = await pool.query(
-    `INSERT INTO celdas
-       (parqueadero_id, piso_id, codigo, area, tipo, es_accesible, fila_mapa, posicion, estado, nota)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      datos.parqueadero_id,
-      datos.piso_id,
-      datos.codigo,
-      datos.area,
-      datos.tipo,
-      datos.es_accesible ? 1 : 0,
-      datos.fila_mapa,
-      datos.posicion,
-      datos.estado,
-      datos.nota ?? null,
-    ]
-  );
-  return resultado.insertId;
-}
-
-async function actualizar(id, datos) {
-  await pool.query(
-    `UPDATE celdas
-        SET parqueadero_id = ?, piso_id = ?, codigo = ?, area = ?, tipo = ?, es_accesible = ?,
-            fila_mapa = ?, posicion = ?
-      WHERE id = ?`,
-    [
-      datos.parqueadero_id,
-      datos.piso_id,
-      datos.codigo,
-      datos.area,
-      datos.tipo,
-      datos.es_accesible ? 1 : 0,
-      datos.fila_mapa,
-      datos.posicion,
-      id,
-    ]
+/** RF-CLD-19: ocupa la celda con el vehículo (la validación previa es del servicio). */
+async function ocupar(id, idVehiculo, { conexion }) {
+  await conexion.query(
+    "UPDATE celda SET estado = 'ocupada', id_vehiculo_actual = ?, motivo_inhabilitacion = NULL WHERE id_celda = ?",
+    [idVehiculo, id]
   );
 }
 
-async function actualizarActiva(id, activa) {
-  await pool.query('UPDATE celdas SET activa = ? WHERE id = ?', [activa ? 1 : 0, id]);
+/** RF-CLD-20: deja la celda disponible y sin vehículo. */
+async function liberar(id, { conexion }) {
+  await conexion.query("UPDATE celda SET estado = 'disponible', id_vehiculo_actual = NULL WHERE id_celda = ?", [id]);
 }
 
-/** Ids de los vehículos activos de un usuario (para marcar sus celdas en el mapa). */
-async function vehiculosDeUsuario(usuarioId) {
-  const [filas] = await pool.query('SELECT id FROM vehiculos WHERE usuario_id = ?', [usuarioId]);
-  return new Set(filas.map((f) => f.id));
+/** RF-MOV-04 (para la spec 007): celda disponible de menor código del tipo, sin esperar a filas bloqueadas. */
+async function primeraDisponible(idParqueadero, tipoVehiculo, { conexion }) {
+  const [filas] = await conexion.query(
+    `SELECT c.id_celda FROM celda c JOIN parqueadero p ON p.id_parqueadero = c.id_parqueadero
+      WHERE c.id_parqueadero = ? AND c.tipo_vehiculo = ? AND c.estado = 'disponible' AND p.estado = 'activo'
+      ORDER BY c.codigo LIMIT 1 FOR UPDATE SKIP LOCKED`,
+    [idParqueadero, tipoVehiculo]
+  );
+  return filas[0]?.id_celda ?? null;
 }
 
 module.exports = {
-  vehiculosDeUsuario,
   listar,
-  buscarDetalle,
-  bloquear,
-  tieneEstadiaAbierta,
-  membresiaFija,
-  reservaActiva,
-  celdaDelVehiculo,
-  actualizarEstado,
-  filasResumen,
-  obtenerPiso,
-  existeCodigo,
-  celdaEnPosicion,
+  obtenerPorId,
+  parqueaderoParaCeldas,
   insertar,
+  codigosExistentes,
+  insertarVarias,
   actualizar,
-  actualizarActiva,
+  cambiarEstado,
+  ocupar,
+  liberar,
+  primeraDisponible,
 };
