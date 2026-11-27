@@ -6745,6 +6745,819 @@
           }
         }
       ]
+    },
+    {
+      "name": "006 Pico y placa",
+      "description": "SRS B.1 §4.6 — HU-29 y HU-30. Ejecutar con la BD sembrada.",
+      "item": [
+        {
+          "name": "HU-29 GET /restricciones-placa — 200 tabla semanal de la semilla",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('lunes a viernes para carros y motos', () => pm.expect(cuerpo.data.filter((r) => r.vigenteDesde === '2026-01-01').length).to.eql(10));",
+                  "pm.test('dígitos como lista', () => pm.expect(cuerpo.data[0].digitos).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa?estado=activo&limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "activo"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /restricciones-placa — 401 sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code NO_AUTENTICADO', () => pm.expect(cuerpo.error.code).to.eql('NO_AUTENTICADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /restricciones-placa?dia=9 — 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa?dia=9",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa"
+              ],
+              "query": [
+                {
+                  "key": "dia",
+                  "value": "9"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-29 POST /restricciones-placa — 201 sábado, carros 6 y 9",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const anio = 2200 + Math.floor(Math.random() * 7000);",
+                  "pm.collectionVariables.set('pypDesde', anio + '-01-01');",
+                  "pm.collectionVariables.set('pypHasta', anio + '-12-31');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('activa con los dígitos ordenados', () => pm.expect(cuerpo.data).to.deep.include({ estado: 'activo', digitos: [6, 9], posicionDigito: 'ultimo', nombreDia: 'sábado' }));",
+                  "pm.collectionVariables.set('idRestriccion', cuerpo.data.idRestriccion);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diaSemana\": 6,\n  \"tipoVehiculo\": \"carro\",\n  \"digitos\": [\n    9,\n    6\n  ],\n  \"horaInicio\": \"05:00\",\n  \"horaFin\": \"20:00\",\n  \"vigenteDesde\": \"{{pypDesde}}\",\n  \"vigenteHasta\": \"{{pypHasta}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-29 POST /restricciones-placa — 409 superpuesta con la anterior",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code RESTRICCION_SUPERPUESTA', () => pm.expect(cuerpo.error.code).to.eql('RESTRICCION_SUPERPUESTA'));",
+                  "pm.test('indica la existente', () => pm.expect(cuerpo.error.details[0].mensaje).to.eql(String(pm.collectionVariables.get('idRestriccion'))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diaSemana\": 6,\n  \"tipoVehiculo\": \"carro\",\n  \"digitos\": [\n    1\n  ],\n  \"horaInicio\": \"06:00\",\n  \"horaFin\": \"07:00\",\n  \"vigenteDesde\": \"{{pypDesde}}\",\n  \"vigenteHasta\": \"{{pypHasta}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-29 POST /restricciones-placa — 422 dígito 12",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diaSemana\": 7,\n  \"tipoVehiculo\": \"carro\",\n  \"digitos\": [\n    12\n  ],\n  \"horaInicio\": \"05:00\",\n  \"horaFin\": \"20:00\",\n  \"vigenteDesde\": \"{{pypDesde}}\",\n  \"vigenteHasta\": \"{{pypHasta}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-29 POST /restricciones-placa — 422 hora fin anterior",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));",
+                  "pm.test('campo horaFin', () => pm.expect(cuerpo.error.details.map((d) => d.campo)).to.include('horaFin'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diaSemana\": 7,\n  \"tipoVehiculo\": \"carro\",\n  \"digitos\": [\n    6,\n    9\n  ],\n  \"horaInicio\": \"05:00\",\n  \"horaFin\": \"04:00\",\n  \"vigenteDesde\": \"{{pypDesde}}\",\n  \"vigenteHasta\": \"{{pypHasta}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-29 POST /restricciones-placa — 403 operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diaSemana\": 7,\n  \"tipoVehiculo\": \"carro\",\n  \"digitos\": [\n    6,\n    9\n  ],\n  \"horaInicio\": \"05:00\",\n  \"horaFin\": \"20:00\",\n  \"vigenteDesde\": \"{{pypDesde}}\",\n  \"vigenteHasta\": \"{{pypHasta}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-30 GET /restricciones-placa/hoy — 200 operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('fecha, día y tipos', () => pm.expect(cuerpo.data).to.include.keys('fecha', 'diaSemana', 'nombreDia', 'tipos', 'mensaje'));",
+                  "pm.test('de lunes a viernes hay restricción; fin de semana, «Sin restricción hoy»', () => { if (cuerpo.data.diaSemana <= 5) pm.expect(cuerpo.data.tipos.carro.digitos.length).to.be.above(0); else pm.expect(cuerpo.data.mensaje).to.eql('Sin restricción hoy'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa/hoy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa",
+                "hoy"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-30 GET /restricciones-placa/hoy — 200 cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa/hoy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa",
+                "hoy"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /restricciones-placa/hoy — 401 sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code NO_AUTENTICADO', () => pm.expect(cuerpo.error.code).to.eql('NO_AUTENTICADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa/hoy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa",
+                "hoy"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-29 PUT /restricciones-placa/:id — 200 cambia los dígitos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('dígitos 1 y 2', () => pm.expect(cuerpo.data.digitos).to.eql([1, 2]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa/{{idRestriccion}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa",
+                "{{idRestriccion}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diaSemana\": 6,\n  \"tipoVehiculo\": \"carro\",\n  \"digitos\": [\n    1,\n    2\n  ],\n  \"horaInicio\": \"05:00\",\n  \"horaFin\": \"20:00\",\n  \"vigenteDesde\": \"{{pypDesde}}\",\n  \"vigenteHasta\": \"{{pypHasta}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-29 PUT /restricciones-placa/:id — 422 vigencia invertida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa/{{idRestriccion}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa",
+                "{{idRestriccion}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diaSemana\": 6,\n  \"tipoVehiculo\": \"carro\",\n  \"digitos\": [\n    6,\n    9\n  ],\n  \"horaInicio\": \"05:00\",\n  \"horaFin\": \"20:00\",\n  \"vigenteDesde\": \"{{pypHasta}}\",\n  \"vigenteHasta\": \"{{pypDesde}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-29 PUT /restricciones-placa/:id — 403 operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa/{{idRestriccion}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa",
+                "{{idRestriccion}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diaSemana\": 6,\n  \"tipoVehiculo\": \"carro\",\n  \"digitos\": [\n    6,\n    9\n  ],\n  \"horaInicio\": \"05:00\",\n  \"horaFin\": \"20:00\",\n  \"vigenteDesde\": \"{{pypDesde}}\",\n  \"vigenteHasta\": \"{{pypHasta}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PUT /restricciones-placa/999999 — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code RESTRICCION_NO_ENCONTRADA', () => pm.expect(cuerpo.error.code).to.eql('RESTRICCION_NO_ENCONTRADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa",
+                "999999"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"diaSemana\": 6,\n  \"tipoVehiculo\": \"carro\",\n  \"digitos\": [\n    6,\n    9\n  ],\n  \"horaInicio\": \"05:00\",\n  \"horaFin\": \"20:00\",\n  \"vigenteDesde\": \"{{pypDesde}}\",\n  \"vigenteHasta\": \"{{pypHasta}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-29 DELETE /restricciones-placa/:id — 403 operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa/{{idRestriccion}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa",
+                "{{idRestriccion}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-29 DELETE /restricciones-placa/:id — 200 eliminación lógica",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('inactiva', () => pm.expect(cuerpo.data.estado).to.eql('inactivo'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa/{{idRestriccion}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa",
+                "{{idRestriccion}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE /restricciones-placa/999999 — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code RESTRICCION_NO_ENCONTRADA', () => pm.expect(cuerpo.error.code).to.eql('RESTRICCION_NO_ENCONTRADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/restricciones-placa/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "restricciones-placa",
+                "999999"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }

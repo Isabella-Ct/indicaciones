@@ -26,18 +26,18 @@
 
 ## Fase 5: Interfaz (Atomic Design)
 
-- [ ] T007 [P] Átomo `atomos/digitos.js`, molécula `moleculas/aviso-pico-placa.js` y organismo `organismos/tabla-semanal.js`, con el CSS que haga falta por nivel
-- [ ] T008 [P] Servicio `js/services/restricciones.service.js`
-- [ ] T009 `herramientas/paginas-006.js` + `partes-pico-placa.js` + regenerar: menú «Pico y placa» (`restricciones.crear`, grupo Configuración); aviso en `celdas.html`, `disponibilidad.html` y `mis-vehiculos.html`
-- [ ] T010 [US1] `pico-placa.html` + `views/pico-placa.view.js` (tabla semanal, nueva, editar, eliminar, «Editar la existente» con 409)
-- [ ] T011 [US2] Aviso de hoy en `celdas.view.js`, `disponibilidad.view.js` y `mis-vehiculos.view.js`
+- [X] T007 [P] Átomo `atomos/digitos.js`, molécula `moleculas/aviso-pico-placa.js` y organismo `organismos/tabla-semanal.js`, con el CSS que haga falta por nivel
+- [X] T008 [P] Servicio `js/services/restricciones.service.js`
+- [X] T009 `herramientas/paginas-006.js` + `partes-pico-placa.js` + regenerar: menú «Pico y placa» (`restricciones.crear`, grupo Configuración); aviso en `celdas.html`, `disponibilidad.html` y `mis-vehiculos.html`
+- [X] T010 [US1] `pico-placa.html` + `views/pico-placa.view.js` (tabla semanal, nueva, editar, eliminar, «Editar la existente» con 409)
+- [X] T011 [US2] Aviso de hoy en `celdas.view.js`, `disponibilidad.view.js` y `mis-vehiculos.view.js`
 
 ## Fase 6: Pulido
 
-- [ ] T012 Carpeta Postman `casos/006-pico-y-placa.js`; `npm run test:api` en verde dos veces seguidas
-- [ ] T013 [P] `README.md` (endpoints y pantallas)
-- [ ] T014 Cobertura del service ≥ 80 %, lint, `herramientas/verificar-front.js`, revisión de que no queden textos en inglés, medición de `GET /hoy` y prueba manual en escritorio y a 375 px
-- [ ] T015 Verificar que cada escenario de HU-29 y HU-30 tenga su prueba y su caso Postman, y marcar `[X]`
+- [X] T012 Carpeta Postman `casos/006-pico-y-placa.js`; `npm run test:api` en verde dos veces seguidas
+- [X] T013 [P] `README.md` (endpoints y pantallas)
+- [X] T014 Cobertura del service ≥ 80 %, lint, `herramientas/verificar-front.js`, revisión de que no queden textos en inglés, medición de `GET /hoy` y prueba manual en escritorio y a 375 px — prueba manual en el navegador pendiente (usuaria)
+- [X] T015 Verificar que cada escenario de HU-29 y HU-30 tenga su prueba y su caso Postman, y marcar `[X]`
 
 ## Dependencias
 
