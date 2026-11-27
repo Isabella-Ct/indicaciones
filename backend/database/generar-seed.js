@@ -93,6 +93,16 @@ const PICO_PLACA = [
   [5, '3,4'],
 ];
 
+// Tarifas (spec 008, research R-08): [nombre, tipo_vehiculo, tipo_cliente, primera hora, minutos fracción,
+// valor fracción, tope diario, gracia, vigente desde, vigente hasta, estado]
+const TARIFAS = [
+  ['Carro ocasional', 'carro', 'ocasional', 4000, 15, 1000, 30000, 10, '2026-01-01 00:00:00', null, 'activo'],
+  ['Carro registrado', 'carro', 'registrado', 3500, 15, 900, 27000, 10, '2026-01-01 00:00:00', null, 'activo'],
+  ['Moto ocasional', 'moto', 'ocasional', 2000, 15, 500, 12000, 10, '2026-01-01 00:00:00', null, 'activo'],
+  ['Moto registrado', 'moto', 'registrado', 1800, 15, 450, 10000, 10, '2026-01-01 00:00:00', null, 'activo'],
+  ['Carro ocasional 2025', 'carro', 'ocasional', 3500, 15, 900, 26000, 10, '2025-01-01 00:00:00', '2026-01-01 00:00:00', 'inactivo'],
+];
+
 // [id_parqueadero, nombre, tipo, estado]
 const PUERTAS = [
   [1, 'Carrera 43', 'mixta', 'activo'],
@@ -230,13 +240,20 @@ async function generarSeed() {
   );
   lineas.push('');
 
+  lineas.push('-- Tarifas (spec 008, RF-TAR-01): las 4 combinaciones vigentes y una inactiva de historial');
+  lineas.push(
+    'INSERT INTO tarifa (nombre, tipo_vehiculo, tipo_cliente, valor_primera_hora, minutos_fraccion, valor_fraccion, tope_diario, minutos_gracia, vigente_desde, vigente_hasta, estado) VALUES'
+  );
+  lineas.push(valores(TARIFAS));
+  lineas.push('');
+
   lineas.push('-- Consecutivos sin huecos (RN-22)');
   lineas.push('INSERT INTO consecutivo (clave, prefijo, siguiente, longitud) VALUES');
   lineas.push(CONSECUTIVOS.map(([c, p]) => `  (${q(c)}, ${q(p)}, 1, 6)`).join(',\n') + ';');
   lineas.push('');
 
   fs.writeFileSync(DESTINO, lineas.filter((l) => l !== null).join('\n'));
-  return { permisos: permisos.length, usuarios: USUARIOS.length, roles: ROLES.length, parqueaderos: PARQUEADEROS.length, puertas: PUERTAS.length, celdas: construirCeldas().length, vehiculos: VEHICULOS.length, restricciones: PICO_PLACA.length * 2 };
+  return { permisos: permisos.length, usuarios: USUARIOS.length, roles: ROLES.length, parqueaderos: PARQUEADEROS.length, puertas: PUERTAS.length, celdas: construirCeldas().length, vehiculos: VEHICULOS.length, restricciones: PICO_PLACA.length * 2, tarifas: TARIFAS.length };
 }
 
 if (require.main === module) {

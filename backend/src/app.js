@@ -37,6 +37,8 @@ function rutasProtegidas() {
     // spec 007-control-ingreso-salida
     { ruta: '/movimientos', router: require('./modules/movimientos/movimientos.routes') },
     { ruta: '/tickets', router: require('./modules/tickets/tickets.routes') },
+    // spec 008-tarifas (GET ?vigentes=true es público: ver arriba)
+    { ruta: '/tarifas', router: require('./modules/tarifas/tarifas.routes').tarifasRouter },
   ];
 }
 
@@ -81,6 +83,7 @@ function crearApp() {
   api.use('/health', saludRoutes);
   api.use('/auth', authRoutes);
   api.use('/disponibilidad', require('./modules/disponibilidad/disponibilidad.routes'));
+  api.use('/tarifas', require('./modules/tarifas/tarifas.routes').tarifasPublicasRouter);
   // Protegidas
   for (const { ruta, router } of rutasProtegidas()) api.use(ruta, authenticate, router);
   app.use('/api/v1', api);

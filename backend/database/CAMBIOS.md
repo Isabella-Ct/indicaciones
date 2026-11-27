@@ -4,6 +4,12 @@ Historial de `schema.sql` y de las migraciones en `migrations/`. Cada entrada in
 
 ---
 
+## 2.2.0 (sin cambios en el esquema; semilla ampliada) — 2026-11-27 · spec `008-tarifas`
+
+La spec 008 usa `tarifa` tal como está (sus `CHECK` de primera hora, fracción, tope, gracia y vigencia ya cumplen RF-TAR-02). Solo cambia `seed.sql`: 4 tarifas vigentes desde 2026-01-01 sin fin — carro ocasional ($ 4.000 / 15 min a $ 1.000 / tope $ 30.000 / 10 min de gracia), carro registrado ($ 3.500 / $ 900 / $ 27.000), moto ocasional ($ 2.000 / $ 500 / $ 12.000), moto registrado ($ 1.800 / $ 450 / $ 10.000) — y «Carro ocasional 2025» inactiva como historial (research R-08).
+
+---
+
 ## 2.2.0 — 2026-11-27 · spec `007-control-ingreso-salida`
 
 Migración: `migrations/002_ingresos_rechazados_y_ticket_extraviado.sql` (para una BD 2.1.0 con datos; `npm run db:reset` ya crea la 2.2.0).
