@@ -1,4 +1,4 @@
-# Research — 001-roles-permisos (incluye la fundación del backend v2)
+# Investigación — 001-roles-permisos (incluye la fundación del backend v2)
 
 **Fecha**: 2026-11-26 · **Spec**: [spec.md](spec.md) · **Plan**: [plan.md](plan.md)
 
@@ -59,7 +59,7 @@ Precedencia de fuentes en esta fase, decidida por la usuaria: **rúbrica del ins
 
 ## R-08 · Esquema global de la base de datos
 
-- **Decisión**: en la fase Foundational de 001 se escribe **todo** el `backend/database/schema.sql` según el modelo 6.1 del SRS (las 15 características): tablas en singular snake_case como en 6.1 (`rol`, `permiso`, `rol_permiso`, `usuario`…), PK `id_<entidad>`, `created_at`/`updated_at` en todas, FK `ON DELETE RESTRICT` y `ON UPDATE RESTRICT` (MySQL no permite CHECK ni columnas generadas sobre FK con acciones en cascada; las PK no cambian), InnoDB `utf8mb4_0900_ai_ci`. Base `parqueaderodb` (configurable en `DB_NAME`). Las specs posteriores lo consultan, y si necesitan algo nuevo lo agregan en `database/migrations/NNN_*.sql` y lo anotan en `database/CAMBIOS.md`.
+- **Decisión**: en la fase Fundacional de 001 se escribe **todo** el `backend/database/schema.sql` según el modelo 6.1 del SRS (las 15 características): tablas en singular snake_case como en 6.1 (`rol`, `permiso`, `rol_permiso`, `usuario`…), PK `id_<entidad>`, `created_at`/`updated_at` en todas, FK `ON DELETE RESTRICT` y `ON UPDATE RESTRICT` (MySQL no permite CHECK ni columnas generadas sobre FK con acciones en cascada; las PK no cambian), InnoDB `utf8mb4_0900_ai_ci`. Base `parqueaderodb` (configurable en `DB_NAME`). Las specs posteriores lo consultan, y si necesitan algo nuevo lo agregan en `database/migrations/NNN_*.sql` y lo anotan en `database/CAMBIOS.md`.
 - **Justificación**: el prompt §3.8 pide un esquema global único y la rúbrica C9 exige `schema.sql` y `seed.sql`. Escribirlo una vez evita que las specs 002–015 se tropiecen con migraciones cruzadas.
 - **Alternativas descartadas**: un esquema incremental por spec (cada spec rompe la anterior al agregar FK); nombres de tabla en plural (6.1 usa singular).
 
@@ -101,7 +101,7 @@ En 001 se crean `sesion`, `bitacora` y `consecutivo`. Las demás quedan reservad
   - `js/api/http.js` (cliente `fetch` único: Bearer, desarma `{ok,data,meta,error}`, timeout con `AbortController`, 401 → login, 403 → aviso);
   - `js/services/` (una función por endpoint);
   - `js/views/` (controlador de cada pantalla);
-  - `js/components/` (navbar, tabla paginada, diálogo de confirmación, toast, clonado de `<template>`);
+  - `js/components/` dividido por **niveles de Atomic Design**: `atomos/` (botón, chip de estado), `moleculas/` (campo, alerta, aviso, buscador, menú de usuario), `organismos/` (tabla de datos, modal `<dialog>`, navbar) y `plantillas/` (marco de la app). El clonado de `<template>` va en `js/utils/plantillas.js`. `js/views/` es el nivel **página** y es el único que llama a `js/services/`. ESLint bloquea importar niveles superiores o servicios desde un componente;
   - `js/utils/` (formatos es-CO, sesión);
   - `assets/` (logo, sprite de iconos).
 
@@ -161,4 +161,4 @@ Las justificaciones se copian en el *Complexity Tracking* de [plan.md](plan.md),
 
 ## [NEEDS CLARIFICATION] pendientes
 
-Ninguno para 001. La usuaria pidió resolver las ambigüedades con los documentos (sección Clarifications de la spec).
+Ninguno para 001. La usuaria pidió resolver las ambigüedades con los documentos (sección Aclaraciones de la spec).

@@ -1,6 +1,6 @@
-// Avisos no bloqueantes (SRS §3.1) copiados de la plantilla #tpl-aviso en la región #avisos
-// (aria-live, RNF-USA-04).
-import { clonar } from './plantilla.js';
+// Molécula · molecule-toast: aviso no bloqueante (SRS §3.1) copiado de la plantilla #tpl-aviso
+// en la región #avisos (aria-live, RNF-USA-04).
+import { clonar } from '../../utils/plantillas.js';
 
 const ICONOS = { success: 'i-check', error: 'i-alert', info: 'i-info' };
 

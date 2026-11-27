@@ -4,7 +4,7 @@
    valores; solo cambian los nombres de clase.
    ========================================================================== */
 
-/* Molecule · alert (nuevo): aviso en línea con borde izquierdo de color. */
+/* Molécula · alert (nuevo): aviso en línea con borde izquierdo de color. */
 .molecule-alert {
   --tone: var(--blue);
   display: flex;
@@ -30,7 +30,7 @@
   --tone: var(--green);
 }
 
-/* Molecule · brand (maqueta: .brand, .brand small) */
+/* Molécula · brand (maqueta: .brand, .brand small) */
 .molecule-brand {
   display: flex;
   align-items: center;
@@ -56,7 +56,7 @@
   text-decoration: none;
 }
 
-/* Molecule · charge (maqueta, sección 6: .charge, .charge-value, .charge-note) */
+/* Molécula · charge (maqueta, sección 6: .charge, .charge-value, .charge-note) */
 .molecule-charge {
   display: flex;
   align-items: flex-end;
@@ -105,7 +105,7 @@
   gap: 14px;
 }
 
-/* Molecule · check (maqueta: .check) */
+/* Molécula · check (maqueta: .check) */
 .molecule-check {
   display: flex;
   align-items: center;
@@ -119,7 +119,7 @@
   accent-color: var(--asphalt);
 }
 
-/* Molecule · countdown (nuevo): tiempo para llegar a la reserva, cifra en --font-mono */
+/* Molécula · countdown (nuevo): tiempo para llegar a la reserva, cifra en --font-mono */
 .molecule-countdown {
   display: grid;
   gap: 4px;
@@ -152,7 +152,7 @@
   color: var(--ink-2);
 }
 
-/* Molecule · data-list (maqueta: .data-list) */
+/* Molécula · data-list (maqueta: .data-list) */
 .molecule-data-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -175,7 +175,7 @@
   overflow-wrap: anywhere;
 }
 
-/* Molecule · empty-state (maqueta: .empty-state) */
+/* Molécula · empty-state (maqueta: .empty-state) */
 .molecule-empty-state {
   padding: 26px 22px;
   border: 2px dashed var(--asphalt);
@@ -204,7 +204,7 @@
   margin-top: 14px;
 }
 
-/* Molecule · field + form-grid (maqueta: .form-grid, .field, .field--full, .req) */
+/* Molécula · field + form-grid (maqueta: .form-grid, .field, .field--full, .req) */
 .organism-form--grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -258,7 +258,7 @@
   }
 }
 
-/* Molecule · kpi (maqueta: .kpi, .kpi-value, .kpi-note, .kpi--main) */
+/* Molécula · kpi (maqueta: .kpi, .kpi-value, .kpi-note, .kpi--main) */
 .molecule-kpi {
   padding: 16px 18px;
   background: var(--panel);
@@ -288,7 +288,7 @@
   background: var(--yellow);
 }
 
-/* Molecule · level-tabs (maqueta, sección 5: .level-tabs, .level-tab, .is-active) */
+/* Molécula · level-tabs (maqueta, sección 5: .level-tabs, .level-tab, .is-active) */
 .molecule-level-tabs {
   display: flex;
   gap: 2px;
@@ -331,7 +331,7 @@
   text-align: left;
 }
 
-/* Molecule · live-status (nuevo): mismo formato que .status-chip, sobre asfalto. */
+/* Molécula · live-status (nuevo): mismo formato que .status-chip, sobre asfalto. */
 .molecule-live-status {
   display: inline-flex;
   align-items: center;
@@ -373,7 +373,7 @@
   }
 }
 
-/* Molecule · map-legend (maqueta, sección 5) */
+/* Molécula · map-legend (maqueta, sección 5) */
 .molecule-map-legend {
   display: flex;
   flex-wrap: wrap;
@@ -420,7 +420,7 @@
   background: repeating-linear-gradient(-45deg, var(--orange) 0 4px, var(--asphalt) 4px 8px);
 }
 
-/* Molecule · notification-item (nuevo): fila de la bandeja con borde amarillo si no está leída. */
+/* Molécula · notification-item (nuevo): fila de la bandeja con borde amarillo si no está leída. */
 .molecule-notification-item-list {
   display: grid;
 }
@@ -475,7 +475,7 @@
   padding: 12px 16px;
 }
 
-/* Molecule · page-head (maqueta: .page-head) */
+/* Molécula · page-head (maqueta: .page-head) */
 .molecule-page-head {
   display: flex;
   flex-wrap: wrap;
@@ -518,7 +518,7 @@
   }
 }
 
-/* Molecule · pagination (nuevo) */
+/* Molécula · pagination (nuevo) */
 .molecule-pagination {
   display: flex;
   flex-wrap: wrap;
@@ -534,7 +534,7 @@
   color: var(--ink-2);
 }
 
-/* Molecule · panel (maqueta: .panel, .panel-head, .panel-body) */
+/* Molécula · panel (maqueta: .panel, .panel-head, .panel-body) */
 .molecule-panel {
   background: var(--panel);
   border: 2px solid var(--asphalt);
@@ -574,7 +574,7 @@
   padding: 0;
 }
 
-/* Molecule · photo-input (nuevo): vista previa cuadrada + botón de archivo. */
+/* Molécula · photo-input (nuevo): vista previa cuadrada + botón de archivo. */
 .molecule-photo-input-row {
   display: flex;
   flex-wrap: wrap;
@@ -618,7 +618,7 @@
   outline-offset: 2px;
 }
 
-/* Molecule · search-box (nuevo) — misma etiqueta que .field > label */
+/* Molécula · search-box (nuevo) — misma etiqueta que .field > label */
 .molecule-search-box {
   display: grid;
   gap: 6px;
@@ -669,7 +669,7 @@
   }
 }
 
-/* Molecule · shift (maqueta: .shift) */
+/* Molécula · shift (maqueta: .shift) */
 .molecule-shift {
   display: flex;
   gap: 24px;
@@ -697,7 +697,7 @@
   }
 }
 
-/* Molecule · space — maqueta, sección 5 ("Espacio de parqueo": las líneas
+/* Molécula · space — maqueta, sección 5 ("Espacio de parqueo": las líneas
    blancas imitan la pintura del piso). Colores sueltos → tokens con el mismo valor. */
 .molecule-space {
   position: relative;
@@ -832,7 +832,7 @@
   outline-offset: -3px;
 }
 
-/* Molecule · tiles (maqueta: .tiles, .tile). El número de columnas va en --cols
+/* Molécula · tiles (maqueta: .tiles, .tile). El número de columnas va en --cols
    (la maqueta usaba style="grid-template-columns:…" en línea). */
 .molecule-tiles {
   display: grid;
@@ -875,7 +875,7 @@
   outline-offset: -3px;
 }
 
-/* Molecule · toast (nuevo). Asfalto, borde izquierdo de color, sin sombras. */
+/* Molécula · toast (nuevo). Asfalto, borde izquierdo de color, sin sombras. */
 .molecule-toast-region {
   position: fixed;
   right: 16px;
@@ -932,7 +932,7 @@
   height: 16px;
 }
 
-/* Molecule · user-menu (nuevo): botón sobre asfalto + lista desplegable tipo panel. */
+/* Molécula · user-menu (nuevo): botón sobre asfalto + lista desplegable tipo panel. */
 .molecule-user-menu {
   position: relative;
 }
@@ -1023,7 +1023,7 @@
   }
 }
 
-/* Molecule · user-picker (nuevo): busca un usuario por documento. */
+/* Molécula · user-picker (nuevo): busca un usuario por documento. */
 .molecule-user-picker-search {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

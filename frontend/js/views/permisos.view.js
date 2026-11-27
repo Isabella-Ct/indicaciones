@@ -1,8 +1,8 @@
-// Configuración › Permisos (HU-06 · RF-ROL-15): catálogo de solo lectura agrupado por módulo.
+// Página · Configuración › Permisos (HU-06 · RF-ROL-15): catálogo de solo lectura agrupado por módulo.
 import { listarPermisos, nombreModulo } from '../services/roles.service.js';
-import { montarMarco } from '../components/navbar.js';
-import { clonar } from '../components/plantilla.js';
-import { mostrarAviso } from '../components/toast.js';
+import { montarMarco } from '../components/plantillas/marco-app.js';
+import { clonar } from '../utils/plantillas.js';
+import { mostrarAviso } from '../components/moleculas/aviso.js';
 import { $ } from '../utils/dom.js';
 
 const ACCIONES = {

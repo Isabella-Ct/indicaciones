@@ -1,28 +1,28 @@
 ---
-description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundational de la v2)"
+description: "Lista de tareas de 001-roles-permisos (incluye Preparación y Fundacional de la v2)"
 ---
 
-# Tasks: Roles y permisos
+# Tareas: Roles y permisos
 
-**Input**: Documentos de diseño de `specs/001-roles-permisos/`
+**Entrada**: Documentos de diseño de `specs/001-roles-permisos/`
 
-**Prerequisites**: [plan.md](plan.md), [spec.md](spec.md), [research.md](research.md), [data-model.md](data-model.md), [contracts/openapi.yaml](contracts/openapi.yaml), [quickstart.md](quickstart.md), [frontend-integration.md](frontend-integration.md)
+**Prerrequisitos**: [plan.md](plan.md), [spec.md](spec.md), [research.md](research.md), [data-model.md](data-model.md), [contracts/openapi.yaml](contracts/openapi.yaml), [quickstart.md](quickstart.md), [frontend-integration.md](frontend-integration.md)
 
-**Tests**: **obligatorias**. La constitución §VI y SC-006 exigen una prueba por escenario de aceptación (Jest + Supertest) y un caso de éxito y otro de error por endpoint en Postman. Cada prueba se nombra `HU-xx Ey <descripción>`.
+**Pruebas**: **obligatorias**. La constitución §VI y SC-006 exigen una prueba por escenario de aceptación (Jest + Supertest) y un caso de éxito y otro de error por endpoint en Postman. Cada prueba se nombra `HU-xx Ey <descripción>`.
 
-**Organization**: por historia de usuario (US1 = HU-01 … US6 = HU-06), en orden de prioridad.
+**Organización**: por historia de usuario (US1 = HU-01 … US6 = HU-06), en orden de prioridad.
 
-## Format: `[ID] [P?] [Story] Description`
+## Formato: `[ID] [P?] [Historia] Descripción`
 
 - **[P]**: se puede hacer en paralelo (archivo distinto y sin depender de tareas pendientes)
-- **[Story]**: historia a la que pertenece (US1…US6)
+- **[Historia]**: historia a la que pertenece (US1…US6)
 - Rutas relativas a la raíz del repositorio (`backend/`, `frontend/`)
 
 ---
 
-## Phase 1: Setup (infraestructura compartida)
+## Fase 1: Preparación (infraestructura compartida)
 
-**Purpose**: retirar la v1 y dejar el esqueleto v2 listo (research R-01, R-02, R-14, R-15)
+**Propósito**: retirar la v1 y dejar el esqueleto v2 listo (research R-01, R-02, R-14, R-15)
 
 - [X] T001 Crear el tag `v0.9.0-legado` sobre el commit `ba86248` (último estado v1 en `main`) y subirlo a `origin`
 - [X] T002 Retirar los módulos v1 de `backend/src/modules/` (todos), `backend/src/jobs/`, `backend/src/realtime/` y las pruebas v1 de `backend/tests/*.test.js`; conservar y adaptar después `backend/src/utils/{fechas,placas,pdf,csv,dinero,sql}.js`
@@ -33,11 +33,11 @@ description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundationa
 
 ---
 
-## Phase 2: Foundational (bloquea todas las historias)
+## Fase 2: Fundacional (bloquea todas las historias)
 
-**Purpose**: esquema 6.1, sobre de respuesta, errores, autenticación y autorización, bitácora, consecutivos, health, login mínimo, infraestructura de pruebas y armazón del frontend
+**Propósito**: esquema 6.1, sobre de respuesta, errores, autenticación y autorización, bitácora, consecutivos, health, login mínimo, infraestructura de pruebas y armazón del frontend
 
-**⚠️ CRITICAL**: ninguna historia empieza antes de terminar esta fase
+**⚠️ CRÍTICO**: ninguna historia empieza antes de terminar esta fase
 
 ### Base de datos
 
@@ -75,22 +75,22 @@ description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundationa
 - [X] T024 Pruebas de integración `backend/tests/integration/salud.test.js` (200) y `auth-login.test.js` (200 con token y permisos y sin `contrasena_hash`; 401 contraseña errada; 401 usuario inactivo con el mismo mensaje; 422 sin documento; 401 en ruta protegida sin token o con token alterado)
 - [X] T025 Colección base `backend/docs/postman/parqueadero.postman_collection.json` (variables `baseUrl`; *pre-request* de login que guarda `{{tokenAdmin}}`, `{{tokenOperador}}` y `{{tokenCliente}}`; carpeta «000 Fundación» con health y login éxito/error) y `backend/docs/postman/local.postman_environment.json`
 
-**Checkpoint**: `npm run db:reset`, `npm test` (unitarias + salud + login) y `npm run lint` en verde; `GET /health` 200; login funciona desde `login.html`.
+**Punto de control**: `npm run db:reset`, `npm test` (unitarias + salud + login) y `npm run lint` en verde; `GET /health` 200; login funciona desde `login.html`.
 
 ---
 
-## Phase 3: User Story 1 — Perfiles iniciales del sistema (Priority: P1) 🎯 MVP · HU-01
+## Fase 3: Historia de usuario 1 — Perfiles iniciales del sistema (Prioridad: P1) 🎯 MVP · HU-01
 
-**Goal**: existen exactamente 3 roles base activos con sus permisos, y los roles base no se pueden inactivar ni renombrar (RF-ROL-01/02/03, RN-01).
+**Objetivo**: existen exactamente 3 roles base activos con sus permisos, y los roles base no se pueden inactivar ni renombrar (RF-ROL-01/02/03, RN-01).
 
-**Independent Test**: con la BD recién sembrada, `GET /roles` muestra Administrador, Operador y Cliente con `esBase:true`; inactivar o renombrar cualquiera de ellos → 409 `ROL_BASE_INMUTABLE`.
+**Prueba independiente**: con la BD recién sembrada, `GET /roles` muestra Administrador, Operador y Cliente con `esBase:true`; inactivar o renombrar cualquiera de ellos → 409 `ROL_BASE_INMUTABLE`.
 
-### Tests for User Story 1
+### Pruebas de la historia 1
 
 - [X] T026 [P] [US1] `backend/tests/unit/roles.reglas.test.js`: `normalizarNombre` (recorte, minúsculas), `esRenombre(actual, nuevo)` y `faltanProtegidos(codigos)` con los 8 permisos protegidos ([data-model.md](data-model.md#catálogo-de-permisos))
 - [X] T027 [US1] `backend/tests/integration/roles.test.js` bloque HU-01: `HU-01 E1` solo 3 roles base activos con `estado=activo&q=` filtrando los semilla; `E2` el Operador no tiene `roles.*`, `tarifas.crear` ni `reportes.*` y sí tiene `usuarios.crear`, `vehiculos.crear`, `movimientos.crear`, `facturas.crear`, `reservas.crear` e `incidencias.crear`; `E3` el Administrador tiene los 63; `E4` el Cliente solo tiene los 11 de su lista; `E5` PATCH estado y PUT con otro nombre sobre un rol base → 409
 
-### Implementation for User Story 1
+### Implementación de la historia 1
 
 - [X] T028 [P] [US1] `backend/src/modules/roles/roles.reglas.js`: funciones puras de T026 y `agruparPorModulo(permisos)`
 - [X] T029 [P] [US1] `backend/src/modules/roles/roles.validator.js`: esquemas zod `params.id`, `query` del listado (paginación + `estado`), `RolEntrada` (`data-model.md` Rol.nombre 3–40 con recorte, Rol.descripcion ≤150 o null, `permisos` ≥1 enteros únicos) y `estado` (`data-model.md` Rol.estado)
@@ -98,115 +98,115 @@ description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundationa
 - [X] T031 [US1] `backend/src/modules/roles/roles.service.js`: `listar` y la regla de rol base (`asegurarNoBase` → 409 `ROL_BASE_INMUTABLE`) que usan T042 y T047
 - [X] T032 [US1] `backend/src/modules/roles/roles.controller.js` + `roles.routes.js` (`GET /roles` con `authenticate` + `authorize('roles.ver')` + `validate`), montados en `backend/src/app.js`
 
-**Checkpoint**: HU-01 en verde. Es el MVP mínimo del control de acceso.
+**Punto de control**: HU-01 en verde. Es el MVP mínimo del control de acceso.
 
 ---
 
-## Phase 4: User Story 2 — Registrar un rol (Priority: P2) · HU-02
+## Fase 4: Historia de usuario 2 — Registrar un rol (Prioridad: P2) · HU-02
 
-**Goal**: el Administrador crea roles activos, no base, con ≥1 permiso y nombre único (RF-ROL-04/05/06, RN-03).
+**Objetivo**: el Administrador crea roles activos, no base, con ≥1 permiso y nombre único (RF-ROL-04/05/06, RN-03).
 
-**Independent Test**: POST «Supervisor» → 201; POST « supervisor » → 409; POST sin permisos → 422; con el token de un Operador → 403.
+**Prueba independiente**: POST «Supervisor» → 201; POST « supervisor » → 409; POST sin permisos → 422; con el token de un Operador → 403.
 
-### Tests for User Story 2
+### Pruebas de la historia 2
 
 - [X] T033 [US2] `backend/tests/integration/roles.test.js` bloque HU-02: `E1` 201 con `estado:'activo'`, `esBase:false`, permisos guardados y entrada en `bitacora`; `E2` duplicado sin distinguir mayúsculas ni espacios → 409 `ROL_DUPLICADO`; `E3` `permisos:[]` → 422 con `details[0].campo='permisos'`; `E4` nombre de 2 o 41 caracteres, descripción de 151, permiso 99999 → 422; Operador → 403
 
-### Implementation for User Story 2
+### Implementación de la historia 2
 
 - [X] T034 [US2] `rolesService.crear(datos, actor)` en `backend/src/modules/roles/roles.service.js`: `withTransaction`; valida que los permisos existan (si no → 422 con campo `permisos`); inserta rol + `rol_permiso` (sin duplicados); `registrarBitacora(accion:'crear', entidad:'rol')`; traduce `ER_DUP_ENTRY` en `uq_rol_nombre` a 409 `ROL_DUPLICADO`; devuelve el `RolDetalle`
 - [X] T035 [US2] Ruta `POST /roles` (`authorize('roles.crear')`) y controlador `crear` → 201 en `backend/src/modules/roles/roles.{routes,controller}.js`
 
-**Checkpoint**: HU-01 y HU-02 en verde.
+**Punto de control**: HU-01 y HU-02 en verde.
 
 ---
 
-## Phase 5: User Story 3 — Consultar y buscar roles (Priority: P2) · HU-03
+## Fase 5: Historia de usuario 3 — Consultar y buscar roles (Prioridad: P2) · HU-03
 
-**Goal**: listado paginado con búsqueda y filtro, y detalle con permisos agrupados y usuarios (RF-ROL-07/08).
+**Objetivo**: listado paginado con búsqueda y filtro, y detalle con permisos agrupados y usuarios (RF-ROL-07/08).
 
-**Independent Test**: `?q=oper`, `?estado=inactivo`, `?page=1&limit=10` con `meta`, `GET /roles/:id` agrupado; `GET /roles/9999` → 404.
+**Prueba independiente**: `?q=oper`, `?estado=inactivo`, `?page=1&limit=10` con `meta`, `GET /roles/:id` agrupado; `GET /roles/9999` → 404.
 
-### Tests for User Story 3
+### Pruebas de la historia 3
 
 - [X] T036 [US3] `backend/tests/integration/roles.test.js` bloque HU-03: `E1` `meta {page:1, limit:10, total}`, cada fila con `usuariosAsignados` y `usuariosActivos`; `E2` `q=OPER` solo trae los que contienen «oper»; `E3` `estado=inactivo` trae Auditor; `E4` detalle con `permisos[]` agrupados por `modulo` y `usuarios[]` sin correo, documento ni hash; `E5` 404 `ROL_NO_ENCONTRADO`; `limit=101` → 422
 
-### Implementation for User Story 3
+### Implementación de la historia 3
 
 - [X] T037 [US3] `rolesService.obtener(id)` (404 `ROL_NO_ENCONTRADO`; agrupa con `agruparPorModulo`) y filtros `q`/`estado` en `rolesService.listar` en `backend/src/modules/roles/roles.service.js`
 - [X] T038 [US3] Ruta `GET /roles/:id` (`authorize('roles.ver')`) y controlador `obtener` en `backend/src/modules/roles/roles.{routes,controller}.js`
 
-**Checkpoint**: HU-01 a HU-03 en verde.
+**Punto de control**: HU-01 a HU-03 en verde.
 
 ---
 
-## Phase 6: User Story 4 — Actualizar un rol y sus permisos (Priority: P2) · HU-04
+## Fase 6: Historia de usuario 4 — Actualizar un rol y sus permisos (Prioridad: P2) · HU-04
 
-**Goal**: editar nombre, descripción y permisos manteniendo la unicidad; nombre de rol base fijo; el Administrador conserva los permisos protegidos; los cambios aplican desde el siguiente inicio de sesión (RF-ROL-09/10/11).
+**Objetivo**: editar nombre, descripción y permisos manteniendo la unicidad; nombre de rol base fijo; el Administrador conserva los permisos protegidos; los cambios aplican desde el siguiente inicio de sesión (RF-ROL-09/10/11).
 
-**Independent Test**: PUT agrega `reportes.ver` a Supervisor de turno; el token viejo del supervisor recibe 403 en una ruta que exige ese permiso y uno nuevo lo incluye en `permisos[]`; PUT al Administrador sin `roles.editar` → 409.
+**Prueba independiente**: PUT agrega `reportes.ver` a Supervisor de turno; el token viejo del supervisor recibe 403 en una ruta que exige ese permiso y uno nuevo lo incluye en `permisos[]`; PUT al Administrador sin `roles.editar` → 409.
 
-### Tests for User Story 4
+### Pruebas de la historia 4
 
 - [X] T039 [US4] `backend/tests/integration/roles.test.js` bloque HU-04: `E1` 200, bitácora con `valor_anterior`/`valor_nuevo` de permisos y descripción; `permisos[]` del token viejo sin el nuevo código y login nuevo con él; `E2` nombre de otro rol → 409 `ROL_DUPLICADO`; `E3` `permisos:[]` → 422; `E4` Administrador sin `roles.editar` → 409 `PERMISOS_ADMIN_PROTEGIDOS`; `E5` rol base Operador: cambiar descripción y permisos → 200, cambiar nombre → 409 `ROL_BASE_INMUTABLE`; `E6` 404
 
-### Implementation for User Story 4
+### Implementación de la historia 4
 
 - [X] T040 [US4] `rolesService.actualizar(id, datos, actor)` en `backend/src/modules/roles/roles.service.js`: `withTransaction` + `obtenerPorId(..., {bloquear:true})`; 404; si `es_base` y `esRenombre` → 409; si es el rol Administrador y `faltanProtegidos` → 409; valida que los permisos existan; `actualizar` + `reemplazarPermisos`; `registrarBitacora(accion:'editar')` con la diferencia; `ER_DUP_ENTRY` → 409
 - [X] T041 [US4] Ruta `PUT /roles/:id` (`authorize('roles.editar')`) y controlador `actualizar` en `backend/src/modules/roles/roles.{routes,controller}.js`
 
-**Checkpoint**: HU-01 a HU-04 en verde.
+**Punto de control**: HU-01 a HU-04 en verde.
 
 ---
 
-## Phase 7: User Story 5 — Activar o inactivar un rol (Priority: P2) · HU-05
+## Fase 7: Historia de usuario 5 — Activar o inactivar un rol (Prioridad: P2) · HU-05
 
-**Goal**: cambio de estado con bitácora; rechazo de roles base y de roles con usuarios activos; los roles inactivos no se ofrecen al asignar (RF-ROL-12/13/14, RN-04).
+**Objetivo**: cambio de estado con bitácora; rechazo de roles base y de roles con usuarios activos; los roles inactivos no se ofrecen al asignar (RF-ROL-12/13/14, RN-04).
 
-**Independent Test**: inactivar un rol sin usuarios activos → 200; inactivar «Supervisor de turno» → 409 «El rol tiene 1 usuarios activos»; activar Auditor → 200 y aparece en `?estado=activo`.
+**Prueba independiente**: inactivar un rol sin usuarios activos → 200; inactivar «Supervisor de turno» → 409 «El rol tiene 1 usuarios activos»; activar Auditor → 200 y aparece en `?estado=activo`.
 
-### Tests for User Story 5
+### Pruebas de la historia 5
 
 - [X] T042 [US5] `backend/tests/integration/roles.test.js` bloque HU-05: `E1` rol creado en la prueba → inactivo + bitácora `cambiar_estado`, y ya no sale en `GET /roles?estado=activo` (fuente de las opciones de asignación, RF-ROL-14); `E2` 409 `ROL_CON_USUARIOS_ACTIVOS` con N real en el mensaje; `E3` rol base → 409 `ROL_BASE_INMUTABLE`; `E4` reactivar Auditor → 200; `E5` `estado:'borrado'` → 422; mismo estado → 200 sin nueva entrada en bitácora
 
-### Implementation for User Story 5
+### Implementación de la historia 5
 
 - [X] T043 [US5] `rolesService.cambiarEstado(id, estado, actor)` en `backend/src/modules/roles/roles.service.js`: `withTransaction` + bloqueo del rol; 404; sin cambios → devuelve el actual; si `inactivo`: rol base → 409 y `contarUsuariosActivos > 0` → 409 con N; `cambiarEstado` + `registrarBitacora`
 - [X] T044 [US5] Ruta `PATCH /roles/:id/estado` (`authorize('roles.cambiar_estado')`) y controlador `cambiarEstado` en `backend/src/modules/roles/roles.{routes,controller}.js`
 
-**Checkpoint**: HU-01 a HU-05 en verde.
+**Punto de control**: HU-01 a HU-05 en verde.
 
 ---
 
-## Phase 8: User Story 6 — Catálogo de permisos (Priority: P3) · HU-06
+## Fase 8: Historia de usuario 6 — Catálogo de permisos (Prioridad: P3) · HU-06
 
-**Goal**: catálogo agrupado por módulo, solo para quien tenga `roles.ver` (RF-ROL-15, RNF-SEG-04).
+**Objetivo**: catálogo agrupado por módulo, solo para quien tenga `roles.ver` (RF-ROL-15, RNF-SEG-04).
 
-**Independent Test**: Administrador → 200 agrupado; Operador → 403; sin token → 401.
+**Prueba independiente**: Administrador → 200 agrupado; Operador → 403; sin token → 401.
 
-### Tests for User Story 6
+### Pruebas de la historia 6
 
 - [X] T045 [US6] `backend/tests/integration/permisos.test.js`: `HU-06 E1` 200 con 21 grupos y 63 permisos con `codigo = modulo.accion`; `E2` Operador → 403 `SIN_PERMISO`; `E3` sin token → 401 `NO_AUTENTICADO`
 
-### Implementation for User Story 6
+### Implementación de la historia 6
 
 - [X] T046 [US6] `rolesService.catalogo()` + ruta `GET /permisos` (`authorize('roles.ver')`) montada en `/api/v1` desde `backend/src/modules/roles/roles.routes.js` (exporta `rolesRouter` y `permisosRouter`)
 
-**Checkpoint**: las 6 historias en verde en la API.
+**Punto de control**: las 6 historias en verde en la API.
 
 ---
 
-## Phase 9: Interfaz por historia (rebanada vertical, constitución §VII)
+## Fase 9: Interfaz por historia (rebanada vertical, constitución §VII)
 
 - [X] T047 [P] [US1] [US3] [US5] `frontend/roles.html` + `frontend/js/views/roles.view.js` + `frontend/js/services/roles.service.js`: tabla paginada (10) con buscador, filtro de estado, etiqueta BASE, conteo de usuarios, acciones Ver, Editar y Cambiar estado (`<dialog>` de confirmación; 409 → toast con `message`); estados de carga, vacío y error
 - [X] T048 [P] [US2] [US4] Diálogo «Nuevo / Editar rol» en `frontend/roles.html` (`<template>` de grupos de permisos con casillas por módulo; validación en línea 3–40 y «Seleccione al menos un permiso»; `details` junto al campo; `ROL_DUPLICADO` en el campo nombre; el nombre se deshabilita en roles base)
 - [X] T049 [P] [US3] `frontend/rol-detalle.html` + `frontend/js/views/rol-detalle.view.js`: datos del rol, permisos agrupados, usuarios asignados y 404 «Rol no encontrado»
 - [X] T050 [P] [US6] `frontend/permisos.html` + `frontend/js/views/permisos.view.js`: catálogo de solo lectura agrupado
-- [X] T051 `frontend/js/components/navbar.js`: entradas Configuración › Roles y Permisos solo con `roles.ver`; acceso directo sin permiso → aviso 403 (criterio 2 de HU-06)
+- [X] T051 `frontend/js/components/organismos/navbar.js` (y `plantillas/marco-app.js`): entradas Configuración › Roles y Permisos solo con `roles.ver`; acceso directo sin permiso → aviso 403 (criterio 2 de HU-06)
 
 ---
 
-## Phase 10: Polish & Cross-Cutting
+## Fase 10: Pulido y transversales
 
 - [X] T052 Carpeta «001 Roles y permisos» en `backend/docs/postman/parqueadero.postman_collection.json` con las peticiones de la tabla de [quickstart.md](quickstart.md#colección-postman-carpeta-001-roles-y-permisos), cada una con `pm.test` de status y `ok`/`error.code`; `npm run test:api` en verde con el servidor en marcha
 - [X] T053 [P] Actualizar `README.md` (se unificó en el README raíz; no se crea `backend/README.md`): instalación, Node 20, `.env`/`.env.test`, `db:reset`, usuarios de prueba, endpoints de 001, pruebas (Jest y Newman), flujo spec-kit + Gitflow y aviso de certificados TLS
@@ -216,48 +216,48 @@ description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundationa
 
 ---
 
-## Dependencies & Execution Order
+## Dependencias y orden de ejecución
 
-### Phase Dependencies
+### Dependencias entre fases
 
-- **Setup (1)** → **Foundational (2)** → historias (3–8) → interfaz (9) → pulido (10).
-- Foundational **bloquea** todas las historias (esquema, auth, validación y sobre).
+- **Preparación (1)** → **Fundacional (2)** → historias (3–8) → interfaz (9) → pulido (10).
+- La fase Fundacional **bloquea** todas las historias (esquema, auth, validación y sobre).
 
-### User Story Dependencies
+### Dependencias entre historias
 
-- **US1 (P1)**: solo depende de Foundational. Crea el repositorio, el validador y las reglas que reutilizan las demás.
+- **US1 (P1)**: solo depende de la fase Fundacional. Crea el repositorio, el validador y las reglas que reutilizan las demás.
 - **US2, US3, US6**: dependen de T028–T032 (archivos del módulo roles). Entre ellas son independientes en cuanto a funcionalidad.
 - **US4**: usa `faltanProtegidos`/`esRenombre` (US1) y la validación de permisos de US2 (T034).
 - **US5**: usa `asegurarNoBase` (US1).
 - **Interfaz (9)**: cada pantalla depende del endpoint de su historia.
 
-### Within Each User Story
+### Dentro de cada historia
 
 - Primero las pruebas (y verificar que fallan), luego validador y repositorio, después el servicio y por último la ruta y el controlador.
 - `roles.service.js`, `roles.routes.js`, `roles.controller.js` y `roles.test.js` son archivos compartidos, así que las tareas de US2 a US6 sobre ellos son **secuenciales**.
 
-### Parallel Opportunities
+### Oportunidades de paralelismo
 
-- Setup: T005 ∥ T006.
-- Foundational: T011 ∥ T012 ∥ T013 ∥ T014; T018 ∥ T019; T022 ∥ T023.
+- Preparación: T005 ∥ T006.
+- Fundacional: T011 ∥ T012 ∥ T013 ∥ T014; T018 ∥ T019; T022 ∥ T023.
 - US1: T026 ∥ T028 ∥ T029.
 - Interfaz: T047 ∥ T049 ∥ T050 (archivos distintos).
 
-## Parallel Example: User Story 1
+## Ejemplo de paralelismo: historia 1
 
 ```text
 T026 roles.reglas.test.js   ∥   T028 roles.reglas.js   ∥   T029 roles.validator.js
 → T030 roles.repository.js → T031 roles.service.js → T032 controller + routes → T027 HU-01 en verde
 ```
 
-## Implementation Strategy
+## Estrategia de implementación
 
-### MVP First (User Story 1 Only)
+### Primero el MVP (solo la historia 1)
 
-1. Setup → Foundational (checkpoint: health, login y pruebas base).
-2. US1 → validar HU-01 (roles base inmutables y con sus permisos). **Stop & validate.**
+1. Preparación → Fundacional (checkpoint: health, login y pruebas base).
+2. US1 → validar HU-01 (roles base inmutables y con sus permisos). **Detenerse y validar.**
 
-### Incremental Delivery
+### Entrega incremental
 
 3. US2 → US3 → US4 → US5 → US6, con un checkpoint en verde después de cada una.
 4. Interfaz (fase 9) y pulido (fase 10).

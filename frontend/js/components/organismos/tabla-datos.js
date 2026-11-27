@@ -1,12 +1,12 @@
 /**
- * Tablas de datos escritas en el HTML (.organism-data-table). El marcado (encabezados, estado
- * vacío, paginación, capa de carga) está en la página; aquí se conectan los eventos y se copian
- * las filas desde un <template>. Nunca llama a la API: la vista le pasa datos y callbacks.
+ * Organismo · organism-data-table: tabla de datos con estado vacío, paginación y capa de carga.
+ * Todo su marcado está en la página; aquí se conectan los eventos y se copian las filas desde un
+ * <template>. Nunca llama a la API: la página (vista) le pasa los datos y los callbacks.
  *
  * Estructura dentro de la raíz: tbody, .molecule-empty-state, .molecule-pagination
  * (botones Anterior / Siguiente + .molecule-pagination-status), .organism-data-table-loading.
  */
-import { clonar } from './plantilla.js';
+import { clonar } from '../../utils/plantillas.js';
 
 /**
  * @param {HTMLElement} raiz
@@ -60,20 +60,4 @@ export function conectarTabla(raiz, { plantilla, rellenar, onPagina, idDe }) {
       raiz.toggleAttribute('aria-busy', activo);
     },
   };
-}
-
-/** Buscador con espera: llama a onBuscar al dejar de escribir o al pulsar Enter. */
-export function conectarBusqueda(input, onBuscar, { espera = 350 } = {}) {
-  let temporizador;
-  input.addEventListener('input', () => {
-    clearTimeout(temporizador);
-    temporizador = setTimeout(() => onBuscar(input.value.trim()), espera);
-  });
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      clearTimeout(temporizador);
-      onBuscar(input.value.trim());
-    }
-  });
 }

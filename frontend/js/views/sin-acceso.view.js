@@ -1,4 +1,4 @@
-// Usuario autenticado sin pantallas disponibles: el botón cierra la sesión del navegador.
+// Página · Usuario autenticado sin pantallas disponibles: el botón cierra la sesión del navegador.
 import { cerrarSesion } from '../services/auth.service.js';
 
 document.getElementById('sin-acceso-salir').addEventListener('click', async (e) => {

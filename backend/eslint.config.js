@@ -66,6 +66,20 @@ const reglasComunes = {
   'prefer-const': 'error',
 };
 
+// Atomic Design (constitución §V): un componente solo importa niveles inferiores y nunca la capa
+// de servicios (los componentes no llaman a la API; lo hacen las páginas en js/views).
+const SIN_SERVICIOS = { group: ['**/services/*'], message: 'Los componentes no llaman a la API: hágalo desde la página (js/views).' };
+const nivelesProhibidos = (niveles) => ({
+  group: niveles.map((n) => `**/components/${n}/*`).concat(niveles.map((n) => `../${n}/*`)),
+  message: 'Atomic Design: un componente solo puede importar componentes de niveles inferiores.',
+});
+const reglaAtomica = (niveles) => ({
+  'no-restricted-imports': [
+    'error',
+    { patterns: niveles.length ? [SIN_SERVICIOS, nivelesProhibidos(niveles)] : [SIN_SERVICIOS] },
+  ],
+});
+
 module.exports = [
   {
     ignores: ['**/node_modules/**', 'backend/uploads/**', 'backend/coverage/**', 'backend/docs/**', 'docs/**'],
@@ -94,4 +108,8 @@ module.exports = [
       ],
     },
   },
+  { files: ['frontend/js/components/atomos/**/*.js'], rules: reglaAtomica(['moleculas', 'organismos', 'plantillas']) },
+  { files: ['frontend/js/components/moleculas/**/*.js'], rules: reglaAtomica(['organismos', 'plantillas']) },
+  { files: ['frontend/js/components/organismos/**/*.js'], rules: reglaAtomica(['plantillas']) },
+  { files: ['frontend/js/components/plantillas/**/*.js'], rules: reglaAtomica([]) },
 ];

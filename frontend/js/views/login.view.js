@@ -1,10 +1,11 @@
-// Pantalla de inicio de sesión (HU-12, HU-13 — versión mínima de la spec 001).
+// Página · Pantalla de inicio de sesión (HU-12, HU-13 — versión mínima de la spec 001).
 import { iniciarSesion } from '../services/auth.service.js';
 import { paginaInicial } from '../config/config.js';
 import { leerSesion } from '../utils/sesion.js';
 import { $, parametro } from '../utils/dom.js';
-import { marcarCampo, limpiarErrores, pintarErroresApi } from '../components/formulario.js';
-import { mostrarAlerta, botonCargando } from '../components/plantilla.js';
+import { marcarCampo, limpiarErrores, pintarErroresApi } from '../components/moleculas/campo.js';
+import { botonCargando } from '../components/atomos/boton.js';
+import { mostrarAlerta } from '../components/moleculas/alerta.js';
 
 const formulario = $('login-form');
 const alerta = $('login-alerta');

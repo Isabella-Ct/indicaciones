@@ -1,4 +1,4 @@
-// Configuración › Roles (HU-01..HU-05): listado, búsqueda, nuevo/editar y cambio de estado.
+// Página · Configuración › Roles (HU-01..HU-05): listado, búsqueda, nuevo/editar y cambio de estado.
 import {
   listarRoles,
   obtenerRol,
@@ -8,12 +8,16 @@ import {
   listarPermisos,
   nombreModulo,
 } from '../services/roles.service.js';
-import { montarMarco } from '../components/navbar.js';
-import { conectarTabla, conectarBusqueda } from '../components/tabla-paginada.js';
-import { clonar, ponerChip, mostrarAlerta, botonCargando } from '../components/plantilla.js';
-import { abrirDialogo, cerrarDialogo, confirmar } from '../components/dialogo.js';
-import { marcarCampo, limpiarErrores, pintarErroresApi } from '../components/formulario.js';
-import { mostrarAviso } from '../components/toast.js';
+import { montarMarco } from '../components/plantillas/marco-app.js';
+import { conectarTabla } from '../components/organismos/tabla-datos.js';
+import { conectarBusqueda } from '../components/moleculas/buscador.js';
+import { clonar } from '../utils/plantillas.js';
+import { ponerChipActivo } from '../components/atomos/chip-estado.js';
+import { botonCargando } from '../components/atomos/boton.js';
+import { mostrarAlerta } from '../components/moleculas/alerta.js';
+import { abrirDialogo, cerrarDialogo, confirmar } from '../components/organismos/modal.js';
+import { marcarCampo, limpiarErrores, pintarErroresApi } from '../components/moleculas/campo.js';
+import { mostrarAviso } from '../components/moleculas/aviso.js';
 import { tienePermiso } from '../utils/sesion.js';
 import { $, parametro } from '../utils/dom.js';
 import { texto, plural } from '../utils/formato.js';
@@ -38,11 +42,7 @@ const tabla = conectarTabla($('tabla-roles'), {
     fila.querySelector('.js-descripcion').textContent = texto(rol.descripcion);
     fila.querySelector('.js-usuarios').textContent =
       `${plural(rol.usuariosAsignados, 'usuario')} · ${rol.usuariosActivos} activos`;
-    ponerChip(
-      fila.querySelector('.js-estado'),
-      rol.estado === 'activo' ? 'Activo' : 'Inactivo',
-      rol.estado === 'activo' ? 'free' : 'out'
-    );
+    ponerChipActivo(fila.querySelector('.js-estado'), rol.estado);
     fila.querySelector('.js-ver').href = `/rol-detalle.html?id=${rol.idRol}`;
     fila.querySelector('.js-ver').setAttribute('aria-label', `Ver el rol ${rol.nombre}`);
 

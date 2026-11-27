@@ -152,7 +152,9 @@ backend/
 frontend/
   index.html, login.html, <pantalla>.html
   css/                       # tokens, base, átomos, moléculas, organismos, plantillas (PARKO)
-  js/{config, api, services, views, components, utils}
+  js/{config, api, services, utils}
+  js/components/{atomos, moleculas, organismos, plantillas}   # Atomic Design: sin llamadas a la API
+  js/views/                  # nivel PÁGINA: una vista por pantalla, llama a services/
   assets/                    # íconos (sprite SVG) y favicon
 ```
 

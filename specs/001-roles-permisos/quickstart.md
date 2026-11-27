@@ -1,4 +1,4 @@
-# Quickstart — 001-roles-permisos
+# Guía rápida — 001-roles-permisos
 
 Guía para comprobar que la spec funciona de punta a punta. El contrato está en [contracts/openapi.yaml](contracts/openapi.yaml) y el modelo en [data-model.md](data-model.md).
 

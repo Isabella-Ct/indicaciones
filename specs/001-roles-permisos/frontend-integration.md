@@ -1,4 +1,4 @@
-# Frontend integration — 001-roles-permisos
+# Integración con el frontend — 001-roles-permisos
 
 Guía para conectar el frontend con los endpoints de esta spec (prompt §3.11, constitución §V). En 001 además se **reestructura** `frontend/` según la constitución ([research.md](research.md) R-13).
 
@@ -10,9 +10,9 @@ El frontend v1 no usa datos simulados: consume la API v1. Lo que toca a este mó
 |---|---|---|
 | `frontend/login.html`, `js/pages/login.js` | login con cookie, `{data}` | `frontend/login.html` + `js/views/login.view.js`: Bearer en `sessionStorage`, `{ok,data}` |
 | `js/services/api.js` | `fetch` con `credentials:'include'`, lee `error.codigo` | `js/api/http.js`: Bearer, lee `error.code`/`error.details`, timeout |
-| `js/pages/comun/marco.js` | header y navbar según rol | `js/components/navbar.js`: navbar según **permisos** del login |
-| `js/pages/comun/plantillas.js` | `cloneNode` de `<template>` | `js/components/plantilla.js` (se reutiliza la lógica) |
-| `js/pages/comun/modales.js` | modales con Esc y foco | `js/components/dialogo.js`: confirmación con `<dialog>` (constitución §V) |
+| `js/pages/comun/marco.js` | header y navbar según rol | `js/components/organismos/navbar.js` + `moleculas/menu-usuario.js` + `plantillas/marco-app.js`: navbar según **permisos** del login |
+| `js/pages/comun/plantillas.js` | `cloneNode` de `<template>` | `js/utils/plantillas.js` (se reutiliza la lógica) |
+| `js/pages/comun/modales.js` | modales con Esc y foco | `js/components/organismos/modal.js`: confirmación con `<dialog>` (constitución §V) |
 | `js/utils/*` (formato COP, fechas) | formatos es-CO | `js/utils/formato.js` |
 | `styles/tokens.css`, `base.css`, `atomic/*.css` | sistema PARKO | `css/tokens.css`, `css/base.css`, `css/componentes.css` (los valores no cambian) |
 | `js/services/roles.service.js` (`GET /roles` simple) | lista de roles para el select de usuarios | `js/services/roles.service.js` con las 6 funciones de abajo |
@@ -52,7 +52,7 @@ Diferencias de forma de los datos (v1 → v2): `id` → `idRol`; `nombre` igual;
 
 ## 4. Reglas de componentes
 
-- `js/components/*` (tabla paginada, diálogo, toast, navbar, plantilla) **nunca** llaman a la API: reciben datos y callbacks.
+- Atomic Design: `js/components/atomos/` → `moleculas/` → `organismos/` → `plantillas/`; cada nivel solo importa niveles inferiores y **ninguno** llama a la API (reciben datos y callbacks). ESLint lo hace cumplir (`no-restricted-imports`).
 - `js/views/<pantalla>.view.js` llama a los servicios y pasa los datos a los componentes.
 - Los datos de la API se pintan **solo** con `textContent` y clonando `<template>`, nunca con `innerHTML` (constitución §V).
 

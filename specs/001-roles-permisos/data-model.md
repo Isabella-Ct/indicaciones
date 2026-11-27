@@ -1,4 +1,4 @@
-# Data Model — 001-roles-permisos
+# Modelo de datos — 001-roles-permisos
 
 **Fuente**: SRS v2.0 §6.1 (4.1 Roles y permisos, 4.2 Usuario), [research.md](research.md) R-08 a R-12. El esquema completo vive en `backend/database/schema.sql`. Este documento detalla las tablas que **usa, crea o modifica** la spec 001; las demás se describen en la spec que las usa.
 
@@ -45,7 +45,7 @@ PK compuesta `(id_rol, id_permiso)`, que es la forma de 6.1. Índice `idx_rol_pe
 
 ### `usuario` (6.1 *Usuario*): solo lectura en 001
 
-Se crea completa en Foundational (columnas de 6.1 más `debe_cambiar_contrasena BOOLEAN DEFAULT TRUE`, que pide RF-ACC-04). La spec 001 solo la lee para:
+Se crea completa en la fase Fundacional (columnas de 6.1 más `debe_cambiar_contrasena BOOLEAN DEFAULT TRUE`, que pide RF-ACC-04). La spec 001 solo la lee para:
 
 - contar los usuarios asignados y los activos de un rol (RF-ROL-07, RF-ROL-13);
 - listar los usuarios de un rol en el detalle (`id_usuario`, `nombre_completo`, `estado`; RF-ROL-08, FR-019);

@@ -1,14 +1,14 @@
-# Implementation Plan: Roles y permisos
+# Plan de implementación: Roles y permisos
 
-**Branch**: `001-roles-permisos` | **Date**: 2026-11-26 | **Spec**: [spec.md](spec.md)
+**Rama**: `001-roles-permisos` | **Fecha**: 2026-11-26 | **Spec**: [spec.md](spec.md)
 
-**Input**: Feature specification from `specs/001-roles-permisos/spec.md`
+**Entrada**: especificación de `specs/001-roles-permisos/spec.md`
 
-## Summary
+## Resumen
 
 Administración de roles y del catálogo de permisos (HU-01 a HU-06; RF-ROL-01 a RF-ROL-15; RN-01, RN-03, RN-04). Se implementan los 7 endpoints del Apéndice B.1 §4.1 sobre un backend monolítico Node.js 20 + Express + MySQL 8 sin ORM.
 
-Como es la **primera spec**, el plan incluye las fases **Setup** y **Foundational** de la versión 2:
+Como es la **primera spec**, el plan incluye las fases **Preparación (Setup)** y **Fundacional** de la versión 2:
 
 - esquema global según el modelo 6.1 del SRS;
 - sobre `{ ok, data, meta, error }` y errores tipados;
@@ -21,29 +21,29 @@ Como es la **primera spec**, el plan incluye las fases **Setup** y **Foundationa
 
 Las decisiones de detalle están en [research.md](research.md).
 
-## Technical Context
+## Contexto técnico
 
-**Language/Version**: JavaScript (ES2022) en **CommonJS** sobre **Node.js 20 LTS** (`engines: "20.x"`, `.nvmrc`). Ver R-02 y R-15.
+**Lenguaje/Versión**: JavaScript (ES2022) en **CommonJS** sobre **Node.js 20 LTS** (`engines: "20.x"`, `.nvmrc`). Ver R-02 y R-15.
 
-**Primary Dependencies**:
+**Dependencias principales**:
 - Producción: `express` 5, `mysql2/promise`, `zod` 3, `jsonwebtoken`, `bcrypt`, `helmet`, `cors`, `dotenv`.
 - Justificadas en *Complexity Tracking*: `express-rate-limit`, `multer`, `pdfkit`.
 - Desarrollo: `jest`, `supertest`, `eslint`, `prettier`.
 - Global: `newman`.
 
-**Storage**: MySQL 8.0+ (InnoDB, `utf8mb4_0900_ai_ci`), base `parqueaderodb` (configurable). Pool `mysql2/promise` con `timezone: '-05:00'`, consultas parametrizadas, sin `SELECT *`. Esquema en `backend/database/schema.sql`, cambios en `backend/database/CAMBIOS.md`.
+**Almacenamiento**: MySQL 8.0+ (InnoDB, `utf8mb4_0900_ai_ci`), base `parqueaderodb` (configurable). Pool `mysql2/promise` con `timezone: '-05:00'`, consultas parametrizadas, sin `SELECT *`. Esquema en `backend/database/schema.sql`, cambios en `backend/database/CAMBIOS.md`.
 
-**Testing**:
+**Pruebas**:
 - Jest + Supertest (integración por HU y escenario; unitarias de funciones puras) contra `parqueaderodb_test`, que un `globalSetup` recrea.
 - Postman + Newman en `backend/docs/postman/`, con una carpeta por spec y casos de éxito y de error por endpoint (RNF-CAL-03).
 
-**Target Platform**: un proceso Node que sirve `/api/v1` y `frontend/` estático. Navegadores Chrome, Edge, Firefox y Safari en sus dos últimas versiones.
+**Plataforma objetivo**: un proceso Node que sirve `/api/v1` y `frontend/` estático. Navegadores Chrome, Edge, Firefox y Safari en sus dos últimas versiones.
 
-**Project Type**: aplicación web monolítica: `backend/` + `frontend/` en el mismo repositorio y el mismo origen.
+**Tipo de proyecto**: aplicación web monolítica: `backend/` + `frontend/` en el mismo repositorio y el mismo origen.
 
-**Performance Goals**: listados y búsquedas ≤ 1 s p95 con 50 000 registros (RNF-REN-02, SC-004). El listado de roles usa `COUNT` agregado en una consulta, sin N+1.
+**Metas de rendimiento**: listados y búsquedas ≤ 1 s p95 con 50 000 registros (RNF-REN-02, SC-004). El listado de roles usa `COUNT` agregado en una consulta, sin N+1.
 
-**Constraints**:
+**Restricciones**:
 - RNF-SEG-02 a RNF-SEG-07 y RNF-PRI-01/02;
 - token de 8 h;
 - 403 en el servidor aunque la opción esté oculta;
@@ -52,15 +52,15 @@ Las decisiones de detalle están en [research.md](research.md).
 - español, COP y `America/Bogota`;
 - sin `innerHTML` con datos externos.
 
-**Scale/Scope**: 1 sede, unos 20 usuarios concurrentes. Catálogo de 63 permisos y menos de 50 roles esperados.
+**Escala/Alcance**: 1 sede, unos 20 usuarios concurrentes. Catálogo de 63 permisos y menos de 50 roles esperados.
 
-## Constitution Check
+## Verificación de la constitución (Constitution Check)
 
-*GATE: pasa antes de la fase 0 y se vuelve a verificar después del diseño (fase 1).*
+*COMPUERTA: pasa antes de la fase 0 y se vuelve a verificar después del diseño (fase 1).*
 
 | Principio | Cumplimiento en 001 | Estado |
 |---|---|---|
-| I. La especificación manda | `spec.md` aprobada con su sección Clarifications. La trazabilidad HU/RF/RN/FR está en la matriz de abajo, en los nombres de las pruebas y en los commits. Las tablas nuevas van marcadas `[Propuesta]` con su RF de origen. | ✅ |
+| I. La especificación manda | `spec.md` aprobada con su sección Aclaraciones. La trazabilidad HU/RF/RN/FR está en la matriz de abajo, en los nombres de las pruebas y en los commits. Las tablas nuevas van marcadas `[Propuesta]` con su RF de origen. | ✅ |
 | II. Monolito por capas y REST | `routes → controller → service → repository`. Rutas en plural y kebab-case de B.1, `PATCH …/estado`, sobre `{ok,data,meta,error}`, 409 para reglas y 422 para validación, paginación `page/limit/q`, eliminación lógica (no hay DELETE de roles). | ✅ |
 | III. Seguridad y privacidad | JWT Bearer de 8 h, bcrypt 10, `authorize('roles.*')` con denegación por defecto, zod en todas las entradas, SQL parametrizado, `helmet`, `cors` restringido a `CORS_ORIGIN`, límite de intentos de login, `.env` fuera del repositorio. El detalle de un rol muestra solo los datos mínimos del usuario. | ✅ |
 | IV. Integridad de datos | MySQL 8 sin ORM, PK `id_<entidad>`, FK, `UNIQUE` sobre el nombre normalizado, `created_at/updated_at`, transacciones en crear, actualizar y cambiar estado, hora del servidor. Cada RN tiene una prueba de que se cumple y otra de que se rechaza su violación. | ✅ |
@@ -70,11 +70,11 @@ Las decisiones de detalle están en [research.md](research.md).
 
 **Nota 1**: las páginas `.html` internas quedan en la raíz de `frontend/`, junto a `index.html`, porque la constitución no fija dónde van las páginas además de `index.html`. Ver R-13.
 
-**Re-evaluación después de la fase 1**: el diseño (data-model, contrato y quickstart) no agrega violaciones. Las tablas `sesion`, `bitacora` y `consecutivo` son `[Propuesta]` justificadas en RF y RNF (R-09) y no contradicen principios. **GATE: PASA.**
+**Re-evaluación después de la fase 1**: el diseño (data-model, contrato y quickstart) no agrega violaciones. Las tablas `sesion`, `bitacora` y `consecutivo` son `[Propuesta]` justificadas en RF y RNF (R-09) y no contradicen principios. **COMPUERTA: PASA.**
 
-## Project Structure
+## Estructura del proyecto
 
-### Documentation (this feature)
+### Documentación (esta funcionalidad)
 
 ```text
 specs/001-roles-permisos/
@@ -89,7 +89,7 @@ specs/001-roles-permisos/
 └── tasks.md                 # /speckit-tasks (no lo genera este comando)
 ```
 
-### Source Code (repository root)
+### Código fuente (raíz del repositorio)
 
 ```text
 backend/
@@ -153,19 +153,24 @@ frontend/
 │   ├── api/http.js
 │   ├── services/{auth.service.js, roles.service.js}
 │   ├── views/{login.view.js, roles.view.js, rol-detalle.view.js, permisos.view.js}
-│   ├── components/{navbar.js, tabla-paginada.js, dialogo.js, toast.js, plantilla.js, formulario.js}
+│   ├── components/
+│   │   ├── atomos/{boton.js, chip-estado.js}                         # atom-button, atom-status-chip
+│   │   ├── moleculas/{campo.js, alerta.js, aviso.js, buscador.js, menu-usuario.js}
+│   │   ├── organismos/{tabla-datos.js, modal.js, navbar.js}          # organism-data-table, organism-modal, organism-navbar
+│   │   └── plantillas/marco-app.js                                   # template-app-layout
+│   ├── views/ = nivel PÁGINA (una por pantalla; únicas que llaman a services/)
 │   └── utils/{sesion.js, formato.js, dom.js}
 └── assets/{icons.svg, logo.svg}
 ```
 
-**Structure Decision**: aplicación web monolítica con `backend/` y `frontend/`. Los módulos v1 que no son de esta spec y sus pantallas se **retiran** de `src/modules/`, `tests/` y `frontend/` (R-01). Quedan en el tag `v0.9.0-legado` y en el historial de git, para que cada spec 002–015 los consulte al reconstruirse. Se reutilizan de v1: `fechas`, `placas`, `pdf`, `csv`, `dinero`, `generar-seed.js`, `reset.js` y el CSS de PARKO.
+**Decisión de estructura**: aplicación web monolítica con `backend/` y `frontend/`. Los módulos v1 que no son de esta spec y sus pantallas se **retiran** de `src/modules/`, `tests/` y `frontend/` (R-01). Quedan en el tag `v0.9.0-legado` y en el historial de git, para que cada spec 002–015 los consulte al reconstruirse. Se reutilizan de v1: `fechas`, `placas`, `pdf`, `csv`, `dinero`, `generar-seed.js`, `reset.js` y el CSS de PARKO.
 
 ## Fases
 
 | Fase | Contenido | Entregable verificable |
 |---|---|---|
-| **1 · Setup** | Tag `v0.9.0-legado`; retiro de los módulos, pruebas y pantallas v1; `package.json` (Node 20, scripts, dependencias limpias); `.nvmrc`; `.env.example`; ESLint y Prettier | `npm run lint` sin errores sobre el esqueleto |
-| **2 · Foundational** (bloquea las historias) | `schema.sql` 6.1 completo + `CAMBIOS.md`; `seed.sql`; `config/env` y `db` (pool, `withTransaction`); `respuesta`, `errores`, `paginacion`, `bitacora`, `consecutivos`; middlewares; `app.js`/`server.js`; `/health`; login mínimo con `sesion`; `globalSetup` de Jest; colección Postman base; frontend: `css/`, `js/api/http.js`, componentes, `login.html` y el armazón con navbar | `npm run db:reset`, `GET /health` 200, login 200/401/422, una ruta protegida responde 401/403, pruebas unitarias en verde |
+| **1 · Preparación (Setup)** | Tag `v0.9.0-legado`; retiro de los módulos, pruebas y pantallas v1; `package.json` (Node 20, scripts, dependencias limpias); `.nvmrc`; `.env.example`; ESLint y Prettier | `npm run lint` sin errores sobre el esqueleto |
+| **2 · Fundacional** (bloquea las historias) | `schema.sql` 6.1 completo + `CAMBIOS.md`; `seed.sql`; `config/env` y `db` (pool, `withTransaction`); `respuesta`, `errores`, `paginacion`, `bitacora`, `consecutivos`; middlewares; `app.js`/`server.js`; `/health`; login mínimo con `sesion`; `globalSetup` de Jest; colección Postman base; frontend: `css/`, `js/api/http.js`, componentes, `login.html` y el armazón con navbar | `npm run db:reset`, `GET /health` 200, login 200/401/422, una ruta protegida responde 401/403, pruebas unitarias en verde |
 | **3 · US1 (P1, MVP)** HU-01 | Seed de roles base y permisos; `GET /roles`; reglas de rol base en servicio y repositorio | Pruebas HU-01 E1–E5 |
 | **4 · US2 (P2)** HU-02 | `POST /roles` + bitácora | HU-02 E1–E4 |
 | **5 · US3 (P2)** HU-03 | Búsqueda, filtro, paginación; `GET /roles/:id` | HU-03 E1–E5 |
@@ -200,7 +205,7 @@ frontend/
 | RNF-SEG-07 | `registrarBitacora` en la transacción de crear, editar y cambiar estado de un rol | `roles.service.js` |
 | RNF-PRI-02 | el detalle de un rol solo lo ven quienes tienen `roles.ver`; datos mínimos de usuario (FR-019) | `roles.repository.obtenerUsuarios` |
 | RNF-REN-02 | `COUNT` con `GROUP BY` en una consulta; índices `idx_rol_estado`, `idx_usuario_rol_estado`, `uq_rol_nombre` | `roles.repository.listar` |
-| RNF-USA-03/04 | `details` por campo → error junto al campo; foco visible; `<dialog>`; `aria-live` en los toasts | `frontend/js/components/formulario.js`, `dialogo.js`, `toast.js` |
+| RNF-USA-03/04 | `details` por campo → error junto al campo; foco visible; `<dialog>`; `aria-live` en los toasts | `frontend/js/components/moleculas/{campo,aviso}.js`, `organismos/modal.js` |
 | RNF-USA-01 | tabla con scroll interno; breakpoints de 1180 y 760 px | `css/componentes.css` |
 | RNF-CAL-03 | carpeta Postman 001 con éxito y error por endpoint; `npm run test:api` | `backend/docs/postman/` |
 | RNF-TEC-01…04 | Node 20 + Express por capas; MySQL 8 con `mysql2/promise` sin ORM; frontend vanilla; `/api/v1` + JWT | todo |
@@ -229,7 +234,7 @@ Catálogo completo y asignación por rol: [data-model.md § Catálogo de permiso
 | Diferencias entre Node 26 (máquina local) y Node 20 (rúbrica) | `engines` 20.x, sin APIs posteriores; se recomienda probar con nvm-windows antes de la entrega |
 | La inspección de TLS del equipo bloquea `npm`/`uv` | documentado en el README (`npm config set cafile` / `--system-certs`) |
 
-## Complexity Tracking
+## Seguimiento de complejidad (Complexity Tracking)
 
 Dependencias que no están en la lista de la constitución §VII (que permite express, mysql2, dotenv, bcrypt/bcryptjs, jsonwebtoken, helmet, cors, una librería de validación, morgan y nodemailer):
 

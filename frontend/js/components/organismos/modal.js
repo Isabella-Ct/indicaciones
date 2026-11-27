@@ -1,6 +1,7 @@
 /**
- * Diálogos con <dialog> nativo (constitución §V): showModal deja inerte el resto de la página,
- * Esc cierra, y el foco vuelve al botón que lo abrió (RNF-USA-04).
+ * Organismo · organism-modal sobre <dialog> nativo (constitución §V): showModal deja inerte el
+ * resto de la página, Esc cierra y el foco vuelve al botón que lo abrió (RNF-USA-04).
+ * La confirmación usa el <dialog id="dialogo-confirmar"> escrito en la página.
  */
 const retornos = new WeakMap();
 const preparados = new WeakSet();

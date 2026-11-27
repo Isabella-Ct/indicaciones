@@ -4,7 +4,7 @@
    valores; solo cambian los nombres de clase.
    ========================================================================== */
 
-/* Template · app-layout (maqueta: .page) */
+/* Plantilla · app-layout (maqueta: .page) */
 .template-app-layout {
   display: flex;
   flex-direction: column;
@@ -354,7 +354,7 @@
   font-size: 0.9375rem;
 }
 
-/* Template · auth-layout (nuevo): panel centrado sobre el concreto. */
+/* Plantilla · auth-layout (nuevo): panel centrado sobre el concreto. */
 .template-auth-layout {
   display: grid;
   align-content: center;
@@ -412,7 +412,7 @@
   }
 }
 
-/* Template · public-layout (nuevo): misma piel PARKO que el panel interno */
+/* Plantilla · public-layout (nuevo): misma piel PARKO que el panel interno */
 .template-public-layout-actions {
   display: flex;
   flex-wrap: wrap;
