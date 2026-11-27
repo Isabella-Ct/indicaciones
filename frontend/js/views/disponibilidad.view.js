@@ -12,6 +12,9 @@ import { mostrarAviso } from '../components/moleculas/aviso.js';
 import { clonar } from '../utils/plantillas.js';
 import { $ } from '../utils/dom.js';
 import { formatearHora, plural } from '../utils/formato.js';
+import { restriccionHoy } from '../services/restricciones.service.js';
+import { ponerPicoPlaca } from '../components/moleculas/aviso-pico-placa.js';
+import { tienePermiso } from '../utils/sesion.js';
 
 const marco = montarMarco({ permiso: 'celdas.ver', alSalir: cerrarSesion });
 
@@ -102,4 +105,17 @@ async function iniciar() {
   }, 10000);
 }
 
-if (marco?.permitido) iniciar();
+/** Aviso «Pico y placa hoy» (spec 006, HU-30): informativo; si falla, la pantalla sigue igual. */
+async function mostrarPicoPlaca() {
+  if (!tienePermiso('restricciones.ver')) return;
+  try {
+    ponerPicoPlaca($('pico-placa-hoy'), await restriccionHoy());
+  } catch {
+    // Sin aviso: no es crítico para la pantalla.
+  }
+}
+
+if (marco?.permitido) {
+  mostrarPicoPlaca();
+  iniciar();
+}

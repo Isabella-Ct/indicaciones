@@ -19,6 +19,8 @@ export const MENU = [
   { id: 'mis-vehiculos', texto: 'Mis vehículos', href: '/mis-vehiculos.html', permiso: 'perfil.ver', ocultarCon: 'vehiculos.ver' },
   { id: 'usuarios', texto: 'Usuarios', href: '/usuarios.html', permiso: 'usuarios.ver' },
   { id: 'parqueaderos', texto: 'Parqueaderos', href: '/parqueaderos.html', permiso: 'parqueaderos.ver', grupo: 'Configuración' },
+  // spec 006: solo quien configura ve la tabla semanal en el menú (el aviso de hoy está en otras pantallas).
+  { id: 'pico-placa', texto: 'Pico y placa', href: '/pico-placa.html', permiso: 'restricciones.crear', grupo: 'Configuración' },
   { id: 'roles', texto: 'Roles', href: '/roles.html', permiso: 'roles.ver', grupo: 'Configuración' },
   { id: 'permisos', texto: 'Permisos', href: '/permisos.html', permiso: 'roles.ver', grupo: 'Configuración' },
   { id: 'mi-perfil', texto: 'Mi perfil', href: '/mi-perfil.html', permiso: 'perfil.ver' },

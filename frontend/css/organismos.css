@@ -1804,3 +1804,32 @@ dialog.organism-modal::backdrop {
     grid-template-columns: 1fr;
   }
 }
+
+/* Organismo · tabla-semanal (nuevo, spec 006): días × tipo de vehículo con las restricciones de cada celda */
+.organism-week-table-cell {
+  display: grid;
+  gap: 8px;
+}
+
+.organism-week-table-item {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 2px solid var(--asphalt);
+  background: var(--panel);
+}
+
+.organism-week-table-item.is-inactive {
+  opacity: 0.6;
+}
+
+.organism-week-table-meta {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+.organism-week-table-empty {
+  color: var(--ink-2);
+  font-size: 0.875rem;
+}

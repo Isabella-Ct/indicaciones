@@ -15,6 +15,7 @@ const MENU = [
   ['mis-vehiculos', 'Mis vehículos', '/mis-vehiculos.html'],
   ['usuarios', 'Usuarios', '/usuarios.html'],
   ['parqueaderos', 'Parqueaderos', '/parqueaderos.html'],
+  ['pico-placa', 'Pico y placa', '/pico-placa.html'],
   ['roles', 'Roles', '/roles.html'],
   ['permisos', 'Permisos', '/permisos.html'],
   ['mi-perfil', 'Mi perfil', '/mi-perfil.html'],
@@ -423,4 +424,5 @@ require('./paginas-002.js')({ pagina, tablaVacia, icono });
 require('./paginas-003.js')({ pagina, icono, destino });
 require('./paginas-004.js')({ pagina, tablaVacia, icono });
 require('./paginas-005.js')({ pagina, tablaVacia, icono });
+require('./paginas-006.js')({ pagina, icono });
 console.log('Páginas escritas en', destino);

@@ -1,6 +1,8 @@
 // Páginas de la spec 004 (parqueaderos, puertas, celdas y disponibilidad), con el mismo marco que
 // las anteriores (se ejecuta junto con armar-paginas.js). La portada pública index.html se escribe
 // aparte porque no usa el marco interno.
+const { avisoPicoPlaca } = require('./partes-pico-placa.js');
+
 module.exports = ({ pagina, tablaVacia, icono }) => {
   const requerido = '<span class="molecule-field-required" aria-hidden="true"> *</span>';
 
@@ -267,6 +269,8 @@ ${tablaVacia(
           </div>
         </div>
 
+        ${avisoPicoPlaca(icono)}
+
         <section class="molecule-panel" aria-labelledby="filtros-titulo">
           <div class="molecule-panel-head"><h2 id="filtros-titulo">Filtros</h2></div>
           <div class="molecule-panel-body">
@@ -451,6 +455,8 @@ ${dialogo({
             <p>// Celdas libres por piso y área · se actualiza cada 10 segundos</p>
           </div>
         </div>
+
+        ${avisoPicoPlaca(icono)}
 
         <section class="molecule-panel" aria-labelledby="filtros-titulo">
           <div class="molecule-panel-head"><h2 id="filtros-titulo">Parqueadero</h2></div>

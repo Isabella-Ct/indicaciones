@@ -1,6 +1,7 @@
 // Páginas de la spec 005 (vehículos, detalle del vehículo y mis vehículos), con el mismo marco que las
 // anteriores (se ejecuta junto con armar-paginas.js). El formulario de vehículo viene de partes-vehiculo.js.
 const { camposVehiculo, requerido } = require('./partes-vehiculo.js');
+const { avisoPicoPlaca } = require('./partes-pico-placa.js');
 
 module.exports = ({ pagina, tablaVacia, icono }) => {
   const alerta = (id) => `<div class="molecule-alert molecule-alert--error molecule-field--full hidden" id="${id}" aria-live="assertive">
@@ -266,6 +267,8 @@ ${dialogo({
             <p>// Vehículos asociados a su cuenta. Para agregar uno, acérquese a la caseta.</p>
           </div>
         </div>
+
+        ${avisoPicoPlaca(icono)}
 
         <section class="molecule-panel" aria-labelledby="panel-mis-vehiculos-titulo">
           <div class="molecule-panel-head"><h2 id="panel-mis-vehiculos-titulo">Vehículos asociados</h2></div>

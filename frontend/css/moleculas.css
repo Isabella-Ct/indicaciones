@@ -1127,3 +1127,47 @@
 .molecule-space-tag {
   white-space: pre-line;
 }
+
+/* Molécula · aviso-pico-placa (nuevo, spec 006): aviso del día sobre molecule-alert, con una fila por tipo */
+.molecule-pico-placa {
+  margin-bottom: 24px;
+}
+
+.molecule-pico-placa-body {
+  display: grid;
+  gap: 8px;
+}
+
+.molecule-pico-placa-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+
+.molecule-pico-placa-list > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.molecule-pico-placa-list dt {
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.molecule-pico-placa-list dd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+/* Casillas de dígitos 0–9 en una fila (formulario de pico y placa) */
+.molecule-digit-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}

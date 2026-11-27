@@ -98,6 +98,9 @@
               <a class="organism-navbar-item" data-id="parqueaderos" href="/parqueaderos.html">Parqueaderos</a>
             </li>
             <li class="hidden">
+              <a class="organism-navbar-item" data-id="pico-placa" href="/pico-placa.html">Pico y placa</a>
+            </li>
+            <li class="hidden">
               <a class="organism-navbar-item" data-id="roles" href="/roles.html">Roles</a>
             </li>
             <li class="hidden">
@@ -126,6 +129,18 @@
             <p>// Celdas libres por piso y área · se actualiza cada 10 segundos</p>
           </div>
         </div>
+
+        <section class="molecule-alert molecule-alert--info molecule-pico-placa hidden" id="pico-placa-hoy" aria-labelledby="pico-placa-titulo" aria-live="polite">
+          <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-calendar"></use></svg>
+          <div class="molecule-pico-placa-body">
+            <p class="atom-label-caps" id="pico-placa-titulo">Pico y placa hoy · <span class="js-dia"></span></p>
+            <p class="hidden js-sin">Sin restricción hoy</p>
+            <dl class="molecule-pico-placa-list js-lista">
+              <div class="js-carro"><dt>Carros</dt><dd><span class="atom-plate js-digitos"></span><span class="js-franja"></span></dd></div>
+              <div class="js-moto"><dt>Motos</dt><dd><span class="atom-plate js-digitos"></span><span class="js-franja"></span></dd></div>
+            </dl>
+          </div>
+        </section>
 
         <section class="molecule-panel" aria-labelledby="filtros-titulo">
           <div class="molecule-panel-head"><h2 id="filtros-titulo">Parqueadero</h2></div>
