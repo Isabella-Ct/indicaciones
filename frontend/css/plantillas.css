@@ -1,0 +1,512 @@
+/* ==========================================================================
+   PLANTILLAS · esqueleto de cada tipo de página. Prefijo: template-<nombre>
+   Generado desde el CSS original de la maqueta (docs/diseno-parko) sin cambiar
+   valores; solo cambian los nombres de clase.
+   ========================================================================== */
+
+/* Template · app-layout (maqueta: .page) */
+.template-app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.template-app-layout-page {
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 24px 28px 64px;
+}
+
+.template-app-layout-page:focus {
+  outline: none;
+}
+
+/* Rejilla de paneles para el contenido de las páginas */
+.template-app-layout-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+
+.template-app-layout-grid > .template-app-layout-grid-full {
+  grid-column: 1 / -1;
+}
+
+/* Rejilla de botones/enlaces (accesos rápidos) */
+.template-app-layout-link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+/* Cabecera de cuenta: avatar + nombre + rol */
+.template-app-layout-account-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.template-app-layout-account-name {
+  margin-bottom: 6px;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+/* Mientras se carga la sesión */
+.template-app-layout-loading {
+  display: grid;
+  place-items: center;
+  min-height: 60vh;
+}
+
+@media (max-width: 1180px) {
+  .template-app-layout-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .template-app-layout-page {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+/* Pila vertical de bloques dentro de un panel o formulario */
+.template-app-layout-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+/* Mapa + detalle (maqueta, sección 5 .workspace y responsive de la sección 10) */
+.template-app-layout-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 24px;
+  align-items: start;
+}
+
+/* minmax(0, 1fr) en vez de 1fr: así el lote del mapa hace scroll dentro de su
+   contenedor en móvil, en lugar de ensanchar la página. */
+@media (max-width: 1180px) {
+  .template-app-layout-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Tarifas: formulario + simulador lado a lado */
+.template-app-layout-tariff-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.template-app-layout-tariff-headline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  text-transform: uppercase;
+}
+
+.template-app-layout-tariff-headline strong {
+  font-size: 2.75rem;
+  line-height: 1;
+}
+
+.template-app-layout-tariff-headline .atom-icon {
+  width: 32px;
+  height: 32px;
+}
+
+@media (max-width: 1180px) {
+  .template-app-layout-tariff-editor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Texto libre largo (descripciones): respeta saltos de línea y no desborda */
+.template-app-layout-text-long {
+  margin-top: 6px;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* Reportes: menú lateral (level-tabs vertical) + reporte activo */
+.template-app-layout-reports {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.template-app-layout-reports-nav {
+  position: sticky;
+  top: 16px;
+}
+
+.template-app-layout-report-description {
+  color: var(--ink-2);
+}
+
+.template-app-layout-report-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.template-app-layout-report-block {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+}
+
+.template-app-layout-report-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+
+.template-app-layout-report-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.template-app-layout-report-rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.template-app-layout-report-loading {
+  display: grid;
+  place-items: center;
+  min-height: 160px;
+}
+
+@media (max-width: 1180px) {
+  .template-app-layout-reports,
+  .template-app-layout-report-grid,
+  .template-app-layout-report-grid--3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* El menú lateral pasa a una fila de pestañas con scroll horizontal */
+  .template-app-layout-reports-nav {
+    position: static;
+    overflow-x: auto;
+  }
+
+  .template-app-layout-reports-nav .molecule-level-tabs--vertical {
+    flex-direction: row;
+    width: max-content;
+  }
+
+  .template-app-layout-reports-nav .molecule-level-tab {
+    white-space: nowrap;
+  }
+}
+
+/* Impresión limpia: sin navegación ni controles, fondo blanco, tablas completas */
+@media print {
+  .organism-header,
+  .organism-navbar,
+  .atom-hazard-strip,
+  .organism-footer,
+  .template-app-layout-reports-nav,
+  .template-app-layout-report-actions,
+  .molecule-page-head-actions,
+  .molecule-filters,
+  .molecule-pagination,
+  .molecule-toast-region,
+  .skip-link {
+    display: none !important;
+  }
+
+  body,
+  .template-app-layout-page {
+    background: var(--white);
+  }
+
+  .template-app-layout-page {
+    max-width: none;
+    padding: 0;
+  }
+
+  .template-app-layout-reports,
+  .template-app-layout-report-grid,
+  .template-app-layout-report-grid--3 {
+    display: block;
+  }
+
+  .template-app-layout-report-block,
+  .organism-kpis,
+  .organism-col-chart,
+  .organism-hbar-chart,
+  .organism-heatmap,
+  .organism-line-chart,
+  .organism-stacked-meter {
+    break-inside: avoid;
+    margin-bottom: 16px;
+  }
+
+  .organism-data-table-scroll,
+  .organism-heatmap-scroll {
+    overflow: visible;
+  }
+
+  .organism-data-table-table,
+  .organism-heatmap-grid {
+    min-width: 0;
+  }
+
+  .molecule-panel-head {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .organism-heatmap-cell,
+  .organism-col-chart-bar,
+  .organism-hbar-chart-fill,
+  .organism-stacked-meter-seg,
+  .atom-meter > span {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+/* Dashboard del cliente: mis vehículos (dentro / fuera) */
+.template-app-layout-my-vehicles {
+  display: grid;
+}
+
+.template-app-layout-my-vehicle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0 12px 12px;
+  border-bottom: 1px solid var(--rule);
+  border-left: 4px solid transparent;
+}
+
+.template-app-layout-my-vehicle.is-inside {
+  border-left-color: var(--orange);
+}
+
+.template-app-layout-my-vehicle strong {
+  display: block;
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .template-app-layout-my-vehicle {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .template-app-layout-my-vehicle > div {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+/* Portal: reserva activa (cuenta regresiva + datos + cancelar) */
+.template-app-layout-reservation-list {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.template-app-layout-reservation {
+  display: grid;
+  grid-template-columns: minmax(180px, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+}
+
+.template-app-layout-reservation .atom-plate {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 760px) {
+  .template-app-layout-reservation {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Mensajes dentro de las acciones del detalle de celda (portal) */
+.organism-space-detail-note {
+  padding: 10px 12px;
+  border-left: 4px solid var(--yellow);
+  background: var(--white);
+  font-size: 0.9375rem;
+}
+
+/* Template · auth-layout (nuevo): panel centrado sobre el concreto. */
+.template-auth-layout {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 16px;
+  min-height: 100vh;
+  padding: 32px 16px;
+}
+
+.template-auth-layout-panel {
+  width: min(460px, 100%);
+}
+
+.template-auth-layout-head {
+  padding: 14px 18px;
+}
+
+.template-auth-layout-body {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+}
+
+.template-auth-layout-title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.template-auth-layout-subtitle {
+  margin-top: -10px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.template-auth-layout-foot {
+  width: min(460px, 100%);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-2);
+  text-align: center;
+}
+
+.organism-login-form {
+  display: grid;
+  gap: 16px;
+}
+
+@media (max-width: 760px) {
+  .template-auth-layout-body {
+    padding: 18px 16px;
+  }
+}
+
+/* Template · public-layout (nuevo): misma piel PARKO que el panel interno */
+.template-public-layout-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* La cabecera pública solo tiene marca y accesos: en móvil van en la misma fila */
+.template-public-layout .organism-header-inner .template-public-layout-actions {
+  order: 1;
+}
+
+.template-public-layout-page {
+  display: grid;
+  gap: 48px;
+  padding-top: 40px;
+}
+
+.template-public-layout-section {
+  display: grid;
+  gap: 18px;
+  scroll-margin-top: 16px;
+}
+
+.template-public-layout-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--asphalt);
+}
+
+.template-public-layout-section-head h2 {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.template-public-layout-section-head p {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+/* Pico y placa de hoy: dígitos grandes por tipo */
+.template-public-layout-plate-rule {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  border: 2px solid var(--asphalt);
+  background: var(--asphalt);
+}
+
+.template-public-layout-plate-rule > div {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  background: var(--panel);
+}
+
+.template-public-layout-plate-digits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.template-public-layout-plate-digit {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 2px solid var(--asphalt);
+  background: var(--yellow);
+  font-family: var(--font-mono);
+  font-size: 1.75rem;
+  font-weight: 600;
+}
+
+@media (max-width: 760px) {
+  .template-public-layout-page {
+    gap: 36px;
+    padding-top: 28px;
+  }
+
+  .template-public-layout-section-head h2 {
+    font-size: 1.75rem;
+  }
+
+  .template-public-layout-plate-rule {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

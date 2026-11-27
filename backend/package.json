@@ -13,7 +13,8 @@
     "lint": "cd .. && eslint --config backend/eslint.config.js backend frontend/js",
     "format": "cd .. && prettier --write backend frontend",
     "db:reset": "node database/reset.js",
-    "db:seed:generar": "node database/generar-seed.js"
+    "db:seed:generar": "node database/generar-seed.js",
+    "postman:generar": "node docs/postman/generar-coleccion.js"
   },
   "engines": {
     "node": "20.x"
@@ -45,7 +46,10 @@
         "functions": 80,
         "lines": 80
       }
-    }
+    },
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup/after-env.js"
+    ]
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

@@ -1,0 +1,357 @@
+/* ==========================================================================
+   ÁTOMOS · piezas mínimas. Prefijo de clase: atom-<nombre>
+   Generado desde el CSS original de la maqueta (docs/diseno-parko) sin cambiar
+   valores; solo cambian los nombres de clase.
+   ========================================================================== */
+
+/* Atom · avatar (nuevo; mismo cuadro amarillo que .brand-mark) */
+.atom-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  background: var(--yellow);
+  color: var(--asphalt);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.atom-avatar--md {
+  width: 48px;
+  height: 48px;
+  font-size: 1.5rem;
+}
+
+.atom-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Atom · brand-mark (maqueta: .brand-mark) */
+.atom-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  background: var(--yellow);
+  color: var(--asphalt);
+  font-size: 1.75rem;
+}
+
+/* Atom · button (maqueta: .btn, --dark, --ghost, --block) */
+.atom-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 0;
+  background: var(--yellow);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.atom-button:hover {
+  background: var(--yellow-hover);
+}
+
+.atom-button--dark {
+  background: var(--asphalt-2);
+  color: var(--line);
+}
+
+.atom-button--dark:hover {
+  background: var(--asphalt-3);
+}
+
+.atom-button--ghost {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--asphalt);
+}
+
+.atom-button--ghost:hover {
+  background: var(--concrete-2);
+}
+
+.atom-button--block {
+  width: 100%;
+}
+
+/* Agregado: tamaño compacto para tablas y barras de filtros */
+.atom-button--sm {
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 0.9375rem;
+}
+
+.atom-button--sm .atom-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Estado deshabilitado / cargando (agregado) */
+.atom-button:disabled,
+.atom-button[aria-busy='true'] {
+  opacity: 0.6;
+}
+
+.atom-button:disabled:hover {
+  background: var(--yellow);
+}
+
+.atom-button--dark:disabled:hover {
+  background: var(--asphalt-2);
+}
+
+.atom-button--ghost:disabled:hover {
+  background: transparent;
+}
+
+/* Atom · hazard-strip (maqueta: .hazard-strip) */
+.atom-hazard-strip {
+  height: 10px;
+  background: var(--hazard);
+}
+
+/* Atom · icon (maqueta: .icon) */
+.atom-icon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+}
+
+/* Atom · icon-button (maqueta: .icon-button) */
+.atom-icon-button {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: var(--asphalt-2);
+  color: var(--line);
+  flex: none;
+}
+
+.atom-icon-button:hover {
+  background: var(--orange);
+}
+
+/* Atom · input, select, textarea (maqueta: .input, .select, .textarea, .input--plate)
+   Las tres comparten estilos base; select y textarea solo añaden sus diferencias. */
+.atom-input,
+.atom-select,
+.atom-textarea {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 2px solid var(--asphalt);
+  border-radius: 0;
+  background: var(--white);
+}
+
+.atom-input:focus,
+.atom-select:focus,
+.atom-textarea:focus {
+  outline: none;
+  border-color: var(--orange);
+  box-shadow: inset 0 0 0 1px var(--orange);
+}
+
+.atom-input--plate {
+  height: 64px;
+  border-width: 3px;
+  background: var(--yellow);
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.atom-input--plate::placeholder {
+  color: var(--placeholder);
+}
+
+/* Estados agregados: inválido y deshabilitado */
+.atom-input[aria-invalid='true'],
+.atom-select[aria-invalid='true'],
+.atom-textarea[aria-invalid='true'] {
+  border-color: var(--red);
+}
+
+.atom-input:disabled,
+.atom-select:disabled,
+.atom-textarea:disabled,
+.atom-input[readonly] {
+  background: var(--concrete-2);
+  color: var(--ink-2);
+}
+
+/* Atom · label-caps (maqueta: .label-caps) */
+.atom-label-caps {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Atom · link (nuevo) */
+.atom-link {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--orange);
+}
+
+.atom-link:hover {
+  background: var(--yellow);
+}
+
+.atom-link--on-dark {
+  color: var(--line);
+}
+
+.atom-link--on-dark:hover {
+  background: transparent;
+  color: var(--yellow);
+}
+
+/* Atom · meter (maqueta: .meter, .meter--orange) */
+.atom-meter {
+  --fill: var(--asphalt);
+  height: 12px;
+  margin-top: 10px;
+  background: var(--track);
+}
+
+.atom-meter > span {
+  display: block;
+  width: calc(var(--v) * 1%);
+  max-width: 100%;
+  height: 100%;
+  background: var(--fill);
+}
+
+.atom-meter--orange {
+  --fill: var(--orange);
+}
+
+/* Atom · plate (maqueta: .plate) */
+.atom-plate {
+  display: inline-block;
+  padding: 2px 10px;
+  border: 2px solid var(--ink);
+  background: var(--yellow);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+/* Tamaño del detalle de celda (maqueta: .vehicle-line .plate) */
+.atom-plate--large {
+  font-size: 1.375rem;
+}
+
+/* Atom · select — estilos base compartidos en atoms/input/input.css (.input, .select, .textarea) */
+.atom-select {
+  cursor: pointer;
+}
+
+/* Atom · spinner (nuevo, mismo lenguaje: bordes rectos, trazo grueso) */
+.atom-spinner {
+  display: inline-block;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border: 4px solid currentColor;
+  border-right-color: var(--yellow);
+  animation: spinner-giro 0.8s steps(8) infinite;
+}
+
+.atom-spinner--sm {
+  width: 16px;
+  height: 16px;
+  border-width: 3px;
+}
+
+@keyframes spinner-giro {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Atom · status-chip (maqueta: .status-chip, --occupied, --free, --reserved) */
+.atom-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  background: var(--line);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.atom-status-chip::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: var(--st, var(--steel));
+}
+
+.atom-status-chip--occupied {
+  --st: var(--orange);
+}
+
+.atom-status-chip--free {
+  --st: var(--green);
+}
+
+.atom-status-chip--reserved {
+  --st: var(--yellow);
+}
+
+/* Agregado: fuera de servicio (franja naranja/asfalto como .space--out) */
+.atom-status-chip--out::before {
+  background: repeating-linear-gradient(-45deg, var(--orange) 0 3px, var(--asphalt) 3px 6px);
+}
+
+/* Atom · textarea — estilos base compartidos en atoms/input/input.css */
+.atom-textarea {
+  min-height: 80px;
+  padding: 10px 14px;
+  resize: vertical;
+}
+
+/* ---------- Agregados de las páginas en HTML estático ---------- */
+/* La barra del medidor lee --v; sin valor queda en 0 */
+.atom-meter > span {
+  width: calc(var(--v, 0) * 1%);
+}

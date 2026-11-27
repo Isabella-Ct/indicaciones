@@ -2,7 +2,7 @@
 
 **Fuente**: SRS v2.0 §6.1 (4.1 Roles y permisos, 4.2 Usuario), [research.md](research.md) R-08 a R-12. El esquema completo vive en `backend/database/schema.sql`. Este documento detalla las tablas que **usa, crea o modifica** la spec 001; las demás se describen en la spec que las usa.
 
-Convenciones comunes (constitución §IV, R-08): tablas en singular snake_case, PK `id_<entidad>` `INT UNSIGNED AUTO_INCREMENT`, columnas `created_at DATETIME DEFAULT CURRENT_TIMESTAMP` y `updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`, FK `ON DELETE RESTRICT ON UPDATE CASCADE`, InnoDB `utf8mb4_0900_ai_ci`, sesión MySQL con `time_zone = '-05:00'`.
+Convenciones comunes (constitución §IV, R-08): tablas en singular snake_case, PK `id_<entidad>` `INT UNSIGNED AUTO_INCREMENT`, columnas `created_at DATETIME DEFAULT CURRENT_TIMESTAMP` y `updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`, FK `ON DELETE RESTRICT ON UPDATE RESTRICT`, InnoDB `utf8mb4_0900_ai_ci`, sesión MySQL con `time_zone = '-05:00'`.
 
 ## Tablas de la spec
 

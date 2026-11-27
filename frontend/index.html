@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PARKO · Inicio</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    />
+    <link rel="stylesheet" href="/css/estilos.css" />
+  </head>
+  <body>
+    <div class="template-app-layout template-public-layout">
+      <a class="skip-link" href="#contenido">Saltar al contenido</a>
+      <header class="organism-header">
+        <div class="organism-header-inner">
+          <a class="molecule-brand molecule-brand--link" href="/">
+            <span class="atom-brand-mark" aria-hidden="true">P</span>
+            <div>PARKO<small>Parking Lot ABC</small></div>
+          </a>
+          <nav class="template-public-layout-actions" aria-label="Accesos">
+            <a class="atom-button atom-button--sm" href="/login.html"
+              ><svg class="atom-icon" aria-hidden="true" focusable="false">
+                <use href="/assets/icons.svg#i-in"></use></svg
+              ><span>Ingresar</span></a
+            >
+          </nav>
+        </div>
+      </header>
+      <div class="atom-hazard-strip" aria-hidden="true"></div>
+      <main id="contenido" tabindex="-1">
+        <div class="template-app-layout-page template-public-layout-page">
+          <section class="molecule-panel" aria-labelledby="inicio-titulo">
+            <div class="molecule-panel-head"><h1 id="inicio-titulo">Parqueadero ABC</h1></div>
+            <div class="molecule-panel-body">
+              <p>Carros y motos · servicio 24 horas · Carrera 43 # 47-53, Medellín.</p>
+              <p>La disponibilidad en tiempo real y las tarifas vigentes estarán aquí muy pronto.</p>
+              <p><a class="atom-button" href="/login.html"><span>Ingresar al sistema</span></a></p>
+            </div>
+          </section>
+        </div>
+      </main>
+      <footer class="organism-footer">
+        <div class="organism-footer-inner">
+          <p class="organism-footer-brand">PARKO</p>
+          <p>Parqueadero ABC · Carrera 43 # 47-53, Medellín · Abierto 24 horas</p>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
