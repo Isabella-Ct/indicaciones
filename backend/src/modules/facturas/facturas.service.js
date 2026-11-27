@@ -1,113 +1,167 @@
-// Facturas — REQ-FAC-1 (pago simulado) y REQ-FAC-2 (factura con consecutivo y PDF).
-// Documento interno, no es facturación electrónica DIAN.
-const { errores } = require('../../utils/errores');
+// Pagos y facturas (spec 009): RF-FAC-05..16, RN-22. El pago y su factura numerada nacen en la misma
+// transacción (research R-04); el comprobante se emite con POST /facturas (tercero y PDF por correo, R-05).
+const { withTransaction } = require('../../config/db');
+const repositorio = require('./facturas.repository');
+const liquidacionesRepositorio = require('../liquidaciones/liquidaciones.repository');
+const liquidaciones = require('../liquidaciones/liquidaciones.service');
+const { generarPdf } = require('./factura.pdf');
+const { enviarCorreo } = require('../../integrations/correo');
+const reloj = require('../../utils/reloj');
+const { AppError, errores } = require('../../utils/errores');
+const { registrarBitacora } = require('../../utils/bitacora');
+const { siguienteConsecutivo } = require('../../utils/consecutivos');
 const { aLimites, meta } = require('../../utils/paginacion');
-const { enBogota, formatearDuracion } = require('../../utils/fechas');
-const repo = require('./facturas.repository');
+const { sumarDias } = require('../../utils/fechas');
+const { pesos } = require('../liquidaciones/liquidaciones.reglas');
+const { enmascararCorreo } = require('../movimientos/movimientos.reglas');
 
-function aPublico(f) {
-  let detalle = f.detalle_calculo;
-  if (typeof detalle === 'string') detalle = JSON.parse(detalle);
-  return {
-    id: f.id,
-    numero: f.numero,
-    concepto: f.concepto,
-    fecha_pago: f.fecha_pago,
-    metodo_pago: f.metodo_pago,
-    subtotal: Number(f.subtotal),
-    descuento: f.descuento_id
-      ? {
-          id: f.descuento_id,
-          nombre: f.descuento_nombre,
-          porcentaje: Number(f.porcentaje_descuento),
-        }
-      : null,
-    valor_descuento: Number(f.valor_descuento),
-    total: Number(f.total),
-    observacion: f.observacion,
-    cliente: f.cliente_id
-      ? {
-          id: f.cliente_id,
-          nombre_completo: f.cliente_nombre,
-          tipo_documento: f.cliente_tipo_documento,
-          numero_documento: f.cliente_numero_documento,
-        }
-      : null,
-    placa: f.placa,
-    tipo_vehiculo: f.tipo_vehiculo,
-    estadia: f.estadia_id
-      ? {
-          id: f.estadia_id,
-          codigo_ticket: f.codigo_ticket,
-          celda: f.celda_codigo,
-          fecha_hora_entrada: f.fecha_hora_entrada,
-          fecha_hora_salida: f.fecha_hora_salida,
-          minutos: f.minutos_estadia,
-          tiempo: formatearDuracion(f.minutos_estadia ?? 0),
-          tipo_cliente: f.tipo_cliente,
-        }
-      : null,
-    membresia: f.membresia_id
-      ? {
-          id: f.membresia_id,
-          tipo: f.membresia_tipo,
-          fecha_inicio: f.membresia_inicio,
-          fecha_fin: f.membresia_fin,
-        }
-      : null,
-    tarifa_id: f.tarifa_id,
-    detalle_calculo: detalle ?? null,
-    registrada_por: f.registrada_por,
-  };
+const NO_ENCONTRADA = () => errores.noEncontrado('Factura no encontrada.', 'FACTURA_NO_ENCONTRADA');
+const YA_PAGADO = () => errores.conflicto('El servicio ya fue pagado', 'YA_PAGADO');
+
+const bitacora = (conexion, actor, accion, entidad, idRegistro, nuevo, anterior = null) =>
+  registrarBitacora(conexion, { idUsuario: actor.idUsuario, accion, entidad, idRegistro, anterior, nuevo, ip: actor.ip });
+
+/** Factura para la API: sin datos internos. */
+function publica(factura) {
+  if (!factura) return factura;
+  const { _correo: _c, _idOperador: _o, ...resto } = factura;
+  return resto;
 }
 
-const esAdmin = (u) => u.permisos.includes('reportes.ver');
+/** Detalle con la liquidación (la guardada) para la pantalla y el PDF. */
+async function detalle(idFactura, { conexion } = {}) {
+  const factura = await repositorio.obtenerPorId(idFactura, { conexion });
+  if (!factura) throw NO_ENCONTRADA();
+  const liquidacion = factura.movimiento ? await liquidaciones.liquidar(factura.movimiento.idMovimiento, null) : null;
+  return { factura, liquidacion };
+}
 
-/** Admin: todas con filtros. Operador: solo las del día. */
-async function listar(filtros, solicitante) {
-  const consulta = { ...filtros };
-  if (!esAdmin(solicitante)) {
-    const hoy = enBogota().fecha;
-    consulta.desde = hoy;
-    consulta.hasta = hoy;
+// ---------------------------------------------------------------- HU-40
+/** RF-FAC-05..09 (R-04): pago + factura numerada en una transacción. */
+async function pagar({ idMovimiento, metodo, valorRecibido, referencia, tercero }, actor) {
+  let idFactura;
+  try {
+    idFactura = await withTransaction(async (conexion) => {
+      const liquidacion = await liquidaciones.liquidarEn(conexion, idMovimiento, actor);
+      if (!liquidacion.persistida) {
+        throw errores.conflicto('Registre primero la salida del vehículo: el movimiento sigue abierto.', 'MOVIMIENTO_NO_CERRADO');
+      }
+      if (liquidacion.pagada) throw YA_PAGADO();
+      const total = liquidacion.total;
+      let cambio = null;
+      let recibido = total;
+      if (metodo === 'efectivo') {
+        recibido = valorRecibido ?? total;
+        // RF-FAC-06: muestra el faltante y no registra el pago.
+        if (recibido < total) throw errores.validacion([{ campo: 'valorRecibido', mensaje: `El valor recibido no alcanza: faltan ${pesos(total - recibido)}.` }]);
+        cambio = Math.round((recibido - total) * 100) / 100;
+      }
+      const movimiento = await liquidacionesRepositorio.movimientoParaLiquidar(idMovimiento, { conexion });
+      const fecha = reloj.ahora();
+      // RN-22: el número se toma dentro de la transacción (sin huecos si el pago falla).
+      const numero = await siguienteConsecutivo(conexion, 'factura');
+      const id = await repositorio.insertarFactura(
+        { numero, idLiquidacion: liquidacion.idLiquidacion, idCliente: movimiento.idPropietario, tercero, total, fecha },
+        { conexion }
+      );
+      const idPago = await repositorio.insertarPago(
+        { idFactura: id, metodo, valor: total, valorRecibido: recibido, cambio, referencia: metodo === 'efectivo' ? null : referencia, idOperador: actor.idUsuario, fecha },
+        { conexion }
+      );
+      await bitacora(conexion, actor, 'registrar_pago', 'factura', id, { numero, idPago, metodo, total, cambio });
+      return id;
+    });
+  } catch (error) {
+    await liquidaciones.alertarSiFaltaTarifa(error);
+    if (error.code === 'ER_DUP_ENTRY') throw YA_PAGADO();
+    throw error;
   }
-  const { filas, total, suma } = await repo.listar(consulta, aLimites(consulta));
-  return {
-    data: filas.map(aPublico),
-    meta: {
-      ...meta(consulta, total),
-      suma_total: suma,
-      desde: consulta.desde ?? null,
-      hasta: consulta.hasta ?? null,
-    },
-  };
+  const { factura } = await detalle(idFactura);
+  return { pago: factura.pago, factura: publica(factura) };
 }
 
-async function listarDeCliente(clienteId, filtros) {
-  const { filas, total, suma } = await repo.listar(
-    { ...filtros, cliente_id: clienteId },
-    aLimites(filtros)
-  );
-  return { data: filas.map(aPublico), meta: { ...meta(filtros, total), suma_total: suma } };
+// ---------------------------------------------------------------- HU-41
+/** GET /facturas/:id. */
+async function obtener(id) {
+  const { factura, liquidacion } = await detalle(id);
+  return { ...publica(factura), liquidacion };
 }
 
-/**
- * Detalle con control de acceso: el personal (facturas.ver) ve cualquiera;
- * el cliente solo las suyas (403 para las ajenas).
- */
-async function obtener(id, solicitante) {
-  const f = await repo.buscarDetalle(id);
-  if (!f) throw errores.noEncontrado('La factura no existe.');
-  const esPersonal = solicitante.permisos.includes('facturas.ver');
-  if (!esPersonal && f.cliente_id !== solicitante.id) {
-    throw errores.prohibido('Solo puedes consultar tus propias facturas.');
+/** RF-FAC-10..12 (R-05): tercero (antes del envío) y PDF al correo del cliente registrado. */
+async function emitir({ idFactura, tercero }, actor) {
+  await withTransaction(async (conexion) => {
+    const factura = await repositorio.obtenerPorId(idFactura, { conexion, bloquear: true });
+    if (!factura) throw NO_ENCONTRADA();
+    if (factura.estado === 'anulada') throw errores.conflicto('La factura está anulada.', 'FACTURA_ANULADA');
+    if (tercero) {
+      if (factura.enviada) throw errores.conflicto('La factura ya se envió al cliente: no se puede cambiar el titular.', 'FACTURA_YA_ENVIADA');
+      await repositorio.guardarTercero(idFactura, tercero, { conexion });
+      await bitacora(conexion, actor, 'factura_a_tercero', 'factura', idFactura, tercero, factura.tercero);
+    }
+  });
+  const { factura, liquidacion } = await detalle(idFactura);
+  let enviadaA = null;
+  if (factura._correo) {
+    const pdf = await generarPdf(factura, liquidacion);
+    const enviado = await enviarCorreo({
+      para: factura._correo,
+      asunto: `PARKO · Factura ${factura.numero}`,
+      texto: [
+        `Hola, ${factura.cliente.nombre}.`,
+        '',
+        `Adjuntamos la factura ${factura.numero} de ${factura.parqueadero?.nombre ?? 'PARKO'} por ${pesos(factura.total)}${factura.movimiento ? ` (placa ${factura.movimiento.placa})` : ''}.`,
+        '',
+        'Comprobante interno; la facturación electrónica está pendiente de envío.',
+        'PARKO · Sistema de Gestión de Parqueadero',
+      ].join('\n'),
+      adjuntos: [{ nombre: `factura-${factura.numero}.pdf`, contenido: pdf, tipo: 'application/pdf' }],
+    });
+    if (enviado) {
+      await withTransaction((conexion) => bitacora(conexion, actor, 'enviar_factura', 'factura', idFactura, { para: enmascararCorreo(factura._correo) }));
+      enviadaA = enmascararCorreo(factura._correo);
+    }
   }
-  return aPublico(f);
+  const actualizada = await repositorio.obtenerPorId(idFactura);
+  return { ...publica(actualizada), liquidacion, enviadaA };
 }
 
-async function resumenHoy() {
-  const { fecha } = enBogota();
-  return { fecha, ...(await repo.resumenDia(fecha)) };
+/** RF-FAC-10, RF-FAC-16 (R-06): PDF para el personal o para el Cliente dueño. */
+async function pdf(id, actor) {
+  const { factura, liquidacion } = await detalle(id);
+  const esDueno = factura.cliente && factura.cliente.idUsuario === actor.idUsuario;
+  if (!actor.permisos.includes('facturas.ver') && !esDueno) {
+    throw new AppError(403, 'SIN_PERMISO', 'Solo puede descargar sus propias facturas.');
+  }
+  return { numero: factura.numero, contenido: await generarPdf(factura, liquidacion) };
 }
 
-module.exports = { listar, listarDeCliente, obtener, resumenHoy, aPublico };
+// ---------------------------------------------------------------- HU-42
+/** RF-FAC-13, RF-FAC-14 (R-07). */
+async function anular(id, { motivo }, actor) {
+  await withTransaction(async (conexion) => {
+    const factura = await repositorio.obtenerPorId(id, { conexion, bloquear: true });
+    if (!factura) throw NO_ENCONTRADA();
+    if (factura.estado === 'anulada') throw errores.conflicto('La factura ya está anulada.', 'FACTURA_ANULADA');
+    await repositorio.anular(id, { motivo, idUsuario: actor.idUsuario, fecha: reloj.ahora() }, { conexion });
+    await bitacora(conexion, actor, 'anular', 'factura', id, { estado: 'anulada', motivo }, { estado: 'emitida' });
+  });
+  return obtener(id);
+}
+
+// ---------------------------------------------------------------- HU-43
+/** Fechas 'AAAA-MM-DD' de Bogotá → rango [desde 00:00, hasta + 1 día 00:00). */
+const rango = ({ desde, hasta }) => ({
+  desde: desde ? new Date(`${desde}T00:00:00-05:00`) : undefined,
+  hasta: hasta ? new Date(`${sumarDias(hasta, 1)}T00:00:00-05:00`) : undefined,
+});
+
+/** RF-FAC-15 (R-08). */
+async function listar(filtros, { idCliente } = {}) {
+  const { filas, total, sumaTotal } = await repositorio.listar({ ...filtros, ...rango(filtros), idCliente, ...aLimites(filtros) });
+  return { data: filas.map(publica), meta: { ...meta(filtros, total), sumaTotal } };
+}
+
+/** RF-FAC-16: solo las del cliente de la sesión. */
+const misFacturas = (filtros, actor) => listar(filtros, { idCliente: actor.idUsuario });
+
+module.exports = { pagar, obtener, emitir, pdf, anular, listar, misFacturas };
