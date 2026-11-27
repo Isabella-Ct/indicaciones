@@ -8,7 +8,6 @@ const { validate } = require('../../middlewares/validate');
 
 const router = Router();
 
-
 // GET /api/v1/tickets/:codigo — HU-32 · RF-MOV-06, RF-MOV-08
 router.get('/:codigo', authorize('movimientos.ver'), validate({ params }), controller.obtener);
 

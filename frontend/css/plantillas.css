@@ -510,3 +510,31 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Plantilla · hoja del ticket (spec 007, RF-MOV-07): en pantalla, centrada; al imprimir, una página de 80 mm
+   solo con el ticket (página con nombre, para no afectar la impresión de otras pantallas). */
+.template-ticket-sheet {
+  width: min(100%, 320px);
+  margin: 0 auto 24px;
+}
+
+@page ticket {
+  size: 80mm auto;
+  margin: 0;
+}
+
+@media print {
+  .template-ticket-sheet {
+    page: ticket;
+    width: 80mm;
+    margin: 0;
+  }
+
+  body:has(.template-ticket-sheet) .template-app-layout-page > :not(.template-ticket-sheet) {
+    display: none !important;
+  }
+
+  .template-ticket-sheet .organism-ticket {
+    border: 0;
+  }
+}

@@ -11,6 +11,8 @@ export const RUTA_CAMBIAR_CONTRASENA = '/cambiar-contrasena.html';
  * (la autorización real la hace el servidor, RNF-SEG-04). Las specs siguientes agregan los suyos.
  */
 export const MENU = [
+  // spec 007: la caseta es la primera pantalla del personal (entradas, salidas y vehículos dentro).
+  { id: 'movimientos', texto: 'Movimientos', href: '/movimientos.html', permiso: 'movimientos.ver' },
   // spec 004: el mapa con placas es del personal; el Cliente ve solo la disponibilidad (RF-CLD-17).
   { id: 'celdas', texto: 'Celdas', href: '/celdas.html', permiso: 'celdas.ver', tambien: 'movimientos.ver' },
   { id: 'disponibilidad', texto: 'Disponibilidad', href: '/disponibilidad.html', permiso: 'celdas.ver', ocultarCon: 'movimientos.ver' },

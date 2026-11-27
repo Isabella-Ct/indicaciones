@@ -1833,3 +1833,12 @@ dialog.organism-modal::backdrop {
   color: var(--ink-2);
   font-size: 0.875rem;
 }
+
+/* Organismo · log-table: fila resaltada (spec 007, RF-MOV-14: más de 24 h dentro). Va con un chip de texto. */
+.organism-log-table-row--alert td {
+  background: var(--panel);
+}
+
+.organism-log-table-row--alert td:first-child {
+  box-shadow: inset 6px 0 0 var(--orange);
+}
