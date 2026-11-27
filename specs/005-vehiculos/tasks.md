@@ -37,20 +37,20 @@
 
 ## Fase 7: Interfaz (Atomic Design)
 
-- [ ] T012 [P] Átomo `atomos/placa.js` (`ponerPlaca`) y molécula `moleculas/selector-tipo.js` (`conectarSelectorTipo`)
-- [ ] T013 [P] Servicio `js/services/vehiculos.service.js`
-- [ ] T014 `herramientas/paginas-005.js` + regenerar: menú «Vehículos» (`vehiculos.ver`) y «Mis vehículos» (`perfil.ver`, oculto con `vehiculos.ver`); `MENU` en `config.js`
-- [ ] T015 [US1] [US4] `vehiculos.html` + `views/vehiculos.view.js` (listado, búsqueda, filtros tipo/propietario/dentro, nuevo vehículo)
-- [ ] T016 [US2] [US3] [US4] `vehiculo-detalle.html` + vista (datos, propietario con asociar, reasignar y quitar, editar, historial y últimos movimientos)
-- [ ] T017 [US2] Sección «Vehículos» en `usuario-detalle.html` + `usuario-detalle.view.js` (lista y «Agregar vehículo» por placa; si no existe, registrar y asociar)
-- [ ] T018 [P] [US4] `mis-vehiculos.html` + `views/mis-vehiculos.view.js`
+- [X] T012 [P] Átomo `atomos/placa.js` (`ponerPlaca`) y molécula `moleculas/selector-tipo.js` (`conectarSelectorTipo`)
+- [X] T013 [P] Servicio `js/services/vehiculos.service.js`
+- [X] T014 `herramientas/paginas-005.js` + regenerar: menú «Vehículos» (`vehiculos.ver`) y «Mis vehículos» (`perfil.ver`, oculto con `vehiculos.ver`); `MENU` en `config.js`
+- [X] T015 [US1] [US4] `vehiculos.html` + `views/vehiculos.view.js` (listado, búsqueda, filtros tipo/propietario/dentro, nuevo vehículo)
+- [X] T016 [US2] [US3] [US4] `vehiculo-detalle.html` + vista (datos, propietario con asociar, reasignar y quitar, editar, historial y últimos movimientos)
+- [X] T017 [US2] Sección «Vehículos» en `usuario-detalle.html` + `usuario-detalle.view.js` (lista y «Agregar vehículo» por placa; si no existe, registrar y asociar)
+- [X] T018 [P] [US4] `mis-vehiculos.html` + `views/mis-vehiculos.view.js`
 
 ## Fase 8: Pulido
 
-- [ ] T019 Carpeta Postman `casos/005-vehiculos.js`; `npm run test:api` en verde dos veces seguidas
-- [ ] T020 [P] `README.md` (endpoints, pantallas, esquema 2.1.0)
-- [ ] T021 Cobertura del service ≥ 80 %, lint, `herramientas/verificar-front.js`, revisión de que no queden textos en inglés, medición de `GET /vehiculos?q=` y prueba manual en escritorio y a 375 px
-- [ ] T022 Verificar que cada escenario HU-25..HU-28 tenga su prueba y su caso Postman, y marcar `[X]`
+- [X] T019 Carpeta Postman `casos/005-vehiculos.js`; `npm run test:api` en verde dos veces seguidas
+- [X] T020 [P] `README.md` (endpoints, pantallas, esquema 2.1.0)
+- [X] T021 Cobertura del service ≥ 80 %, lint, `herramientas/verificar-front.js`, revisión de que no queden textos en inglés, medición de `GET /vehiculos?q=` y prueba manual en escritorio y a 375 px — prueba manual en el navegador pendiente (usuaria)
+- [X] T022 Verificar que cada escenario HU-25..HU-28 tenga su prueba y su caso Postman, y marcar `[X]`
 
 ## Dependencias
 

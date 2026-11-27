@@ -87,7 +87,10 @@ function peticion(caso) {
       raw: typeof caso.body === 'string' ? caso.body : JSON.stringify(caso.body, null, 2),
     };
   }
-  return { name: caso.nombre, event: [{ listen: 'test', script: pruebas(caso) }], request };
+  const event = [{ listen: 'test', script: pruebas(caso) }];
+  // `antes`: líneas que corren antes de la petición (p. ej. calcular una placa aleatoria válida).
+  if (caso.antes) event.unshift({ listen: 'prerequest', script: script(caso.antes.join('\n')) });
+  return { name: caso.nombre, event, request };
 }
 
 function generar() {

@@ -5485,6 +5485,1266 @@
           }
         }
       ]
+    },
+    {
+      "name": "005 Vehículos",
+      "description": "SRS B.1 §4.5 — HU-25..HU-28. Ejecutar con la BD sembrada.",
+      "item": [
+        {
+          "name": "HU-25 POST /vehiculos — 201 placa normalizada",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const letra = () => String.fromCharCode(65 + Math.floor(Math.random() * 26));",
+                  "const letras = () => letra() + letra() + letra();",
+                  "const digitos = (n) => String(Math.floor(Math.random() * 10 ** n)).padStart(n, '0');",
+                  "pm.collectionVariables.set('placaCarro', letras() + digitos(3));",
+                  "pm.collectionVariables.set('placaCarro2', letras() + digitos(3));",
+                  "pm.collectionVariables.set('placaMoto', letras() + digitos(2) + letra());",
+                  "const p = pm.collectionVariables.get('placaCarro');",
+                  "pm.collectionVariables.set('placaCarroEscrita', p.slice(0, 3).toLowerCase() + ' ' + p.slice(3));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('placa en mayúsculas y sin espacios', () => pm.expect(cuerpo.data.placa).to.eql(pm.collectionVariables.get('placaCarro')));",
+                  "pm.test('sin propietario y fuera', () => pm.expect(cuerpo.data).to.include({ propietario: null, dentro: false }));",
+                  "pm.collectionVariables.set('idVehiculo', cuerpo.data.idVehiculo);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placaCarroEscrita}}\",\n  \"tipo\": \"carro\",\n  \"color\": \"Rojo\",\n  \"marca\": \"Chevrolet\",\n  \"modelo\": 2018\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-25 POST /vehiculos — 409 placa ya registrada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code PLACA_DUPLICADA', () => pm.expect(cuerpo.error.code).to.eql('PLACA_DUPLICADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"abc-123\",\n  \"tipo\": \"carro\",\n  \"color\": \"Rojo\",\n  \"marca\": \"Chevrolet\",\n  \"modelo\": 2018\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-25 POST /vehiculos — 422 formato inválido para carro",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));",
+                  "pm.test('mensaje del formato', () => pm.expect(cuerpo.error.details[0]).to.eql({ campo: 'placa', mensaje: 'Formato de placa inválido para carro (AAA123).' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"AB1234\",\n  \"tipo\": \"carro\",\n  \"color\": \"Rojo\",\n  \"marca\": \"Chevrolet\",\n  \"modelo\": 2018\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /vehiculos — 403 cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placaCarro2}}\",\n  \"tipo\": \"carro\",\n  \"color\": \"Rojo\",\n  \"marca\": \"Kia\",\n  \"modelo\": 2020\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-25 POST /vehiculos — 201 moto con propietario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('propietario Carlos', () => pm.expect(cuerpo.data.propietario.idUsuario).to.eql(5));",
+                  "pm.collectionVariables.set('idMoto', cuerpo.data.idVehiculo);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placaMoto}}\",\n  \"tipo\": \"moto\",\n  \"color\": \"Negro\",\n  \"marca\": \"Yamaha\",\n  \"modelo\": 2022,\n  \"idPropietario\": 5\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-25 GET /vehiculos?propietario=ninguno — 200 incluye el nuevo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('el vehículo nuevo sin propietario', () => pm.expect(cuerpo.data.map((v) => v.idVehiculo)).to.eql([pm.collectionVariables.get('idVehiculo')]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos?propietario=ninguno&q={{placaCarro}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ],
+              "query": [
+                {
+                  "key": "propietario",
+                  "value": "ninguno"
+                },
+                {
+                  "key": "q",
+                  "value": "{{placaCarro}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-28 GET /vehiculos?q=abc1 — 200 con propietario y presencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('meta de paginación', () => pm.expect(cuerpo.meta).to.include({ page: 1, limit: 10 }));",
+                  "pm.test('ABC123 de Andrea', () => pm.expect(cuerpo.data.find((v) => v.placa === 'ABC123').propietario.nombre).to.eql('Andrea Salcedo Ríos'));",
+                  "pm.test('campo dentro', () => cuerpo.data.forEach((v) => pm.expect(v).to.have.property('dentro')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos?q=abc1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "abc1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /vehiculos?dentro=quizas — 422",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos?dentro=quizas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ],
+              "query": [
+                {
+                  "key": "dentro",
+                  "value": "quizas"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-28 GET /vehiculos — 403 cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /vehiculos — 401 sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code NO_AUTENTICADO', () => pm.expect(cuerpo.error.code).to.eql('NO_AUTENTICADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-28 GET /vehiculos/1 — 200 detalle con historial",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('historial de propietarios', () => pm.expect(cuerpo.data.historialPropietarios.length).to.be.above(0));",
+                  "pm.test('últimos movimientos (máximo 10)', () => pm.expect(cuerpo.data.ultimosMovimientos.length).to.be.at.most(10));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /vehiculos/999999 — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VEHICULO_NO_ENCONTRADO', () => pm.expect(cuerpo.error.code).to.eql('VEHICULO_NO_ENCONTRADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-28 GET /usuarios/me/vehiculos — 200 solo los del cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('todos de Andrea', () => cuerpo.data.forEach((v) => pm.expect(v.propietario.idUsuario).to.eql(4)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me/vehiculos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "vehiculos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /usuarios/me/vehiculos — 401 sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code NO_AUTENTICADO', () => pm.expect(cuerpo.error.code).to.eql('NO_AUTENTICADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me/vehiculos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "vehiculos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-26 PATCH /vehiculos/:id/propietario — 200 asocia por documento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('propietario Andrea', () => pm.expect(cuerpo.data.propietario.idUsuario).to.eql(4));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/{{idVehiculo}}/propietario",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{idVehiculo}}",
+                "propietario"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"1000000004\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-26 PATCH /vehiculos/999999/propietario — 404 registre primero el vehículo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VEHICULO_NO_ENCONTRADO', () => pm.expect(cuerpo.error.code).to.eql('VEHICULO_NO_ENCONTRADO'));",
+                  "pm.test('mensaje', () => pm.expect(cuerpo.error.message).to.eql('Registre primero el vehículo.'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/999999/propietario",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "999999",
+                "propietario"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idUsuario\": 4\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-26 PATCH …/propietario — 404 usuario no registrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code USUARIO_NO_ENCONTRADO', () => pm.expect(cuerpo.error.code).to.eql('USUARIO_NO_ENCONTRADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/{{idVehiculo}}/propietario",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{idVehiculo}}",
+                "propietario"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipoDocumento\": \"CC\",\n  \"numeroDocumento\": \"999999999\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-26 PATCH …/propietario — 409 usuario inactivo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code USUARIO_INACTIVO', () => pm.expect(cuerpo.error.code).to.eql('USUARIO_INACTIVO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/{{idVehiculo}}/propietario",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{idVehiculo}}",
+                "propietario"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idUsuario\": 7\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-26 PATCH …/propietario — 403 el Operador no reasigna",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SOLO_ADMIN_REASIGNA', () => pm.expect(cuerpo.error.code).to.eql('SOLO_ADMIN_REASIGNA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/{{idVehiculo}}/propietario",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{idVehiculo}}",
+                "propietario"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idUsuario\": 6\n}"
+            }
+          }
+        },
+        {
+          "name": "PATCH …/propietario — 422 sin usuario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/{{idVehiculo}}/propietario",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{idVehiculo}}",
+                "propietario"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "HU-27 PATCH …/propietario — 200 el Administrador reasigna",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('propietario Valentina', () => pm.expect(cuerpo.data.propietario.idUsuario).to.eql(6));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/{{idVehiculo}}/propietario",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{idVehiculo}}",
+                "propietario"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idUsuario\": 6\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-27 GET /vehiculos/:id — 200 el historial conserva a Andrea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('dos periodos: Valentina vigente y Andrea cerrado', () => { const h = cuerpo.data.historialPropietarios; pm.expect(h.map((x) => x.idUsuario)).to.eql([6, 4]); pm.expect(h[0].hasta).to.eql(null); pm.expect(h[1].hasta).to.not.eql(null); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/{{idVehiculo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{idVehiculo}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-27 PUT /vehiculos/:id — 200 cambia el color",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('color Azul', () => pm.expect(cuerpo.data.color).to.eql('Azul'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/{{idVehiculo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{idVehiculo}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placaCarro}}\",\n  \"tipo\": \"carro\",\n  \"color\": \"Azul\",\n  \"marca\": \"Chevrolet\",\n  \"modelo\": 2018\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-27 PUT /vehiculos/:id — 409 placa de otro vehículo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code PLACA_DUPLICADA', () => pm.expect(cuerpo.error.code).to.eql('PLACA_DUPLICADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/{{idVehiculo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{idVehiculo}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"ABC123\",\n  \"tipo\": \"carro\",\n  \"color\": \"Azul\",\n  \"marca\": \"Chevrolet\",\n  \"modelo\": 2018\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-27 PUT /vehiculos/:id — 403 operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/{{idVehiculo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{idVehiculo}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placaCarro}}\",\n  \"tipo\": \"carro\",\n  \"color\": \"Verde\",\n  \"marca\": \"Chevrolet\",\n  \"modelo\": 2018\n}"
+            }
+          }
+        },
+        {
+          "name": "PUT /vehiculos/999999 — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VEHICULO_NO_ENCONTRADO', () => pm.expect(cuerpo.error.code).to.eql('VEHICULO_NO_ENCONTRADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "999999"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placaCarro2}}\",\n  \"tipo\": \"carro\",\n  \"color\": \"Azul\",\n  \"marca\": \"Kia\",\n  \"modelo\": 2020\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-27 PATCH …/propietario — 200 quita el propietario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('sin propietario', () => pm.expect(cuerpo.data.propietario).to.eql(null));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos/{{idMoto}}/propietario",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos",
+                "{{idMoto}}",
+                "propietario"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idUsuario\": null\n}"
+            }
+          }
+        }
+      ]
     }
   ]
 }
