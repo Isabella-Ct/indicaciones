@@ -1,294 +1,275 @@
-// Reglas de negocio de usuarios — REQ-USR-2..6.
+// Reglas de negocio de usuarios (spec 002): RN-02, RN-05, RN-06, RF-USR-01..17.
+// No conoce req/res. Escrituras en transacción con bitácora; correos y borrado de archivos
+// viejos solo después del commit (research R-01, R-03).
 const bcrypt = require('bcrypt');
-const { enTransaccion } = require('../../config/db');
-const { ROLES } = require('../../config/constantes');
-const { AppError, errores } = require('../../utils/errores');
+const env = require('../../config/env');
+const { withTransaction } = require('../../config/db');
+const repositorio = require('./usuarios.repository');
+const { generarContrasenaTemporal, diferencias, mensajeCambioDatos } = require('./usuarios.reglas');
+const { errores } = require('../../utils/errores');
+const { registrarBitacora } = require('../../utils/bitacora');
 const { aLimites, meta } = require('../../utils/paginacion');
-const { guardarImagen, eliminarArchivo } = require('../../utils/archivos');
-const notificaciones = require('../notificaciones/notificaciones.service');
-const repo = require('./usuarios.repository');
+const { guardarFoto, borrarFoto, rutaFoto, tipoDeClave } = require('../../utils/archivos');
+const { enviarCorreo } = require('../../integrations/correo');
 
-const COSTO_BCRYPT = 10;
-const CARPETA_FOTOS = 'usuarios';
+const NO_ENCONTRADO = () => errores.noEncontrado('Usuario no encontrado.', 'USUARIO_NO_ENCONTRADO');
+const ROL_NO_ASIGNABLE = () =>
+  errores.validacion([{ campo: 'idRol', mensaje: 'Seleccione un rol activo.' }]);
 
-const ETIQUETAS_CAMPO = {
-  primer_nombre: 'primer nombre',
-  segundo_nombre: 'segundo nombre',
-  primer_apellido: 'primer apellido',
-  segundo_apellido: 'segundo apellido',
-  correo: 'correo',
-  celular: 'celular',
-  foto_url: 'foto',
-};
+/** research R-08: sin `usuarios.editar` el alcance se limita a usuarios con rol Cliente. */
+const alcanceTotal = (actor) => actor.permisos.includes('usuarios.editar');
 
-function nombreCompleto(u) {
-  return [u.primer_nombre, u.segundo_nombre, u.primer_apellido, u.segundo_apellido]
-    .filter(Boolean)
-    .join(' ');
+/** Representación pública: sin la clave interna de la foto ni datos de autenticación. */
+function publico(usuario) {
+  if (!usuario) return usuario;
+  const { claveFoto: _clave, rolEsBase: _base, ...resto } = usuario;
+  return resto;
 }
 
-/** Forma pública del usuario (sin contrasena_hash). */
-function aPublico(u) {
-  return {
-    id: u.id,
-    tipo_documento: u.tipo_documento,
-    numero_documento: u.numero_documento,
-    primer_nombre: u.primer_nombre,
-    segundo_nombre: u.segundo_nombre,
-    primer_apellido: u.primer_apellido,
-    segundo_apellido: u.segundo_apellido,
-    nombre_completo: nombreCompleto(u),
-    correo: u.correo,
-    celular: u.celular,
-    foto_url: u.foto_url,
-    rol_id: u.rol_id,
-    rol: u.rol,
-    estado: u.estado,
-    debe_cambiar_contrasena: Boolean(u.debe_cambiar_contrasena),
-    ultimo_acceso: u.ultimo_acceso,
-    created_at: u.created_at,
-  };
-}
+/** Datos comparables para la bitácora (RF-USR-11). */
+const plano = (u) => ({
+  tipoDocumento: u.tipoDocumento,
+  numeroDocumento: u.numeroDocumento,
+  nombreCompleto: u.nombreCompleto,
+  correo: u.correo,
+  celular: u.celular,
+  idRol: u.rol.idRol,
+});
 
-/** Forma reducida para el user-picker (operador): sin correo, celular ni rol. */
-function aResumen(u) {
-  return {
-    id: u.id,
-    tipo_documento: u.tipo_documento,
-    numero_documento: u.numero_documento,
-    nombre_completo: nombreCompleto(u),
-  };
-}
-
-async function validarUnicos({ tipo_documento, numero_documento, correo }, excluirId) {
-  if (await repo.existeDocumento(tipo_documento, numero_documento, excluirId)) {
-    throw new AppError(
-      409,
-      'DOCUMENTO_DUPLICADO',
-      `Ya existe un usuario con el documento ${tipo_documento} ${numero_documento}.`,
-      [{ campo: 'numero_documento', mensaje: 'Este documento ya está registrado.' }]
-    );
+/** RF-USR-03 / RF-USR-10: duplicados del UNIQUE de la BD → 409 con el campo afectado. */
+function traducirDuplicado(error) {
+  if (error.code === 'ER_DUP_ENTRY') {
+    const mensaje = String(error.message);
+    if (mensaje.includes('uq_usuario_documento')) {
+      throw errores.conflicto('El documento ya está registrado.', 'DOCUMENTO_DUPLICADO');
+    }
+    if (mensaje.includes('uq_usuario_correo')) {
+      throw errores.conflicto('El correo ya está registrado.', 'CORREO_DUPLICADO');
+    }
   }
-  if (await repo.existeCorreo(correo, excluirId)) {
-    throw new AppError(409, 'CORREO_DUPLICADO', `El correo ${correo} ya está registrado.`, [
-      { campo: 'correo', mensaje: 'Este correo ya está registrado.' },
-    ]);
+  throw error;
+}
+
+async function asegurarRolActivo(idRol, conexion) {
+  const rol = await repositorio.rolAsignable(idRol, { conexion });
+  if (!rol || rol.estado !== 'activo') throw ROL_NO_ASIGNABLE();
+  return rol;
+}
+
+/** RF-USR-08: el Operador solo puede ver o tocar usuarios con rol Cliente. */
+async function asegurarAlcance(usuario, actor) {
+  if (alcanceTotal(actor)) return;
+  if (usuario.rol.idRol !== (await repositorio.idRolCliente())) throw errores.sinPermiso();
+}
+
+// ---------------------------------------------------------------- HU-07 · registrar
+/** RF-USR-01..05, RF-ROL-14, RN-05. Devuelve el usuario y si salió el correo. */
+async function crear(entrada, foto, actor) {
+  const datos = { ...entrada };
+  if (!alcanceTotal(actor)) {
+    // RF-USR-04: el Operador solo registra Clientes; si no envía rol, se asigna Cliente.
+    const idCliente = await repositorio.idRolCliente();
+    datos.idRol ??= idCliente;
+    if (datos.idRol !== idCliente) throw errores.sinPermiso();
+  } else if (datos.idRol === undefined) {
+    throw errores.validacion([{ campo: 'idRol', mensaje: 'Seleccione el rol.' }]);
   }
-}
+  const contrasena = generarContrasenaTemporal();
+  const contrasenaHash = await bcrypt.hash(contrasena, env.BCRYPT_COSTO);
+  const claveFoto = foto ? await guardarFoto(foto.buffer, foto.ext) : null;
 
-async function obtenerExistente(id) {
-  const usuario = await repo.buscarPorId(id);
-  if (!usuario) throw errores.noEncontrado('El usuario no existe.');
-  return usuario;
-}
-
-async function listar(filtros) {
-  const { filas, total } = await repo.listar({ ...filtros, ...aLimites(filtros) });
-  return { data: filas.map(aPublico), meta: meta(filtros, total) };
-}
-
-/** Admin ve cualquiera; los demás solo a sí mismos. */
-async function obtener(id, solicitante) {
-  if (id !== solicitante.id && !solicitante.permisos.includes('usuarios.ver')) {
-    throw errores.prohibido('Solo puedes consultar tus propios datos.');
-  }
-  return aPublico(await obtenerExistente(id));
-}
-
-async function buscarClientes(documento) {
-  return (await repo.buscarClientesActivosPorDocumento(documento)).map(aResumen);
-}
-
-/** Cliente activo apto para ser propietario de un vehículo (lo usa el módulo vehiculos). */
-async function obtenerClienteActivo(id) {
-  const usuario = await repo.buscarPorId(id);
-  if (!usuario || usuario.rol !== ROLES.USUARIO || usuario.estado !== 'activo') return null;
-  return aResumen(usuario);
-}
-
-/** REQ-USR-2: admin y operador crean usuarios; el operador no crea administradores. */
-async function crear(datos, imagen, solicitante) {
-  const rol = await repo.obtenerRol(datos.rol_id);
-  if (!rol) {
-    throw errores.validacion([{ campo: 'rol_id', mensaje: 'El rol seleccionado no existe.' }]);
-  }
-  if (
-    rol.nombre === ROLES.ADMINISTRADOR &&
-    !solicitante.permisos.includes('usuarios.crear_administrador')
-  ) {
-    throw errores.prohibido('Los operadores no pueden crear usuarios administradores.');
-  }
-  await validarUnicos(datos);
-
-  const foto_url = imagen ? await guardarImagen(imagen, CARPETA_FOTOS) : null;
+  let id;
   try {
-    const id = await repo.insertar({
-      ...datos,
-      foto_url,
-      contrasena_hash: await bcrypt.hash(datos.contrasena_temporal, COSTO_BCRYPT),
-      creado_por: solicitante.id,
+    id = await withTransaction(async (conexion) => {
+      await asegurarRolActivo(datos.idRol, conexion);
+      const { aceptaTratamientoDatos: _a, ...campos } = datos;
+      const idUsuario = await repositorio.insertar({ ...campos, claveFoto, contrasenaHash }, { conexion });
+      await registrarBitacora(conexion, {
+        idUsuario: actor.idUsuario,
+        accion: 'crear',
+        entidad: 'usuario',
+        idRegistro: idUsuario,
+        nuevo: { ...campos, estado: 'activo', foto: Boolean(claveFoto) },
+        ip: actor.ip,
+      });
+      return idUsuario;
     });
-    return aPublico(await repo.buscarPorId(id));
-  } catch (err) {
-    await eliminarArchivo(foto_url);
-    throw err;
+  } catch (error) {
+    if (claveFoto) await borrarFoto(claveFoto);
+    return traducirDuplicado(error);
   }
-}
 
-/** Resuelve la foto nueva / quitada. Devuelve { foto_url?, anterior } */
-async function resolverFoto(actual, imagen, quitar) {
-  if (imagen)
-    return { foto_url: await guardarImagen(imagen, CARPETA_FOTOS), anterior: actual.foto_url };
-  if (quitar && actual.foto_url) return { foto_url: null, anterior: actual.foto_url };
-  return { anterior: null };
-}
-
-/** REQ-USR-5: el administrador edita los datos de cualquier usuario. */
-async function actualizar(id, datos, imagen, solicitante) {
-  const actual = await obtenerExistente(id);
-  const rol = await repo.obtenerRol(datos.rol_id);
-  if (!rol) {
-    throw errores.validacion([{ campo: 'rol_id', mensaje: 'El rol seleccionado no existe.' }]);
-  }
-  if (id === solicitante.id && rol.nombre !== ROLES.ADMINISTRADOR) {
-    throw new AppError(409, 'ACCION_SOBRE_SI_MISMO', 'No puedes quitarte el rol de administrador.');
-  }
-  await validarUnicos(datos, id);
-
-  const { quitar_foto, ...campos } = datos;
-  const foto = await resolverFoto(actual, imagen, quitar_foto);
-  if ('foto_url' in foto) campos.foto_url = foto.foto_url;
-  try {
-    await repo.actualizar(id, campos);
-  } catch (err) {
-    if (imagen) await eliminarArchivo(foto.foto_url);
-    throw err;
-  }
-  await eliminarArchivo(foto.anterior);
-  return aPublico(await repo.buscarPorId(id));
-}
-
-/** REQ-USR-3: solo el administrador activa/inactiva; nunca a sí mismo. */
-async function cambiarEstado(id, estado, solicitante) {
-  if (id === solicitante.id) {
-    throw new AppError(
-      409,
-      'ACCION_SOBRE_SI_MISMO',
-      'No puedes cambiar el estado de tu propio usuario.'
-    );
-  }
-  await obtenerExistente(id);
-  await repo.actualizarEstado(id, estado);
-  return aPublico(await repo.buscarPorId(id));
-}
-
-/**
- * DELETE /usuarios/:id — borrado lógico: el usuario queda inactivo (nunca se borra porque
- * tiene historial). Si ya estaba inactivo responde 409.
- */
-async function eliminar(id, solicitante) {
-  if (id === solicitante.id) {
-    throw new AppError(409, 'ACCION_SOBRE_SI_MISMO', 'No puedes eliminar tu propio usuario.');
-  }
-  const usuario = await obtenerExistente(id);
-  if (usuario.estado === 'inactivo') {
-    throw new AppError(409, 'YA_ELIMINADO', 'El usuario ya estaba eliminado (inactivo).');
-  }
-  await repo.actualizarEstado(id, 'inactivo');
-  return aPublico(await repo.buscarPorId(id));
-}
-
-/**
- * REQ-USR-5: el administrador asigna una contraseña temporal a quien la olvidó (no hay
- * recuperación por correo). El usuario debe cambiarla al entrar y recibe un aviso interno.
- */
-async function restablecerContrasena(id, contrasenaTemporal, solicitante) {
-  if (id === solicitante.id) {
-    throw new AppError(
-      409,
-      'ACCION_SOBRE_SI_MISMO',
-      'Para tu propia cuenta usa "Cambiar contraseña".'
-    );
-  }
-  await obtenerExistente(id);
-  const hash = await bcrypt.hash(contrasenaTemporal, COSTO_BCRYPT);
-  await enTransaccion(async (conexion) => {
-    await repo.restablecerContrasena(id, hash, conexion);
-    await notificaciones.notificar(
-      {
-        usuarios: [id],
-        titulo: 'Tu contraseña fue restablecida',
-        mensaje:
-          'El administrador te asignó una contraseña temporal. Al iniciar sesión deberás crear una nueva.',
-        tipo: 'contrasena_restablecida',
-        enviadaPor: solicitante.id,
-      },
-      conexion
-    );
+  const correoEnviado = await enviarCorreo({
+    para: datos.correo,
+    asunto: 'Su cuenta en Parking Lot ABC',
+    texto: [
+      `Hola, ${datos.nombreCompleto}.`,
+      '',
+      'Se creó su cuenta en el Sistema de Gestión de Parqueadero de Parking Lot ABC.',
+      `Usuario: ${datos.tipoDocumento} ${datos.numeroDocumento}`,
+      `Contraseña temporal: ${contrasena}`,
+      '',
+      'Por seguridad, el sistema le pedirá cambiarla en su primer inicio de sesión.',
+    ].join('\n'),
   });
-  return aPublico(await repo.buscarPorId(id));
+  return { ...publico(await repositorio.obtenerPorId(id)), correoEnviado };
 }
 
-async function obtenerMiPerfil(id) {
-  return aPublico(await obtenerExistente(id));
+// ---------------------------------------------------------------- HU-08 · consultar
+/** RF-USR-06, RF-USR-08: el Operador siempre ve solo Clientes. */
+async function listar({ page, limit, q, rol, estado }, actor) {
+  const idRol = alcanceTotal(actor) ? rol : await repositorio.idRolCliente();
+  const { usuarios, total } = await repositorio.listar({ q, idRol, estado, ...aLimites({ page, limit }) });
+  return { data: usuarios, meta: meta({ page, limit }, total) };
 }
 
+/** RF-USR-07: detalle con vehículos y membresía vigente, sin datos de autenticación. */
+async function obtener(id, actor) {
+  const usuario = await repositorio.obtenerPorId(id);
+  if (!usuario) throw NO_ENCONTRADO();
+  await asegurarAlcance(usuario, actor);
+  const [vehiculos, membresiaVigente] = await Promise.all([
+    repositorio.vehiculosDe(id),
+    repositorio.membresiaVigente(id),
+  ]);
+  return { ...publico(usuario), vehiculos, membresiaVigente };
+}
+
+/** [Propuesta] foto privada: la propia (perfil.ver) o dentro del alcance (usuarios.ver). */
+async function foto(id, actor) {
+  const usuario = await repositorio.obtenerPorId(id);
+  const propia = actor.idUsuario === id && actor.permisos.includes('perfil.ver');
+  if (!propia) {
+    if (!actor.permisos.includes('usuarios.ver')) throw errores.sinPermiso();
+    if (!usuario) throw NO_ENCONTRADO();
+    await asegurarAlcance(usuario, actor);
+  }
+  const ruta = usuario?.claveFoto ? rutaFoto(usuario.claveFoto) : null;
+  if (!ruta) throw errores.noEncontrado('El usuario no tiene foto.', 'FOTO_NO_ENCONTRADA');
+  return { ruta, tipo: tipoDeClave(usuario.claveFoto) };
+}
+
+// ---------------------------------------------------------------- HU-09 / HU-11 · actualizar
 /**
- * REQ-USR-4: cada usuario edita sus nombres, correo, celular y foto.
- * Si algo cambió, notifica a todos los administradores con los campos cambiados.
+ * Aplica cambios de datos y foto en una transacción con bitácora. `campos` son los datos nuevos
+ * ya validados; `accion` es 'editar' (administrador) o 'editar_perfil' (el propio usuario).
+ * `antesDeGuardar(usuario, conexion)` permite validar o bloquear dentro de la transacción y
+ * `despuesDeDiferencias(dif, usuario, conexion)` escribir notificaciones en la misma transacción.
  */
-async function actualizarMiPerfil(usuarioId, datos, imagen) {
-  const actual = await obtenerExistente(usuarioId);
-  if (await repo.existeCorreo(datos.correo, usuarioId)) {
-    throw new AppError(409, 'CORREO_DUPLICADO', `El correo ${datos.correo} ya está registrado.`, [
-      { campo: 'correo', mensaje: 'Este correo ya está registrado.' },
-    ]);
-  }
-
-  const { quitar_foto, ...campos } = datos;
-  const cambiados = Object.keys(campos).filter((c) => (campos[c] ?? null) !== (actual[c] ?? null));
-  const foto = await resolverFoto(actual, imagen, quitar_foto);
-  if ('foto_url' in foto) {
-    campos.foto_url = foto.foto_url;
-    cambiados.push('foto_url');
-  }
-  if (cambiados.length === 0) return { usuario: aPublico(actual), cambiados: [] };
-
+async function aplicarCambios(id, campos, { foto: archivo, quitarFoto }, actor, opciones) {
+  const claveNueva = archivo ? await guardarFoto(archivo.buffer, archivo.ext) : null;
+  let claveVieja = null;
+  let resultado;
   try {
-    await enTransaccion(async (conexion) => {
-      await repo.actualizar(usuarioId, campos, conexion);
-      await notificaciones.notificar(
-        {
-          rol: 'administrador',
-          titulo: 'Un usuario actualizó sus datos',
-          mensaje: `${nombreCompleto(actual)} (${actual.tipo_documento} ${actual.numero_documento}) cambió: ${cambiados
-            .map((c) => ETIQUETAS_CAMPO[c])
-            .join(', ')}.`,
-          tipo: 'perfil_actualizado',
-          enlace: `/app/usuarios.html?id=${usuarioId}`,
-          excluirUsuarioId: usuarioId,
-        },
-        conexion
-      );
+    resultado = await withTransaction(async (conexion) => {
+      const usuario = await repositorio.obtenerPorId(id, { conexion, bloquear: true });
+      if (!usuario) throw NO_ENCONTRADO();
+      await opciones.antesDeGuardar?.(usuario, conexion);
+
+      const dif = diferencias(plano(usuario), campos);
+      const cambiaFoto = Boolean(claveNueva) || (quitarFoto === true && Boolean(usuario.claveFoto));
+      if (cambiaFoto) {
+        dif.anterior.foto = Boolean(usuario.claveFoto);
+        dif.nuevo.foto = Boolean(claveNueva);
+        dif.campos.push('foto');
+      }
+      if (dif.campos.length === 0) return { usuario, dif };
+
+      const cambios = Object.fromEntries(dif.campos.filter((c) => c !== 'foto').map((c) => [c, campos[c]]));
+      if (cambiaFoto) {
+        cambios.claveFoto = claveNueva;
+        claveVieja = usuario.claveFoto;
+      }
+      await repositorio.actualizar(id, cambios, { conexion });
+      await registrarBitacora(conexion, {
+        idUsuario: actor.idUsuario,
+        accion: opciones.accion,
+        entidad: 'usuario',
+        idRegistro: id,
+        anterior: dif.anterior,
+        nuevo: dif.nuevo,
+        ip: actor.ip,
+      });
+      const extra = await opciones.despuesDeDiferencias?.(dif, usuario, conexion);
+      return { usuario, dif, extra };
     });
-  } catch (err) {
-    if (imagen) await eliminarArchivo(foto.foto_url);
-    throw err;
+  } catch (error) {
+    if (claveNueva) await borrarFoto(claveNueva);
+    return traducirDuplicado(error);
   }
-  await eliminarArchivo(foto.anterior);
-  return { usuario: aPublico(await repo.buscarPorId(usuarioId)), cambiados };
+  if (claveVieja) await borrarFoto(claveVieja);
+  return resultado;
 }
 
-module.exports = {
-  listar,
-  obtener,
-  buscarClientes,
-  obtenerClienteActivo,
-  crear,
-  actualizar,
-  cambiarEstado,
-  eliminar,
-  restablecerContrasena,
-  obtenerMiPerfil,
-  actualizarMiPerfil,
-};
+/** HU-09 · RF-USR-09..11 (solo Administrador, por la ruta). */
+async function actualizar(id, { quitarFoto, ...datos }, archivo, actor) {
+  await aplicarCambios(id, datos, { foto: archivo, quitarFoto }, actor, {
+    accion: 'editar',
+    antesDeGuardar: async (usuario, conexion) => {
+      if (datos.idRol !== usuario.rol.idRol) await asegurarRolActivo(datos.idRol, conexion);
+    },
+  });
+  return obtener(id, actor);
+}
+
+// ---------------------------------------------------------------- HU-10 · estado
+/** RF-USR-12..14, RN-06: inactivar revoca las sesiones abiertas. */
+async function cambiarEstado(id, estado, actor) {
+  return withTransaction(async (conexion) => {
+    const usuario = await repositorio.obtenerPorId(id, { conexion, bloquear: true });
+    if (!usuario) throw NO_ENCONTRADO();
+    if (estado === 'inactivo' && id === actor.idUsuario) {
+      throw errores.conflicto('No puede inactivar su propia cuenta.', 'AUTOINACTIVACION');
+    }
+    if (usuario.estado === estado) return publico(usuario);
+    await repositorio.cambiarEstado(id, estado, { conexion });
+    if (estado === 'inactivo') await repositorio.revocarSesiones(id, { conexion });
+    await registrarBitacora(conexion, {
+      idUsuario: actor.idUsuario,
+      accion: 'cambiar_estado',
+      entidad: 'usuario',
+      idRegistro: id,
+      anterior: { estado: usuario.estado },
+      nuevo: { estado },
+      ip: actor.ip,
+    });
+    return publico(await repositorio.obtenerPorId(id, { conexion }));
+  });
+}
+
+// ---------------------------------------------------------------- HU-11 · mis datos
+/** RF-USR-15: mis datos. */
+async function misDatos(actor) {
+  const usuario = await repositorio.obtenerPorId(actor.idUsuario);
+  if (!usuario) throw NO_ENCONTRADO();
+  return publico(usuario);
+}
+
+/** RF-USR-15..17: solo nombre, correo, celular y foto; avisa a los Administradores (RF-USR-16). */
+async function actualizarMisDatos({ quitarFoto, ...datos }, archivo, actor) {
+  const resultado = await aplicarCambios(actor.idUsuario, datos, { foto: archivo, quitarFoto }, actor, {
+    accion: 'editar_perfil',
+    despuesDeDiferencias: async (dif, usuario, conexion) => {
+      const admins = await repositorio.administradoresActivos(actor.idUsuario, { conexion });
+      const aviso = {
+        titulo: 'Actualización de datos personales',
+        mensaje: mensajeCambioDatos({ nombreCompleto: usuario.nombreCompleto, idUsuario: usuario.idUsuario }, dif),
+      };
+      const ids = await repositorio.insertarNotificaciones(admins, aviso, { conexion });
+      return { aviso, destinatarios: admins.map((a, i) => ({ ...a, idNotificacion: ids[i] })) };
+    },
+  });
+
+  // Correos después del commit; si uno falla, la notificación interna queda igual (spec 014 reintenta).
+  for (const destino of resultado.extra?.destinatarios ?? []) {
+    const enviado = await enviarCorreo({
+      para: destino.correo,
+      asunto: resultado.extra.aviso.titulo,
+      texto: resultado.extra.aviso.mensaje,
+    });
+    if (enviado) await repositorio.marcarNotificacionEnviada(destino.idNotificacion);
+  }
+  return misDatos(actor);
+}
+
+module.exports = { crear, listar, obtener, foto, actualizar, cambiarEstado, misDatos, actualizarMisDatos };

@@ -1,0 +1,158 @@
+openapi: 3.1.0
+info:
+  title: Parking Lot ABC — API v1 · 005 Vehículos
+  version: 1.0.0
+  description: |
+    Contrato de la spec 005 (SRS v2.0 Apéndice B.1 §4.5). Sobre común { ok, data, meta, error }; errores y paginación
+    como en specs/001-roles-permisos/contracts/openapi.yaml. `x-permiso`: permiso exigido (RNF-SEG-04).
+    Reasignar o quitar un propietario exige además `vehiculos.editar` (research R-06).
+servers:
+  - url: http://localhost:3000/api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Vehículos
+
+paths:
+  /vehiculos:
+    post:
+      tags: [Vehículos]
+      summary: Registrar un vehículo (HU-25 · RF-VEH-01..03)
+      x-permiso: vehiculos.crear
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/VehiculoEntrada' }, example: { placa: abc 123, tipo: carro, color: Rojo, marca: Chevrolet, modelo: 2018 } } }
+      responses:
+        '201': { description: Registrado con la placa normalizada, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaVehiculo' } } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { description: 'USUARIO_NO_ENCONTRADO si se envía idPropietario inexistente' }
+        '409': { $ref: '#/components/responses/Conflicto', description: 'PLACA_DUPLICADA «La placa ya está registrada» · USUARIO_INACTIVO' }
+        '422': { $ref: '#/components/responses/Validacion', description: '«Formato de placa inválido para carro (AAA123)»' }
+    get:
+      tags: [Vehículos]
+      summary: Consultar vehículos (HU-28 · RF-VEH-10)
+      x-permiso: vehiculos.ver
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+        - { name: q, in: query, description: placa (normalizada), nombre o documento del propietario, schema: { type: string } }
+        - { name: tipo, in: query, schema: { type: string, enum: [carro, moto] } }
+        - { name: propietario, in: query, description: 'id del usuario o «ninguno»', schema: { oneOf: [{ type: integer }, { const: ninguno }] } }
+        - { name: dentro, in: query, schema: { type: boolean } }
+      responses:
+        '200': { description: Página de vehículos, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/Vehiculo' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /vehiculos/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get:
+      tags: [Vehículos]
+      summary: Detalle con propietario, historial y últimos 10 movimientos (HU-28 · RF-VEH-11)
+      x-permiso: vehiculos.ver
+      responses:
+        '200': { description: Detalle, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/VehiculoDetalle' } } } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    put:
+      tags: [Vehículos]
+      summary: Actualizar o reasignar un vehículo (HU-27 · RF-VEH-07..09)
+      x-permiso: vehiculos.editar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/VehiculoEntrada'
+            example: { placa: ABC123, tipo: carro, color: Azul, marca: Chevrolet, modelo: 2018, idPropietario: 5 }
+      responses:
+        '200': { description: Actualizado (y reasignado si cambia idPropietario), content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaVehiculo' } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflicto', description: 'PLACA_DUPLICADA · VEHICULO_DENTRO (placa o tipo con el vehículo dentro) · USUARIO_INACTIVO' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /vehiculos/{id}/propietario:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch:
+      tags: [Vehículos]
+      summary: Asociar (o, con vehiculos.editar, reasignar o quitar) el propietario (HU-26, HU-27 · RF-VEH-04..06, RF-VEH-08)
+      x-permiso: vehiculos.crear
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - { type: object, required: [idUsuario], properties: { idUsuario: { type: [integer, 'null'] } } }
+                - { type: object, required: [tipoDocumento, numeroDocumento], properties: { tipoDocumento: { type: string, enum: [CC, CE, TI, PAS, NIT] }, numeroDocumento: { type: string } } }
+            examples:
+              porDocumento: { value: { tipoDocumento: CC, numeroDocumento: '1000000004' } }
+              quitar: { value: { idUsuario: null } }
+      responses:
+        '200': { description: Propietario actualizado, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaVehiculo' } } } }
+        '403': { description: 'SIN_PERMISO · SOLO_ADMIN_REASIGNA «Solo el Administrador puede reasignar el vehículo»' }
+        '404': { description: 'VEHICULO_NO_ENCONTRADO «Registre primero el vehículo» · USUARIO_NO_ENCONTRADO «El usuario no está registrado»' }
+        '409': { description: 'USUARIO_INACTIVO «El usuario está inactivo»' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /usuarios/me/vehiculos:
+    get:
+      tags: [Vehículos]
+      summary: Mis vehículos (HU-28 · RF-VEH-12)
+      x-permiso: perfil.ver
+      responses:
+        '200': { description: Solo los vehículos de la sesión, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/Vehiculo' } } } } } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    id: { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+  schemas:
+    Meta: { type: object, properties: { page: { type: integer }, limit: { type: integer }, total: { type: integer } } }
+    VehiculoEntrada:
+      type: object
+      required: [placa, tipo, color, marca, modelo]
+      properties:
+        placa: { type: string, description: 'se normaliza: mayúsculas, sin espacios ni guiones' }
+        tipo: { type: string, enum: [carro, moto] }
+        color: { type: string, minLength: 2, maxLength: 30 }
+        marca: { type: string, minLength: 2, maxLength: 40 }
+        modelo: { type: integer, minimum: 1950, description: hasta el año actual + 1 }
+        idPropietario: { type: [integer, 'null'], description: 'opcional; en PUT reasigna (vehiculos.editar)' }
+    Propietario:
+      type: [object, 'null']
+      properties: { idUsuario: { type: integer }, nombre: { type: string }, tipoDocumento: { type: string }, numeroDocumento: { type: string }, estado: { type: string } }
+    Vehiculo:
+      type: object
+      properties:
+        idVehiculo: { type: integer }
+        placa: { type: string }
+        tipo: { type: string, enum: [carro, moto] }
+        color: { type: string }
+        marca: { type: string }
+        modelo: { type: integer }
+        estado: { type: string }
+        dentro: { type: boolean }
+        celdaActual: { type: [string, 'null'] }
+        propietario: { $ref: '#/components/schemas/Propietario' }
+    VehiculoDetalle:
+      allOf:
+        - $ref: '#/components/schemas/Vehiculo'
+        - type: object
+          properties:
+            historialPropietarios: { type: array, items: { type: object, properties: { idUsuario: { type: integer }, nombre: { type: string }, desde: { type: string, format: date-time }, hasta: { type: [string, 'null'], format: date-time } } } }
+            ultimosMovimientos: { type: array, maxItems: 10, items: { type: object, properties: { idMovimiento: { type: integer }, fechaHoraEntrada: { type: string }, fechaHoraSalida: { type: [string, 'null'] }, minutosEstadia: { type: [integer, 'null'] }, celda: { type: string }, estado: { type: string } } } }
+    RespuestaVehiculo: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Vehiculo' } } }
+  responses:
+    NoAutenticado: { description: Sin sesión válida }
+    SinPermiso: { description: Sin permiso (403 SIN_PERMISO) }
+    NoEncontrado: { description: 'No existe (404 VEHICULO_NO_ENCONTRADO)' }
+    Conflicto: { description: Regla de negocio (409) }
+    Validacion: { description: Datos inválidos (422) con detalle por campo }
