@@ -41,9 +41,9 @@ description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundationa
 
 ### Base de datos
 
-- [ ] T007 Escribir `backend/database/schema.sql` v2.0.0 con **todas** las entidades del modelo 6.1 del SRS (§4.1 a §4.15), según las convenciones de [data-model.md](data-model.md): `rol` (con `data-model.md` Rol.nombre_normalizado generada y UNIQUE, Rol.estado, Rol.es_base), `permiso` (Permiso.accion ENUM, Permiso.codigo UNIQUE + CHECK), `rol_permiso` (PK compuesta, FK de rol con CASCADE), `usuario` (Usuario.tipo_documento ENUM, UNIQUE de documento y de correo, Usuario.debe_cambiar_contrasena), y las tablas `[Propuesta]` `sesion` (Sesion.jti UNIQUE), `bitacora` (Bitacora.valor_anterior/valor_nuevo JSON) y `consecutivo` (Consecutivo.clave PK)
+- [ ] T007 Escribir `backend/database/schema.sql` v2.0.0 con **todas** las entidades del modelo 6.1 del SRS (§4.1 a §4.15), según las convenciones de [data-model.md](data-model.md): `rol` (con `data-model.md` Rol.nombre_normalizado generada y UNIQUE, Rol.estado, Rol.es_base), `permiso` (Permiso.accion ENUM, Permiso.codigo UNIQUE + CHECK), `rol_permiso` (PK compuesta, FK de rol con CASCADE), `usuario` (Usuario.tipo_documento ENUM, UNIQUE de documento y de correo, Usuario.debe_cambiar_contrasena), `permiso` además con `data-model.md` Permiso.modulo y Permiso.descripcion NOT NULL y UNIQUE (modulo, accion); y las tablas `[Propuesta]` `sesion` (`data-model.md` Sesion.jti UNIQUE, Sesion.emitida_en, Sesion.expira_en, Sesion.revocada_en), `bitacora` (`data-model.md` Bitacora.accion, Bitacora.entidad, Bitacora.id_registro NOT NULL, Bitacora.valor_anterior/valor_nuevo JSON) y `consecutivo` (`data-model.md` Consecutivo.clave PK, Consecutivo.prefijo, Consecutivo.siguiente, Consecutivo.longitud)
 - [ ] T008 Escribir `backend/database/CAMBIOS.md` con la versión 2.0.0: relación entre tablas v1 y 6.1, tablas `[Propuesta]` con su RF de origen (research R-09) y las reservadas para las specs 007, 009 y 016
-- [ ] T009 Reescribir `backend/database/generar-seed.js` y `backend/database/seed.sql`: 3 roles base + «Supervisor de turno» (activo) + «Auditor» (inactivo), los 63 permisos del [catálogo](data-model.md#catálogo-de-permisos), sus asignaciones por rol, los usuarios de prueba (1 admin, 2 operadores, 3 clientes activos, 1 cliente inactivo; bcrypt costo 10) y los consecutivos `ticket`, `factura`, `incidencia`, `reserva`
+- [ ] T009 Reescribir `backend/database/generar-seed.js` y `backend/database/seed.sql`: 3 roles base + «Supervisor de turno» (activo) + «Auditor» (inactivo), los 63 permisos del [catálogo](data-model.md#catálogo-de-permisos), sus asignaciones por rol, los usuarios de prueba (1 admin, 2 operadores —uno con rol «Supervisor de turno», que es su único usuario activo—, 3 clientes activos, 1 cliente inactivo; bcrypt costo 10) y los consecutivos `ticket`, `factura`, `incidencia`, `reserva`
 - [ ] T010 Adaptar `backend/database/reset.js` a `DB_NAME` (por defecto `parqueaderodb`), bloqueado con `NODE_ENV=production`, mostrando el conteo de roles, permisos y usuarios
 
 ### Núcleo del backend
@@ -51,7 +51,7 @@ description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundationa
 - [ ] T011 [P] `backend/src/config/env.js`: validar con zod todas las variables de T005 (falla al arrancar si falta alguna, y exige `JWT_SECRET` ≥ 32 en producción); `backend/src/config/db.js`: pool `mysql2/promise` con `timezone:'-05:00'`, `SET time_zone` al conectar y `withTransaction(fn)`
 - [ ] T012 [P] `backend/src/utils/errores.js` (AppError con `status/code/message/details`, fábricas `validacion`, `solicitudInvalida`, `noAutenticado`, `sinPermiso`, `noEncontrado`, `conflicto`) y `backend/src/utils/respuesta.js` (`ok`, `creado`, `sinContenido` con el sobre `{ok,data,meta}`)
 - [ ] T013 [P] `backend/src/utils/paginacion.js` (zod `page`/`limit`/`q`, de 1 a 100, valor por defecto 10 → `{limit, offset, meta(total)}`) y `backend/src/utils/sql.js` (`escapeLike`, `aCamel`)
-- [ ] T014 [P] `backend/src/utils/bitacora.js` (`registrarBitacora(conexion, {idUsuario, accion, entidad, idRegistro, anterior, nuevo, ip})`, sin guardar nunca `contrasena_hash`) y `backend/src/utils/consecutivos.js` (`siguienteConsecutivo(conexion, clave)` con `FOR UPDATE`)
+- [ ] T014 [P] `backend/src/utils/bitacora.js` (escribe `data-model.md` Bitacora.accion/entidad/id_registro; `registrarBitacora(conexion, {idUsuario, accion, entidad, idRegistro, anterior, nuevo, ip})`, sin guardar nunca `contrasena_hash`) y `backend/src/utils/consecutivos.js` (`siguienteConsecutivo(conexion, clave)` con `FOR UPDATE`)
 - [ ] T015 Middlewares en `backend/src/middlewares/`:
   - `validate.js`: zod → `req.validado`, 422 con `details[{campo,mensaje}]`;
   - `authenticate.js`: Bearer → verificar firma, sesión por `jti` no revocada ni vencida y usuario `activo` → `req.usuario = {idUsuario, rol, permisos}`; 401 `NO_AUTENTICADO`;
@@ -71,7 +71,7 @@ description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundationa
 
 - [ ] T021 `backend/tests/setup/global-setup.js` (carga `.env.test` y recrea `parqueaderodb_test` con `schema.sql` + `seed.sql`), `global-teardown.js` y `helpers.js` (`app`, `tokenDe('admin'|'operador'|'cliente'|'supervisor')`, `auth(token)`)
 - [ ] T022 [P] Pruebas unitarias en `backend/tests/unit/`: `respuesta.test.js`, `paginacion.test.js` (límites 1/100/101, `q` con `%` y `_` escapados), `errores.test.js` (traducción en el error-handler)
-- [ ] T023 [P] Prueba de integración `backend/tests/unit/consecutivos.test.js` (con BD: dos llamadas seguidas dan consecutivos sin hueco; con rollback no se consume el número)
+- [ ] T023 [P] Prueba de integración `backend/tests/integration/consecutivos.test.js` (con BD: dos llamadas seguidas dan consecutivos sin hueco; con rollback no se consume el número)
 - [ ] T024 Pruebas de integración `backend/tests/integration/salud.test.js` (200) y `auth-login.test.js` (200 con token y permisos y sin `contrasena_hash`; 401 contraseña errada; 401 usuario inactivo con el mismo mensaje; 422 sin documento; 401 en ruta protegida sin token o con token alterado)
 - [ ] T025 Colección base `backend/docs/postman/parqueadero.postman_collection.json` (variables `baseUrl`; *pre-request* de login que guarda `{{tokenAdmin}}`, `{{tokenOperador}}` y `{{tokenCliente}}`; carpeta «000 Fundación» con health y login éxito/error) y `backend/docs/postman/local.postman_environment.json`
 
@@ -211,7 +211,8 @@ description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundationa
 - [ ] T052 Carpeta «001 Roles y permisos» en `backend/docs/postman/parqueadero.postman_collection.json` con las peticiones de la tabla de [quickstart.md](quickstart.md#colección-postman-carpeta-001-roles-y-permisos), cada una con `pm.test` de status y `ok`/`error.code`; `npm run test:api` en verde con el servidor en marcha
 - [ ] T053 [P] Actualizar `README.md` y `backend/README.md`: instalación, Node 20, `.env`/`.env.test`, `db:reset`, usuarios de prueba, endpoints de 001, pruebas (Jest y Newman), flujo spec-kit + Gitflow y aviso de certificados TLS
 - [ ] T054 Verificar la cobertura de `roles.service.js` (≥ 80 %), `npm run lint` sin errores y `npm run dev` arrancando; prueba manual según [quickstart.md](quickstart.md#interfaz-prueba-manual) en escritorio y a 375 px
-- [ ] T055 Revisar que cada criterio de HU-01 a HU-06 tenga su prueba Jest con nombre `HU-xx Ey` y su caso Postman (RNF-CAL-03), y marcar `[X]` en este archivo
+- [ ] T055 Verificar SC-004/RNF-REN-02: sembrar 50 000 filas de prueba en `usuario` (script temporal fuera del repositorio), medir `GET /roles` (p95 ≤ 1 s) y revisar `EXPLAIN` de `rolesRepository.listar`; documentar el resultado en `specs/001-roles-permisos/quickstart.md`
+- [ ] T056 Revisar que cada criterio de HU-01 a HU-06 tenga su prueba Jest con nombre `HU-xx Ey` y su caso Postman (RNF-CAL-03), y marcar `[X]` en este archivo
 
 ---
 
@@ -268,3 +269,7 @@ Un commit por fase como mínimo, con trazabilidad, por ejemplo:
 - `chore(fundacion): esquema 6.1, sobre {ok}, auth Bearer y bitácora [RNF-SEG-03][RNF-SEG-07]`
 - `feat(roles): roles base inmutables [HU-01][RF-ROL-01][RF-ROL-03]`
 - `feat(roles): registrar rol [HU-02][RF-ROL-04..06]`
+
+### Notas para specs siguientes
+
+- Spec 002: al crear o editar usuarios debe rechazar los roles `inactivo` (RF-ROL-14) y bloquear el rol (`FOR UPDATE`) mientras asigna (riesgo del plan).
