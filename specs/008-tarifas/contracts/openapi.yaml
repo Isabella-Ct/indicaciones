@@ -1,0 +1,119 @@
+openapi: 3.1.0
+info:
+  title: Parking Lot ABC — API v1 · 008 Tarifas
+  version: 1.0.0
+  description: |
+    Contrato de la spec 008 (SRS v2.0 Apéndice B.1 §4.8). Sobre común { ok, data, meta, error }; errores y paginación
+    como en specs/001-roles-permisos/contracts/openapi.yaml. `x-permiso`: permiso exigido (RNF-SEG-04).
+    GET /tarifas?vigentes=true es público (RF-TAR-07, RNF-SEG-03).
+servers:
+  - url: http://localhost:3000/api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Tarifas
+
+paths:
+  /tarifas:
+    get:
+      tags: [Tarifas]
+      summary: Tarifas vigentes y programadas (público con vigentes=true) o listado administrativo (HU-38, HU-37)
+      x-permiso: 'público con vigentes=true; si no, tarifas.ver'
+      security: [{}, { bearerAuth: [] }]
+      parameters:
+        - { name: vigentes, in: query, schema: { type: boolean }, description: 'true → vigentes y programadas, sin sesión' }
+        - { name: tipoVehiculo, in: query, schema: { type: string, enum: [carro, moto] } }
+        - { name: tipoCliente, in: query, schema: { type: string, enum: [ocasional, registrado] } }
+        - { name: estado, in: query, schema: { type: string, enum: [activo, inactivo] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200': { description: Tarifas, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/Tarifa' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { description: Sin sesión (solo el listado administrativo) }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '422': { $ref: '#/components/responses/Validacion' }
+    post:
+      tags: [Tarifas]
+      summary: Configurar una tarifa (HU-36 · RF-TAR-01..03, RF-TAR-05)
+      x-permiso: tarifas.crear
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/TarifaEntrada'
+                - type: object
+                  properties: { cerrarAnterior: { type: boolean, default: false, description: 'cierra la vigencia de la tarifa activa anterior en el inicio de la nueva' } }
+            example: { nombre: Carro ocasional, tipoVehiculo: carro, tipoCliente: ocasional, valorPrimeraHora: 4000, minutosFraccion: 15, valorFraccion: 1000, topeDiario: 30000, minutosGracia: 10, vigenteDesde: '2027-01-01' }
+      responses:
+        '201': { description: 'Creada (programada si empieza en el futuro)', content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaTarifa' } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '409': { description: 'TARIFA_SUPERPUESTA; details[0].mensaje = id de la existente' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /tarifas/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    put:
+      tags: [Tarifas]
+      summary: Actualizar una tarifa (HU-37 · RF-TAR-04, RF-TAR-05)
+      x-permiso: tarifas.editar
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/TarifaEntrada' } } }
+      responses:
+        '200': { description: Actualizada, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaTarifa' } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { description: TARIFA_NO_ENCONTRADA }
+        '409': { description: 'TARIFA_USADA (solo nombre y cierre de vigencia) · TARIFA_SUPERPUESTA' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /tarifas/{id}/estado:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch:
+      tags: [Tarifas]
+      summary: Activar o inactivar una tarifa (HU-37 · RF-TAR-06)
+      x-permiso: tarifas.cambiar_estado
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [estado], properties: { estado: { type: string, enum: [activo, inactivo] }, confirmar: { type: boolean, default: false } } } } }
+      responses:
+        '200': { description: Estado cambiado, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaTarifa' } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { description: TARIFA_NO_ENCONTRADA }
+        '409': { description: 'UNICA_TARIFA_VIGENTE (sin confirmar) · TARIFA_SUPERPUESTA (al activar)' }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    id: { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+  schemas:
+    Meta: { type: object, properties: { page: { type: integer }, limit: { type: integer }, total: { type: integer } } }
+    TarifaEntrada:
+      type: object
+      required: [nombre, tipoVehiculo, tipoCliente, valorPrimeraHora, minutosFraccion, valorFraccion, vigenteDesde]
+      properties:
+        nombre: { type: string, minLength: 3, maxLength: 60 }
+        tipoVehiculo: { type: string, enum: [carro, moto] }
+        tipoCliente: { type: string, enum: [ocasional, registrado] }
+        valorPrimeraHora: { type: number, exclusiveMinimum: 0 }
+        minutosFraccion: { type: integer, minimum: 1, maximum: 60 }
+        valorFraccion: { type: number, minimum: 0 }
+        topeDiario: { type: [number, 'null'], description: '≥ valorPrimeraHora' }
+        minutosGracia: { type: integer, minimum: 0, maximum: 30, default: 0 }
+        vigenteDesde: { type: string, description: 'AAAA-MM-DD o AAAA-MM-DDTHH:MM (hora de Bogotá)' }
+        vigenteHasta: { type: [string, 'null'], description: posterior a vigenteDesde }
+    Tarifa:
+      allOf:
+        - $ref: '#/components/schemas/TarifaEntrada'
+        - type: object
+          properties:
+            idTarifa: { type: integer }
+            estado: { type: string, enum: [activo, inactivo] }
+            situacion: { type: string, enum: [vigente, programada, vencida, inactiva] }
+            usada: { type: boolean, description: solo en el listado administrativo }
+    RespuestaTarifa: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Tarifa' } } }
+  responses:
+    SinPermiso: { description: Sin permiso (403 SIN_PERMISO) }
+    Validacion: { description: Datos inválidos (422) con detalle por campo }
