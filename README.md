@@ -23,7 +23,8 @@ Se construye con **Spec-Driven Development (GitHub spec-kit)** y **Gitflow**, un
 | `004-parqueaderos-celdas` | Parqueaderos, puertas, celdas, mapa por piso y disponibilidad pública | ✅ implementada |
 | `005-vehiculos` | Vehículos, propietario con historial y «Mis vehículos» (esquema 2.1.0) | ✅ implementada |
 | `006-pico-y-placa` | Restricción de pico y placa: tabla semanal, superposición, aviso de hoy y evaluación de placas | ✅ implementada |
-| `007`–`015` | pico y placa, movimientos, tarifas, facturación, membresías, descuentos, reservas, incidencias, monitoreo, reportes | pendientes |
+| `007-control-ingreso-salida` | Entradas con pico y placa y ticket, salidas con tiempo de estadía, vehículos dentro y anulación (esquema 2.2.0) | ✅ implementada |
+| `008`–`015` | pico y placa, movimientos, tarifas, facturación, membresías, descuentos, reservas, incidencias, monitoreo, reportes | pendientes |
 | `016-festivos-pico-placa` | API externa Nager.Date (festivos para pico y placa, TBD-03) | pendiente |
 
 La versión anterior (PARKO v1, trazabilidad `REQ-`) se conserva en el tag `v0.9.0-legado`.
@@ -173,12 +174,20 @@ Autenticación con `Authorization: Bearer <token>`. Listados con `?page&limit&q`
 | GET | `/api/v1/restricciones-placa/hoy` | `restricciones.ver` | HU-30 |
 | PUT | `/api/v1/restricciones-placa/:id` (`estado` exige `restricciones.cambiar_estado`) | `restricciones.editar` | HU-29 |
 | DELETE | `/api/v1/restricciones-placa/:id` (eliminación lógica) | `restricciones.cambiar_estado` | HU-29 |
+| POST | `/api/v1/movimientos` (`placa`, `idPuerta`, `tipo` si es nueva, `idCelda` opcional) | `movimientos.crear` | HU-31, HU-32 |
+| GET | `/api/v1/movimientos?estado&placa&q&page&limit` (por defecto abiertos) | `movimientos.ver` | HU-33, HU-34 |
+| POST | `/api/v1/movimientos/:id/salida` (`idPuerta`, `ticketExtraviado`) | `movimientos.crear` | HU-33 |
+| PATCH | `/api/v1/movimientos/:id/anulacion` (Operador: 15 min) | `movimientos.anular` | HU-35 |
+| GET | `/api/v1/tickets/:codigo` | `movimientos.ver` | HU-32 |
+| POST | `/api/v1/tickets/:codigo/envio` | `movimientos.crear` | HU-32 |
 
 Pantallas de la 004: `celdas.html` (mapa por piso que se refresca cada 10 s; personal), `parqueaderos.html`, `parqueadero-detalle.html` (puertas), `disponibilidad.html` (Cliente) y la portada `index.html` (cupos por tipo con «Lleno», sin sesión). El paso de la celda a ocupada y a disponible con cada entrada y salida (HU-23) lo usan los movimientos de la spec 007.
 
 Pantallas de la 005: `vehiculos.html` (búsqueda, filtros y registro), `vehiculo-detalle.html` (propietario, edición, historial y movimientos), «Agregar vehículo» en `usuario-detalle.html` y `mis-vehiculos.html` (Cliente). El esquema pasa a **2.1.0** (`historial_propietario`); para una BD existente se aplica `backend/database/migrations/001_historial_propietario.sql`.
 
 Pantallas de la 006: `pico-placa.html` (Configuración › tabla semanal por día y tipo) y el aviso «Pico y placa hoy» en Celdas, Disponibilidad y Mis vehículos. La semilla trae el calendario de ejemplo de Medellín (lunes a viernes, 05:00–20:00); los festivos los agrega la spec 016.
+
+Pantallas de la 007: `movimientos.html` (caseta: entrada con el aviso de pico y placa, salida por placa o ticket, vehículos dentro con más de 24 h resaltados y anulación) y `ticket.html` (vista de impresión de 80 mm y envío por correo). El esquema pasa a **2.2.0** (`ticket.extraviado`, `ingreso_rechazado`); para una BD existente se aplica `migrations/002_ingresos_rechazados_y_ticket_extraviado.sql`. La hora de entrada y salida la pone el servidor (`utils/reloj.js`); el valor a pagar lo calcula la spec 009.
 
 El contrato completo de cada spec está en `specs/NNN-*/contracts/openapi.yaml`.
 

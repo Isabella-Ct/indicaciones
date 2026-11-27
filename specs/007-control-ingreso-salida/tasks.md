@@ -42,18 +42,18 @@
 
 ## Fase 8: Interfaz (Atomic Design)
 
-- [ ] T014 [P] Organismo `organismos/ticket.js` (`ponerTicket`), CSS de la fila de más de 24 h e impresión de 80 mm
-- [ ] T015 [P] Servicios `js/services/movimientos.service.js` y `tickets.service.js`; `formatearDuracion` en `utils/formato.js`
-- [ ] T016 `herramientas/paginas-007.js` + regenerar: menú «Movimientos» (`movimientos.ver`, primero); `MENU` en `config.js`
-- [ ] T017 [US1] [US2] [US3] [US4] [US5] `movimientos.html` + `views/movimientos.view.js` (aviso de pico y placa, entrada con búsqueda del vehículo, ticket, salida por placa o ticket, vehículos dentro, anular)
-- [ ] T018 [P] [US2] `ticket.html` + `views/ticket.view.js` (vista de 80 mm, imprimir, enviar por correo)
+- [X] T014 [P] Organismo `organismos/ticket.js` (`ponerTicket`), CSS de la fila de más de 24 h e impresión de 80 mm
+- [X] T015 [P] Servicios `js/services/movimientos.service.js` y `tickets.service.js`; `formatearDuracion` en `utils/formato.js`
+- [X] T016 `herramientas/paginas-007.js` + regenerar: menú «Movimientos» (`movimientos.ver`, primero); `MENU` en `config.js`
+- [X] T017 [US1] [US2] [US3] [US4] [US5] `movimientos.html` + `views/movimientos.view.js` (aviso de pico y placa, entrada con búsqueda del vehículo, ticket, salida por placa o ticket, vehículos dentro, anular)
+- [X] T018 [P] [US2] `ticket.html` + `views/ticket.view.js` (vista de 80 mm, imprimir, enviar por correo)
 
 ## Fase 9: Pulido
 
-- [ ] T019 Carpeta Postman `casos/007-control-ingreso-salida.js` (placas libres o restringidas según `/restricciones-placa/hoy`); `npm run test:api` en verde dos veces seguidas
-- [ ] T020 [P] `README.md` (endpoints, pantallas, esquema 2.2.0)
-- [ ] T021 Cobertura de los services ≥ 80 %, lint, `herramientas/verificar-front.js`, revisión de que no queden textos en inglés, medición de entrada y salida (RNF-REN-01) y prueba manual en escritorio y a 375 px
-- [ ] T022 Verificar que cada escenario HU-31..HU-35 tenga su prueba y su caso Postman, y marcar `[X]`
+- [X] T019 Carpeta Postman `casos/007-control-ingreso-salida.js` (placas libres o restringidas según `/restricciones-placa/hoy`); `npm run test:api` en verde dos veces seguidas
+- [X] T020 [P] `README.md` (endpoints, pantallas, esquema 2.2.0)
+- [X] T021 Cobertura de los services ≥ 80 %, lint, `herramientas/verificar-front.js`, revisión de que no queden textos en inglés, medición de entrada y salida (RNF-REN-01) y prueba manual en escritorio y a 375 px — prueba manual en el navegador pendiente (usuaria)
+- [X] T022 Verificar que cada escenario HU-31..HU-35 tenga su prueba y su caso Postman, y marcar `[X]`
 
 ## Dependencias
 
