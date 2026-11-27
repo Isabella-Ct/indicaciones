@@ -83,6 +83,16 @@ const VEHICULOS = [
 ];
 const INICIO_SEMILLA = '2026-01-15 08:00:00';
 
+// Pico y placa de ejemplo de Medellín (spec 006, research R-08; TBD-03): lunes a viernes 05:00–20:00,
+// carros por el último dígito y motos por el primero. [dia_semana, digitos]
+const PICO_PLACA = [
+  [1, '6,9'],
+  [2, '5,7'],
+  [3, '1,8'],
+  [4, '0,2'],
+  [5, '3,4'],
+];
+
 // [id_parqueadero, nombre, tipo, estado]
 const PUERTAS = [
   [1, 'Carrera 43', 'mixta', 'activo'],
@@ -208,13 +218,25 @@ async function generarSeed() {
   lineas.push(valores(VEHICULOS.filter((v) => v[6] !== null).map((v) => [v[0], v[6], INICIO_SEMILLA])));
   lineas.push('');
 
+  lineas.push('-- Pico y placa (spec 006, RF-PYP-01; calendario de ejemplo, TBD-03)');
+  lineas.push('INSERT INTO restriccion_placa (dia_semana, tipo_vehiculo, digitos, posicion_digito, hora_inicio, hora_fin, vigente_desde) VALUES');
+  lineas.push(
+    valores(
+      PICO_PLACA.flatMap(([dia, digitos]) => [
+        [dia, 'carro', digitos, 'ultimo', '05:00:00', '20:00:00', '2026-01-01'],
+        [dia, 'moto', digitos, 'primero', '05:00:00', '20:00:00', '2026-01-01'],
+      ])
+    )
+  );
+  lineas.push('');
+
   lineas.push('-- Consecutivos sin huecos (RN-22)');
   lineas.push('INSERT INTO consecutivo (clave, prefijo, siguiente, longitud) VALUES');
   lineas.push(CONSECUTIVOS.map(([c, p]) => `  (${q(c)}, ${q(p)}, 1, 6)`).join(',\n') + ';');
   lineas.push('');
 
   fs.writeFileSync(DESTINO, lineas.filter((l) => l !== null).join('\n'));
-  return { permisos: permisos.length, usuarios: USUARIOS.length, roles: ROLES.length, parqueaderos: PARQUEADEROS.length, puertas: PUERTAS.length, celdas: construirCeldas().length, vehiculos: VEHICULOS.length };
+  return { permisos: permisos.length, usuarios: USUARIOS.length, roles: ROLES.length, parqueaderos: PARQUEADEROS.length, puertas: PUERTAS.length, celdas: construirCeldas().length, vehiculos: VEHICULOS.length, restricciones: PICO_PLACA.length * 2 };
 }
 
 if (require.main === module) {

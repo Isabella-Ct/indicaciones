@@ -226,13 +226,13 @@ INSERT INTO rol_permiso (id_rol, id_permiso) VALUES
 
 -- Usuarios de prueba (contraseñas en README; bcrypt costo 10)
 INSERT INTO usuario (id_usuario, tipo_documento, numero_documento, nombre_completo, correo, celular, id_rol, contrasena_hash, debe_cambiar_contrasena, estado, acepta_tratamiento_datos, fecha_autorizacion) VALUES
-  (1, 'CC', '1000000001', 'Laura Gómez Restrepo', 'admin@parqueaderoabc.co', '3001000001', 1, '$2b$10$1G.AUG/ysdQP8WoF100Gg.xHD8qFUUJRa1NAwES7f3a.lOvHFaxRy', FALSE, 'activo', TRUE, NOW()),
-  (2, 'CC', '1000000002', 'Juan Pérez Álvarez', 'operador@parqueaderoabc.co', '3001000002', 2, '$2b$10$Kp6KWv1te.kDum6bV7x4h.yYPglFDarXURo9x8H5mIIjbs54O5VSO', FALSE, 'activo', TRUE, NOW()),
-  (3, 'CC', '1000000003', 'Sebastián Duque Mejía', 'supervisor@parqueaderoabc.co', '3001000003', 4, '$2b$10$zc0GJ0lZ0tyDCNUbsnXB1OS7PRhAc1ohfEHto2rC50dPaE3c0Mk8G', FALSE, 'activo', TRUE, NOW()),
-  (4, 'CC', '1000000004', 'Andrea Salcedo Ríos', 'andrea.salcedo@correo.co', '3101000004', 3, '$2b$10$wHPeoervrS.qg7DJ8VNVjOlBLkxDzzwH/JDn9JdJBFE5AzEanoy/W', FALSE, 'activo', TRUE, NOW()),
-  (5, 'CE', '1000000005', 'Carlos Medina Toro', 'carlos.medina@correo.co', '3101000005', 3, '$2b$10$qh8OadUoa68.oQVdmJek3eeyQzsy4Aq5H4MvdWpl0y8mw/ZbRJbM6', FALSE, 'activo', TRUE, NOW()),
-  (6, 'CC', '1000000006', 'Valentina Ospina Gil', 'valentina.ospina@correo.co', '3101000006', 3, '$2b$10$z8IOHq6PuFCaCeoRFt4hjuyeuNK0w3QPcLo6hLfriqH649PcsjOAG', TRUE, 'activo', TRUE, NOW()),
-  (7, 'CC', '1000000009', 'Mateo Cardona Ruiz', 'mateo.cardona@correo.co', '3101000009', 3, '$2b$10$dI6mxIXQwZoYfEv3TY4fQewqvWyX6BF6al7PBhcFei2P5HwYY5idy', FALSE, 'inactivo', TRUE, NOW());
+  (1, 'CC', '1000000001', 'Laura Gómez Restrepo', 'admin@parqueaderoabc.co', '3001000001', 1, '$2b$10$.qlrXjQRWN3rpcOVznEo8ONlTdg7NC0kuEoQDlTW.wZkad3EKNvLC', FALSE, 'activo', TRUE, NOW()),
+  (2, 'CC', '1000000002', 'Juan Pérez Álvarez', 'operador@parqueaderoabc.co', '3001000002', 2, '$2b$10$3bf/RgQlylG53DvdFi0FZeSyIwCoSWAIlKTJoplea147rKtTqsQc6', FALSE, 'activo', TRUE, NOW()),
+  (3, 'CC', '1000000003', 'Sebastián Duque Mejía', 'supervisor@parqueaderoabc.co', '3001000003', 4, '$2b$10$VP5JdNXMSN2xSyTQmgDh9.8dFKFdrsCDTL9ik.G7Hd8GLRVWXod4i', FALSE, 'activo', TRUE, NOW()),
+  (4, 'CC', '1000000004', 'Andrea Salcedo Ríos', 'andrea.salcedo@correo.co', '3101000004', 3, '$2b$10$odXu8XiTyKXcfUC4cU0AzONe4bc1yGpx.yAlfo3O4vmcMyITkH6US', FALSE, 'activo', TRUE, NOW()),
+  (5, 'CE', '1000000005', 'Carlos Medina Toro', 'carlos.medina@correo.co', '3101000005', 3, '$2b$10$pm.gRYcONDvO4O4bs4vLvOv1x4Ql.7Cr0QVIJ8S/OT1bJ/XvnAS8K', FALSE, 'activo', TRUE, NOW()),
+  (6, 'CC', '1000000006', 'Valentina Ospina Gil', 'valentina.ospina@correo.co', '3101000006', 3, '$2b$10$K4K33x2CSy3N5SwffSNdReCZyl62k3vV2U7EWApcO3iPUXeuT6uHW', TRUE, 'activo', TRUE, NOW()),
+  (7, 'CC', '1000000009', 'Mateo Cardona Ruiz', 'mateo.cardona@correo.co', '3101000009', 3, '$2b$10$i18PU3cfDCP5Po/d2TM.fekwZdO6BWImUb0ZPUyHEL2CA4nfRbSwW', FALSE, 'inactivo', TRUE, NOW());
 
 -- Parqueaderos, puertas y celdas (spec 004, RF-CLD-01, RF-CLD-07, RF-CLD-09)
 INSERT INTO parqueadero (id_parqueadero, nombre, direccion, pisos, horario, estado) VALUES
@@ -299,6 +299,19 @@ INSERT INTO historial_propietario (id_vehiculo, id_usuario, fecha_desde) VALUES
   (3, 5, '2026-01-15 08:00:00'),
   (4, 6, '2026-01-15 08:00:00'),
   (6, 7, '2026-01-15 08:00:00');
+
+-- Pico y placa (spec 006, RF-PYP-01; calendario de ejemplo, TBD-03)
+INSERT INTO restriccion_placa (dia_semana, tipo_vehiculo, digitos, posicion_digito, hora_inicio, hora_fin, vigente_desde) VALUES
+  (1, 'carro', '6,9', 'ultimo', '05:00:00', '20:00:00', '2026-01-01'),
+  (1, 'moto', '6,9', 'primero', '05:00:00', '20:00:00', '2026-01-01'),
+  (2, 'carro', '5,7', 'ultimo', '05:00:00', '20:00:00', '2026-01-01'),
+  (2, 'moto', '5,7', 'primero', '05:00:00', '20:00:00', '2026-01-01'),
+  (3, 'carro', '1,8', 'ultimo', '05:00:00', '20:00:00', '2026-01-01'),
+  (3, 'moto', '1,8', 'primero', '05:00:00', '20:00:00', '2026-01-01'),
+  (4, 'carro', '0,2', 'ultimo', '05:00:00', '20:00:00', '2026-01-01'),
+  (4, 'moto', '0,2', 'primero', '05:00:00', '20:00:00', '2026-01-01'),
+  (5, 'carro', '3,4', 'ultimo', '05:00:00', '20:00:00', '2026-01-01'),
+  (5, 'moto', '3,4', 'primero', '05:00:00', '20:00:00', '2026-01-01');
 
 -- Consecutivos sin huecos (RN-22)
 INSERT INTO consecutivo (clave, prefijo, siguiente, longitud) VALUES

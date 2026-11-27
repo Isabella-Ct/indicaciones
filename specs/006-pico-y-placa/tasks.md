@@ -8,21 +8,21 @@
 
 ## Fase 1: Preparación
 
-- [ ] T001 `backend/database/generar-seed.js` + `seed.sql`: 10 restricciones (research R-08); `npm run db:reset`; nota en `CAMBIOS.md` (sin cambios de esquema)
+- [X] T001 `backend/database/generar-seed.js` + `seed.sql`: 10 restricciones (research R-08); `npm run db:reset`; nota en `CAMBIOS.md` (sin cambios de esquema)
 
 ## Fase 2: Fundacional
 
-- [ ] T002 [P] `backend/src/modules/restricciones/restricciones.reglas.js` (`digitosATexto`, `textoADigitos`, `digitoEvaluado(placa, posicion)`, `vigenciasSeCruzan`, `restringe(restriccion, momento)`, `motivo(restriccion)`) + `backend/tests/unit/restricciones.reglas.test.js` (límites de franja, posiciones, vigencias)
+- [X] T002 [P] `backend/src/modules/restricciones/restricciones.reglas.js` (`digitosATexto`, `textoADigitos`, `digitoEvaluado(placa, posicion)`, `vigenciasSeCruzan`, `restringe(restriccion, momento)`, `motivo(restriccion)`) + `backend/tests/unit/restricciones.reglas.test.js` (límites de franja, posiciones, vigencias)
 
 ## Fase 3: US1 — Configurar la restricción (P1) — HU-29
 
-- [ ] T003 [US1] `backend/tests/integration/restricciones.test.js` bloque HU-29 E1–E5
-- [ ] T004 [US1] `backend/src/modules/restricciones/` validator (data-model.md RestriccionPlaca.dia_semana, RestriccionPlaca.tipo_vehiculo, RestriccionPlaca.digitos, RestriccionPlaca.posicion_digito, RestriccionPlaca.hora_inicio, RestriccionPlaca.hora_fin, RestriccionPlaca.vigente_desde, RestriccionPlaca.vigente_hasta, RestriccionPlaca.estado), repository, service `listar`, `crear`, `actualizar`, `eliminar` (superposición R-04 con `FOR UPDATE`, bitácora), controller y rutas; registro en `rutasProtegidas()`
+- [X] T003 [US1] `backend/tests/integration/restricciones.test.js` bloque HU-29 E1–E5
+- [X] T004 [US1] `backend/src/modules/restricciones/` validator (data-model.md RestriccionPlaca.dia_semana, RestriccionPlaca.tipo_vehiculo, RestriccionPlaca.digitos, RestriccionPlaca.posicion_digito, RestriccionPlaca.hora_inicio, RestriccionPlaca.hora_fin, RestriccionPlaca.vigente_desde, RestriccionPlaca.vigente_hasta, RestriccionPlaca.estado), repository, service `listar`, `crear`, `actualizar`, `eliminar` (superposición R-04 con `FOR UPDATE`, bitácora), controller y rutas; registro en `rutasProtegidas()`
 
 ## Fase 4: US2 — Consultar la restricción vigente (P2) — HU-30
 
-- [ ] T005 [US2] Bloque HU-30 E1–E3 en `restricciones.test.js` (E3 con `evaluar` y fechas fijas)
-- [ ] T006 [US2] Service `hoy()` (R-06) y `evaluar({ placa, tipo, fechaHora }, { conexion })` (R-05); ruta `GET /restricciones-placa/hoy` antes de `/:id`
+- [X] T005 [US2] Bloque HU-30 E1–E3 en `restricciones.test.js` (E3 con `evaluar` y fechas fijas)
+- [X] T006 [US2] Service `hoy()` (R-06) y `evaluar({ placa, tipo, fechaHora }, { conexion })` (R-05); ruta `GET /restricciones-placa/hoy` antes de `/:id`
 
 ## Fase 5: Interfaz (Atomic Design)
 

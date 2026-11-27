@@ -32,6 +32,8 @@ function rutasProtegidas() {
     { ruta: '/celdas', router: require('./modules/celdas/celdas.routes') },
     // spec 005-vehiculos
     { ruta: '/vehiculos', router: require('./modules/vehiculos/vehiculos.routes') },
+    // spec 006-pico-y-placa
+    { ruta: '/restricciones-placa', router: require('./modules/restricciones/restricciones.routes') },
   ];
 }
 

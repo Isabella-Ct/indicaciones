@@ -4,6 +4,12 @@ Historial de `schema.sql` y de las migraciones en `migrations/`. Cada entrada in
 
 ---
 
+## 2.1.0 (sin cambios en el esquema; semilla ampliada) — 2026-11-27 · spec `006-pico-y-placa`
+
+La spec 006 usa `restriccion_placa` tal como está (sus `CHECK` de día, dígitos, horas y vigencia ya cumplen RF-PYP-02). Solo cambia `seed.sql`: 10 restricciones de ejemplo de Medellín (lunes a viernes × carro y moto, 05:00–20:00, vigentes desde 2026-01-01): lunes 6,9 · martes 5,7 · miércoles 1,8 · jueves 0,2 · viernes 3,4; carros por el último dígito y motos por el primero (research R-08; el calendario oficial es TBD-03).
+
+---
+
 ## 2.1.0 — 2026-11-27 · spec `005-vehiculos`
 
 Migración: `migrations/001_historial_propietario.sql` (para una BD 2.0.0 con datos; `npm run db:reset` ya crea la 2.1.0).
