@@ -183,6 +183,22 @@ async function cambiarEstado(id, estado, solicitante) {
 }
 
 /**
+ * DELETE /usuarios/:id — borrado lógico: el usuario queda inactivo (nunca se borra porque
+ * tiene historial). Si ya estaba inactivo responde 409.
+ */
+async function eliminar(id, solicitante) {
+  if (id === solicitante.id) {
+    throw new AppError(409, 'ACCION_SOBRE_SI_MISMO', 'No puedes eliminar tu propio usuario.');
+  }
+  const usuario = await obtenerExistente(id);
+  if (usuario.estado === 'inactivo') {
+    throw new AppError(409, 'YA_ELIMINADO', 'El usuario ya estaba eliminado (inactivo).');
+  }
+  await repo.actualizarEstado(id, 'inactivo');
+  return aPublico(await repo.buscarPorId(id));
+}
+
+/**
  * REQ-USR-5: el administrador asigna una contraseña temporal a quien la olvidó (no hay
  * recuperación por correo). El usuario debe cambiarla al entrar y recibe un aviso interno.
  */
@@ -271,6 +287,7 @@ module.exports = {
   crear,
   actualizar,
   cambiarEstado,
+  eliminar,
   restablecerContrasena,
   obtenerMiPerfil,
   actualizarMiPerfil,

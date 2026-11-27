@@ -46,6 +46,10 @@ async function cambiarEstado(req, res) {
   res.json({ data: usuario });
 }
 
+async function eliminar(req, res) {
+  res.json({ data: await usuariosService.eliminar(req.validado.params.id, req.usuario) });
+}
+
 async function miPerfil(req, res) {
   res.json({ data: await usuariosService.obtenerMiPerfil(req.usuario.id) });
 }
@@ -70,6 +74,7 @@ module.exports = {
   crear,
   actualizar,
   cambiarEstado,
+  eliminar,
   restablecerContrasena,
   miPerfil,
   actualizarMiPerfil,

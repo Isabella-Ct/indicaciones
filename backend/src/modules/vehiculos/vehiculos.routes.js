@@ -57,6 +57,14 @@ router.put(
   controller.actualizar
 );
 
+// DELETE /api/v1/vehiculos/:id — borrado lógico (activo = 0), REQ-CAR-2 (solo administrador)
+router.delete(
+  '/:id',
+  requirePermiso('vehiculos.editar'),
+  validate({ params: esquemas.params }),
+  controller.eliminar
+);
+
 // PATCH /api/v1/vehiculos/:id/propietario — REQ-USR-6 (asignar) / REQ-CAR-3 (cambiar, solo admin)
 router.patch(
   '/:id/propietario',

@@ -113,6 +113,25 @@ async function actualizar(id, datos) {
 }
 
 /**
+ * DELETE /vehiculos/:id — borrado lógico (activo = 0): conserva estadías, facturas e historial.
+ */
+async function eliminar(id) {
+  const actual = await obtenerExistente(id);
+  if (!actual.activo) {
+    throw new AppError(409, 'YA_ELIMINADO', 'El vehículo ya estaba eliminado (inactivo).');
+  }
+  if (await repo.tieneEstadiaAbierta(id)) {
+    throw new AppError(
+      409,
+      'VEHICULO_DENTRO',
+      'El vehículo está dentro del parqueadero: registra su salida antes de eliminarlo.'
+    );
+  }
+  await repo.inactivar(id);
+  return aPublico(await repo.buscarPorId(id));
+}
+
+/**
  * Asigna o cambia el propietario.
  * - Sin propietario → cualquiera con vehiculos.crear (admin/operador; REQ-USR-6).
  * - Con propietario → solo con vehiculos.reasignar (admin; REQ-CAR-3), también para quitarlo.
@@ -185,6 +204,7 @@ module.exports = {
   obtenerPorPlaca,
   crear,
   actualizar,
+  eliminar,
   cambiarPropietario,
   historial,
   listarDeUsuario,

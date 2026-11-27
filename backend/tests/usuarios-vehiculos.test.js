@@ -414,3 +414,50 @@ describe('Vehículos (REQ-CAR-1..3, REQ-USR-6)', () => {
     expect(res.body.data.every((v) => v.propietario.id === 4)).toBe(true);
   });
 });
+
+describe('Eliminar con borrado lógico (DELETE)', () => {
+  test('el administrador elimina un usuario: queda inactivo y el segundo intento → 409', async () => {
+    const creado = await enviarUsuario(admin, datosCliente()).then(registrarCreado);
+    const id = creado.body.data.id;
+    expect((await operador.delete(`/api/v1/usuarios/${id}`)).status).toBe(403);
+    const res = await admin.delete(`/api/v1/usuarios/${id}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.estado).toBe('inactivo');
+    const [[fila]] = await pool.query('SELECT COUNT(*) AS n FROM usuarios WHERE id = ?', [id]);
+    expect(fila.n).toBe(1);
+    expect((await admin.delete(`/api/v1/usuarios/${id}`)).status).toBe(409);
+  });
+
+  test('eliminar un usuario: a sí mismo → 409, inexistente → 404, id inválido → 422', async () => {
+    expect((await admin.delete('/api/v1/usuarios/1')).status).toBe(409);
+    expect((await admin.delete('/api/v1/usuarios/999999')).status).toBe(404);
+    expect((await admin.delete('/api/v1/usuarios/abc')).status).toBe(422);
+  });
+
+  test('el administrador elimina un vehículo: queda inactivo y el segundo intento → 409', async () => {
+    const placa = `${letras(3)}${String(Number(sufijo.slice(-3)) + 1)
+      .padStart(3, '0')
+      .slice(-3)}`;
+    const creado = await admin
+      .post('/api/v1/vehiculos')
+      .send({ placa, tipo: 'carro', color: 'Gris', marca: 'Kia', modelo: 'Rio' });
+    expect(creado.status).toBe(201);
+    const id = creado.body.data.id;
+    creados.vehiculos.push(id);
+    expect((await operador.delete(`/api/v1/vehiculos/${id}`)).status).toBe(403);
+    const res = await admin.delete(`/api/v1/vehiculos/${id}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.activo).toBe(false);
+    expect((await admin.delete(`/api/v1/vehiculos/${id}`)).status).toBe(409);
+    expect((await admin.delete('/api/v1/vehiculos/999999')).status).toBe(404);
+  });
+
+  test('no se elimina un vehículo que está dentro del parqueadero → 409', async () => {
+    const [[estadia]] = await pool.query(
+      "SELECT vehiculo_id FROM estadias WHERE estado = 'en_curso' LIMIT 1"
+    );
+    const res = await admin.delete(`/api/v1/vehiculos/${estadia.vehiculo_id}`);
+    expect(res.status).toBe(409);
+    expect(res.body.error.codigo).toBe('VEHICULO_DENTRO');
+  });
+});

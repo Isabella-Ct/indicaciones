@@ -870,6 +870,38 @@
       </section>
     </div>
 
+    <div class="organism-modal-overlay hidden" id="modal-confirmar">
+      <section
+        class="organism-modal organism-modal--sm"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirmar-titulo"
+      >
+        <header class="organism-modal-head">
+          <div><h2 id="confirmar-titulo"></h2></div>
+          <button
+            class="atom-icon-button organism-modal-close"
+            type="button"
+            aria-label="Cerrar"
+            title="Cerrar"
+          >
+            <svg class="atom-icon" aria-hidden="true" focusable="false">
+              <use href="/assets/icons.svg#i-x"></use>
+            </svg>
+          </button>
+        </header>
+        <div class="organism-modal-body"><p id="confirmar-mensaje"></p></div>
+        <footer class="organism-modal-foot">
+          <button class="atom-button atom-button--ghost organism-modal-close" type="button">
+            <span>Cancelar</span>
+          </button>
+          <button class="atom-button atom-button--dark" id="confirmar-aceptar" type="button">
+            <span>Confirmar</span>
+          </button>
+        </footer>
+      </section>
+    </div>
+
     <div class="molecule-toast-region" id="avisos" aria-live="polite"></div>
     <a class="hidden" id="descarga" aria-hidden="true" tabindex="-1">Descargar</a>
 
@@ -937,6 +969,9 @@
             </button>
             <button class="atom-button atom-button--ghost atom-button--sm" type="button">
               <span>Historial</span>
+            </button>
+            <button class="atom-button atom-button--dark atom-button--sm hidden" type="button">
+              <span>Eliminar</span>
             </button>
           </div>
         </td>

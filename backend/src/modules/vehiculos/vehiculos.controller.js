@@ -24,6 +24,10 @@ async function actualizar(req, res) {
   res.json({ data: await vehiculosService.actualizar(req.validado.params.id, req.body) });
 }
 
+async function eliminar(req, res) {
+  res.json({ data: await vehiculosService.eliminar(req.validado.params.id) });
+}
+
 async function cambiarPropietario(req, res) {
   const vehiculo = await vehiculosService.cambiarPropietario(
     req.validado.params.id,
@@ -40,5 +44,6 @@ module.exports = {
   historial,
   crear,
   actualizar,
+  eliminar,
   cambiarPropietario,
 };

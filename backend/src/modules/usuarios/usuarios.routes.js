@@ -104,6 +104,14 @@ router.patch(
   controller.cambiarEstado
 );
 
+// DELETE /api/v1/usuarios/:id — borrado lógico (queda inactivo), REQ-USR-3
+router.delete(
+  '/:id',
+  requirePermiso('usuarios.cambiar_estado'),
+  validate({ params: esquemas.params }),
+  controller.eliminar
+);
+
 // PATCH /api/v1/usuarios/:id/contrasena — REQ-USR-5: contraseña temporal asignada por el admin
 router.patch(
   '/:id/contrasena',

@@ -18,7 +18,6 @@ const ORDEN = {
   propietario: 'u.primer_apellido',
 };
 
-
 function filtros({ placa, tipo, propietario, usuario_id, q, activo }) {
   const condiciones = [];
   const valores = [];
@@ -120,6 +119,10 @@ async function actualizar(id, datos) {
   );
 }
 
+async function inactivar(id) {
+  await pool.query('UPDATE vehiculos SET activo = 0 WHERE id = ?', [id]);
+}
+
 async function actualizarPropietario(id, usuarioId, conexion = pool) {
   await conexion.query('UPDATE vehiculos SET usuario_id = ? WHERE id = ?', [usuarioId, id]);
 }
@@ -135,7 +138,6 @@ async function insertarHistorial(
     [vehiculo_id, usuario_anterior_id, usuario_nuevo_id, cambiado_por, motivo ?? null]
   );
 }
-
 
 async function listarHistorial(vehiculoId) {
   const [filas] = await pool.query(
@@ -165,6 +167,7 @@ module.exports = {
   tieneEstadiaAbierta,
   insertar,
   actualizar,
+  inactivar,
   actualizarPropietario,
   insertarHistorial,
   listarHistorial,

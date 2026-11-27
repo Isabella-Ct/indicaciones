@@ -1,4 +1,4 @@
-import { get, post, put, patch } from './api.js';
+import { get, post, put, patch, del } from './api.js';
 
 /** @param {Record<string, string|number|undefined>} filtros */
 export function aQuery(filtros) {
@@ -41,6 +41,11 @@ export async function restablecerContrasenaUsuario(id, contrasena_temporal) {
 
 export async function cambiarEstadoUsuario(id, estado) {
   return (await patch(`/usuarios/${id}/estado`, { estado })).data;
+}
+
+/** Borrado lógico: el usuario queda inactivo (DELETE /usuarios/:id). */
+export async function eliminarUsuario(id) {
+  return (await del(`/usuarios/${id}`)).data;
 }
 
 export async function obtenerMiPerfil() {

@@ -5,14 +5,16 @@
  * HTML en app/vehiculos.html.
  */
 import { montarMarco } from './comun/marco-app.js';
-import { abrirModal, cerrarModal, mostrarAviso } from './comun/dialogos.js';
+import { abrirModal, cerrarModal, confirmar, mostrarAviso } from './comun/dialogos.js';
 import { ponerChip, marcarCampo, mostrarAlerta, botonCargando } from './comun/plantillas.js';
 import { conectarTabla, conectarBusqueda, texto } from './comun/tablas.js';
 import { conectarSelectorUsuario } from './comun/selector-usuario.js';
 import {
   listarVehiculos,
+  obtenerVehiculo,
   crearVehiculo,
   actualizarVehiculo,
+  eliminarVehiculo,
   cambiarPropietario,
   historialPropietarios,
 } from '../services/vehiculos.service.js';
@@ -72,11 +74,16 @@ const tabla = conectarTabla($('tabla-vehiculos'), {
       v.activo ? 'free' : 'neutral'
     );
 
-    const [editar, dueno, historial] = acciones.firstElementChild.children;
+    const [editar, dueno, historial, eliminar] = acciones.firstElementChild.children;
     if (puede('vehiculos.editar')) {
       mostrar(editar, true);
       editar.setAttribute('aria-label', `Editar ${v.placa}`);
-      editar.addEventListener('click', () => abrirFormulario(v, editar));
+      editar.addEventListener('click', () => editarVehiculo(v.id, editar));
+    }
+    if (puede('vehiculos.editar') && v.activo) {
+      mostrar(eliminar, true);
+      eliminar.setAttribute('aria-label', `Eliminar ${v.placa}`);
+      eliminar.addEventListener('click', () => borrarVehiculo(v, eliminar));
     }
     const asignar = !v.propietario && puede('vehiculos.crear');
     const cambiar = v.propietario && puede('vehiculos.reasignar');
@@ -156,6 +163,36 @@ f.formulario.addEventListener('change', (e) => {
   if (e.target.name === 'tipo')
     $('vehiculo-placa-ayuda').textContent = MENSAJE_PLACA[e.target.value];
 });
+
+/** Editar carga primero el registro actualizado (GET /vehiculos/:id). */
+async function editarVehiculo(id, origen) {
+  try {
+    abrirFormulario(await obtenerVehiculo(id), origen);
+  } catch (error) {
+    mostrarAviso(error.message, 'error');
+  }
+}
+
+/** Eliminar = DELETE con borrado lógico; se restaura editando y marcando "Activo". */
+async function borrarVehiculo(vehiculo, origen) {
+  const ok = await confirmar({
+    titulo: 'Eliminar vehículo',
+    mensaje: `El vehículo ${formatearPlaca(vehiculo.placa)} quedará inactivo. Sus estadías, facturas e historial se conservan.`,
+    textoConfirmar: 'Eliminar',
+    origen,
+  });
+  if (!ok) return;
+  try {
+    await eliminarVehiculo(vehiculo.id);
+    mostrarAviso(
+      `El vehículo ${formatearPlaca(vehiculo.placa)} fue eliminado (inactivo).`,
+      'success'
+    );
+    await recargar();
+  } catch (error) {
+    mostrarAviso(error.message, 'error');
+  }
+}
 
 function abrirFormulario(vehiculo, origen) {
   f.editando = vehiculo;

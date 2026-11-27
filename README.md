@@ -115,7 +115,7 @@ Todos entran con **tipo de documento + número + contraseña**.
 
 | Rol | Tipo | Documento | Contraseña | Nombre | Observación |
 |---|---|---|---|---|---|
-| Administrador | CC | `<1000000001>` | `Admin2026*` | Laura Gómez | |
+| Administrador | CC | `1000000001` | `Admin2026*` | Laura Gómez | |
 | Operador | CC | `1000000002` | `Operador2026*` | Juan Pérez | |
 | Operador | CC | `1000000003` | `Operador2026*` | Sebastián Duque | |
 | Cliente | CC | `1000000004` | `Cliente2026*` | Andrea Salcedo | Mensualidad con celda fija A-04 |

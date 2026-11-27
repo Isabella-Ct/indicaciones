@@ -1,4 +1,4 @@
-import { get, post, put, patch } from './api.js';
+import { get, post, put, patch, del } from './api.js';
 import { aQuery } from './usuarios.service.js';
 
 export function listarVehiculos(filtros = {}) {
@@ -7,6 +7,10 @@ export function listarVehiculos(filtros = {}) {
 
 export async function obtenerVehiculoPorPlaca(placa) {
   return (await get(`/vehiculos/placa/${encodeURIComponent(placa)}`)).data;
+}
+
+export async function obtenerVehiculo(id) {
+  return (await get(`/vehiculos/${id}`)).data;
 }
 
 export async function historialPropietarios(id) {
@@ -19,6 +23,11 @@ export async function crearVehiculo(datos) {
 
 export async function actualizarVehiculo(id, datos) {
   return (await put(`/vehiculos/${id}`, datos)).data;
+}
+
+/** Borrado lógico: el vehículo queda inactivo (DELETE /vehiculos/:id). */
+export async function eliminarVehiculo(id) {
+  return (await del(`/vehiculos/${id}`)).data;
 }
 
 /** usuario_id null = dejar sin propietario (solo admin). */

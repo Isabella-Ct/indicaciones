@@ -21,6 +21,7 @@ import {
   crearUsuario,
   actualizarUsuario,
   cambiarEstadoUsuario,
+  eliminarUsuario,
   restablecerContrasenaUsuario,
 } from '../services/usuarios.service.js';
 import { listarRoles } from '../services/roles.service.js';
@@ -83,7 +84,7 @@ const tabla = conectarTabla($('tabla-usuarios'), {
     if (puede('usuarios.editar')) {
       mostrar(editar, true);
       editar.setAttribute('aria-label', `Editar a ${u.nombre_completo}`);
-      editar.addEventListener('click', () => abrirFormulario(u, editar));
+      editar.addEventListener('click', () => editarUsuario(u.id, editar));
     }
     if (puede('usuarios.editar') && otro) {
       mostrar(contrasena, true);
@@ -92,7 +93,7 @@ const tabla = conectarTabla($('tabla-usuarios'), {
     }
     if (puede('usuarios.cambiar_estado') && otro) {
       mostrar(alternar, true);
-      const accion = activo ? 'Inactivar' : 'Activar';
+      const accion = activo ? 'Eliminar' : 'Restaurar';
       alternar.querySelector('span').textContent = accion;
       alternar.setAttribute('aria-label', `${accion} a ${u.nombre_completo}`);
       alternar.addEventListener('click', () => alternarEstado(u, alternar));
@@ -166,6 +167,15 @@ const CAMPOS = [
 $('contrasena-generar').addEventListener('click', () => {
   $('contrasena_temporal').value = generarContrasena();
 });
+
+/** Editar carga primero el registro actualizado (GET /usuarios/:id). */
+async function editarUsuario(id, origen) {
+  try {
+    abrirFormulario(await obtenerUsuario(id), origen);
+  } catch (error) {
+    mostrarAviso(error.message, 'error');
+  }
+}
 
 function abrirFormulario(usuario, origen) {
   estado.editando = usuario;
@@ -270,20 +280,24 @@ formulario.addEventListener('submit', async (evento) => {
 // Activar / inactivar (solo admin)
 // ---------------------------------------------------------------------------
 async function alternarEstado(usuario, origen) {
-  const nuevo = usuario.estado === 'activo' ? 'inactivo' : 'activo';
+  const eliminar = usuario.estado === 'activo';
   const ok = await confirmar({
-    titulo: nuevo === 'inactivo' ? 'Inactivar usuario' : 'Activar usuario',
-    mensaje:
-      nuevo === 'inactivo'
-        ? `${usuario.nombre_completo} no podrá iniciar sesión hasta que lo actives de nuevo.`
-        : `${usuario.nombre_completo} podrá volver a iniciar sesión.`,
-    textoConfirmar: nuevo === 'inactivo' ? 'Inactivar' : 'Activar',
+    titulo: eliminar ? 'Eliminar usuario' : 'Restaurar usuario',
+    mensaje: eliminar
+      ? `${usuario.nombre_completo} quedará inactivo y no podrá iniciar sesión. Su historial se conserva y puedes restaurarlo después.`
+      : `${usuario.nombre_completo} podrá volver a iniciar sesión.`,
+    textoConfirmar: eliminar ? 'Eliminar' : 'Restaurar',
     origen,
   });
   if (!ok) return;
   try {
-    await cambiarEstadoUsuario(usuario.id, nuevo);
-    mostrarAviso(`${usuario.nombre_completo} quedó ${nuevo}.`, 'success');
+    // Eliminar = DELETE (borrado lógico); restaurar = PATCH …/estado.
+    if (eliminar) await eliminarUsuario(usuario.id);
+    else await cambiarEstadoUsuario(usuario.id, 'activo');
+    mostrarAviso(
+      `${usuario.nombre_completo} ${eliminar ? 'fue eliminado (inactivo)' : 'fue restaurado'}.`,
+      'success'
+    );
     await recargar();
   } catch (error) {
     mostrarAviso(error.message, 'error');
