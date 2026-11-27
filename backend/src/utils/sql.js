@@ -1,10 +1,20 @@
-// Ayudas para armar SQL (solo fragmentos fijos: los valores siempre van como parámetros ?).
+// Ayudas para SQL. Solo fragmentos fijos: los valores van siempre como parámetros `?` (RNF-SEG-06).
 
-/** Escapa los comodines de LIKE (% _ \) en un texto que se buscará con LIKE ?. */
-const escaparLike = (texto) => texto.replace(/[\\%_]/g, (c) => `\\${c}`);
+/** Escapa los comodines de LIKE (% _ \) en un texto que se buscará con `LIKE ?`. */
+const escapeLike = (texto) => String(texto).replace(/[\\%_]/g, (c) => `\\${c}`);
 
-/** Nombre completo de un usuario a partir del alias de la tabla (u → u.primer_nombre…). */
-const nombreCompleto = (alias) =>
-  `CONCAT_WS(' ', ${alias}.primer_nombre, ${alias}.segundo_nombre, ${alias}.primer_apellido, ${alias}.segundo_apellido)`;
+/** 'nombre_completo' → 'nombreCompleto' */
+const aCamelClave = (clave) => clave.replace(/_([a-z])/g, (_, l) => l.toUpperCase());
 
-module.exports = { escaparLike, nombreCompleto };
+/** Fila de MySQL (snake_case) → objeto camelCase. Convierte TINYINT(1) solo si se indica. */
+function aCamel(fila, booleanos = []) {
+  if (!fila) return fila;
+  const salida = {};
+  for (const [clave, valor] of Object.entries(fila)) {
+    const nueva = aCamelClave(clave);
+    salida[nueva] = booleanos.includes(clave) ? Boolean(valor) : valor;
+  }
+  return salida;
+}
+
+module.exports = { escapeLike, aCamel, aCamelClave };

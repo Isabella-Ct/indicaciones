@@ -1,5 +1,5 @@
-// Valida body / query / params con esquemas zod.
-// El resultado limpio queda en req.validado (y req.body se reemplaza por el body validado).
+// Valida params, query y body con esquemas zod (RNF-SEG-06). El resultado limpio queda en
+// req.validado (en Express 5 req.query es de solo lectura). Errores → 422 con detalle por campo.
 const { errores } = require('../utils/errores');
 
 function aDetalles(issues) {
@@ -7,7 +7,7 @@ function aDetalles(issues) {
 }
 
 /**
- * @param {{ body?: import('zod').ZodTypeAny, query?: import('zod').ZodTypeAny, params?: import('zod').ZodTypeAny }} esquemas
+ * @param {{ params?: import('zod').ZodTypeAny, query?: import('zod').ZodTypeAny, body?: import('zod').ZodTypeAny }} esquemas
  */
 function validate(esquemas) {
   return (req, _res, next) => {
@@ -21,7 +21,6 @@ function validate(esquemas) {
     }
     if (detalles.length > 0) return next(errores.validacion(detalles));
     req.validado = validado;
-    if (validado.body) req.body = validado.body;
     return next();
   };
 }
