@@ -1,0 +1,11 @@
+/* ==========================================================================
+   Hoja principal de todas las páginas · sistema de diseño PARKO
+   (docs/diseno-parko/; clases con prefijo de nivel atom-, molecule-, organism-, template-).
+   Orden: tokens → base → átomos → moléculas → organismos → plantillas.
+   ========================================================================== */
+@import url('./tokens.css');
+@import url('./base.css');
+@import url('./atomos.css');
+@import url('./moleculas.css');
+@import url('./organismos.css');
+@import url('./plantillas.css');

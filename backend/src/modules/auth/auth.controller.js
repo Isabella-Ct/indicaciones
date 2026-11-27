@@ -1,32 +1,10 @@
-const env = require('../../config/env');
-const { COOKIE_SESION } = require('../../config/constantes');
+// Traduce HTTP ↔ servicio de autenticación (sin reglas ni SQL).
 const authService = require('./auth.service');
-
-const opcionesCookie = () => ({
-  httpOnly: true,
-  sameSite: 'strict',
-  secure: env.NODE_ENV === 'production',
-  path: '/',
-});
+const { ok } = require('../../utils/respuesta');
 
 async function login(req, res) {
-  const { token, expiraEn, usuario } = await authService.login(req.body);
-  res.cookie(COOKIE_SESION, token, { ...opcionesCookie(), expires: expiraEn });
-  res.json({ data: usuario });
+  const sesion = await authService.iniciarSesion(req.validado.body, { ip: req.ip });
+  return ok(res, sesion);
 }
 
-function logout(_req, res) {
-  res.clearCookie(COOKIE_SESION, opcionesCookie());
-  res.json({ data: { mensaje: 'Sesión cerrada.' } });
-}
-
-function me(req, res) {
-  res.json({ data: req.usuario });
-}
-
-async function cambiarContrasena(req, res) {
-  const usuario = await authService.cambiarContrasena(req.usuario.id, req.body);
-  res.json({ data: usuario });
-}
-
-module.exports = { login, logout, me, cambiarContrasena };
+module.exports = { login };

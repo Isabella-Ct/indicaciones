@@ -1,28 +1,14 @@
-// Autenticación — REQ-USR-7, REQ-USR-8 [AJUSTADO]
+// /api/v1/auth — spec 001 (login mínimo, research R-05). La spec 003 agrega contrasena,
+// registro, recuperar, restablecer y logout (SRS B.1 §4.3).
 const { Router } = require('express');
-const { auth } = require('../../middlewares/auth');
+const controller = require('./auth.controller');
+const esquemas = require('./auth.validator');
 const { validate } = require('../../middlewares/validate');
 const { limiteLogin } = require('../../middlewares/rate-limit');
-const esquemas = require('./auth.schemas');
-const controller = require('./auth.controller');
 
 const router = Router();
 
-// POST /api/v1/auth/login — documento + contraseña → cookie httpOnly con el JWT
+// POST /api/v1/auth/login — HU-12, HU-13 · RF-ACC-01, RF-ACC-02, RF-ACC-05
 router.post('/login', limiteLogin, validate({ body: esquemas.login }), controller.login);
-
-// POST /api/v1/auth/logout
-router.post('/logout', controller.logout);
-
-// GET /api/v1/auth/me — usuario en sesión y sus permisos
-router.get('/me', auth({ permitirCambioPendiente: true }), controller.me);
-
-// POST /api/v1/auth/cambiar-contrasena — también resuelve la contraseña temporal
-router.post(
-  '/cambiar-contrasena',
-  auth({ permitirCambioPendiente: true }),
-  validate({ body: esquemas.cambiarContrasena }),
-  controller.cambiarContrasena
-);
 
 module.exports = router;

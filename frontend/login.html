@@ -11,8 +11,8 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     />
-    <link rel="stylesheet" href="/styles/atomic.css" />
-    <script type="module" src="/js/pages/login.js"></script>
+    <link rel="stylesheet" href="/css/estilos.css" />
+    <script type="module" src="/js/views/login.view.js"></script>
   </head>
   <body>
     <main class="template-auth-layout" id="contenido">
@@ -20,7 +20,7 @@
         <div class="molecule-panel-head template-auth-layout-head">
           <a class="molecule-brand molecule-brand--link" href="/">
             <span class="atom-brand-mark" aria-hidden="true">P</span>
-            <div>PARKO<small id="login-sede"></small></div>
+            <div>PARKO<small>Parking Lot ABC</small></div>
           </a>
         </div>
         <div class="atom-hazard-strip" aria-hidden="true"></div>
@@ -30,28 +30,18 @@
           <p class="template-auth-layout-subtitle">// Ingresa con tu documento y contraseña</p>
 
           <form class="organism-login-form" id="login-form" novalidate>
-            <div
-              class="molecule-alert molecule-alert--error hidden"
-              id="login-alerta"
-              aria-live="assertive"
-            >
+            <div class="molecule-alert molecule-alert--error hidden" id="login-alerta" aria-live="assertive">
               <svg class="atom-icon" aria-hidden="true" focusable="false">
                 <use href="/assets/icons.svg#i-alert"></use>
               </svg>
-              <p id="login-alerta-texto"></p>
+              <p></p>
             </div>
 
             <div class="molecule-field">
               <label for="tipo-documento">
                 Tipo de documento<span class="molecule-field-required" aria-hidden="true"> *</span>
               </label>
-              <select
-                class="atom-select"
-                id="tipo-documento"
-                name="tipo_documento"
-                required
-                aria-describedby="tipo-documento-error"
-              >
+              <select class="atom-select" id="tipo-documento" required aria-describedby="tipo-documento-error">
                 <option value="CC" selected>Cédula de ciudadanía (CC)</option>
                 <option value="CE">Cédula de extranjería (CE)</option>
                 <option value="TI">Tarjeta de identidad (TI)</option>
@@ -63,15 +53,13 @@
 
             <div class="molecule-field">
               <label for="numero-documento">
-                Número de documento<span class="molecule-field-required" aria-hidden="true">
-                  *</span
-                >
+                Número de documento<span class="molecule-field-required" aria-hidden="true"> *</span>
               </label>
               <input
                 class="atom-input"
                 id="numero-documento"
-                name="numero_documento"
                 type="text"
+                inputmode="numeric"
                 autocomplete="username"
                 maxlength="20"
                 required
@@ -88,7 +76,6 @@
               <input
                 class="atom-input"
                 id="contrasena"
-                name="contrasena"
                 type="password"
                 autocomplete="current-password"
                 maxlength="72"
@@ -107,14 +94,13 @@
               <svg class="atom-icon" aria-hidden="true" focusable="false">
                 <use href="/assets/icons.svg#i-in"></use>
               </svg>
-              <span id="login-boton-texto">Ingresar</span>
+              <span>Ingresar</span>
             </button>
           </form>
         </div>
       </section>
 
       <div class="template-auth-layout-foot">
-        <p class="hidden" id="login-direccion"></p>
         <p><a class="atom-link" href="/">← Volver a la página principal</a></p>
       </div>
     </main>

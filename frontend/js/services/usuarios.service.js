@@ -1,62 +1,43 @@
-import { get, post, put, patch, del } from './api.js';
+// Una función por endpoint de la spec 002 (SRS B.1 §4.2 + foto [Propuesta]).
+// Con foto (o para quitarla en multipart) se envía FormData; si no, JSON.
+import { solicitar, solicitarArchivo } from '../api/http.js';
 
-/** @param {Record<string, string|number|undefined>} filtros */
-export function aQuery(filtros) {
-  const params = new URLSearchParams();
-  for (const [clave, valor] of Object.entries(filtros)) {
-    if (valor !== undefined && valor !== null && valor !== '') params.set(clave, String(valor));
+/** Arma el cuerpo: FormData si hay archivo, JSON en otro caso. */
+function cuerpo(datos, foto) {
+  if (!foto) return datos;
+  const formulario = new FormData();
+  for (const [clave, valor] of Object.entries(datos)) {
+    if (valor !== undefined && valor !== null) formulario.append(clave, String(valor));
   }
-  const texto = params.toString();
-  return texto ? `?${texto}` : '';
+  formulario.append('foto', foto);
+  return formulario;
 }
 
-/** Listado (admin): { data, meta } */
-export function listarUsuarios(filtros = {}) {
-  return get(`/usuarios${aQuery(filtros)}`);
-}
+/** GET /usuarios?page&limit&q&rol&estado → { data, meta } */
+export const listarUsuarios = ({ page = 1, limit = 10, q, rol, estado } = {}) =>
+  solicitar('/usuarios', { query: { page, limit, q, rol, estado } });
 
-export async function obtenerUsuario(id) {
-  return (await get(`/usuarios/${id}`)).data;
-}
+/** GET /usuarios/:id → detalle con vehículos y membresía */
+export const obtenerUsuario = async (id) => (await solicitar(`/usuarios/${id}`)).data;
 
-/** Clientes activos por documento (user-picker). */
-export async function buscarClientes(documento) {
-  return (await get(`/usuarios/buscar${aQuery({ documento })}`)).data;
-}
+/** POST /usuarios → usuario + correoEnviado */
+export const crearUsuario = async (datos, foto) =>
+  (await solicitar('/usuarios', { method: 'POST', body: cuerpo(datos, foto) })).data;
 
-/** @param {FormData} formulario */
-export async function crearUsuario(formulario) {
-  return (await post('/usuarios', formulario)).data;
-}
+/** PUT /usuarios/:id */
+export const actualizarUsuario = async (id, datos, foto) =>
+  (await solicitar(`/usuarios/${id}`, { method: 'PUT', body: cuerpo(datos, foto) })).data;
 
-/** @param {FormData} formulario */
-export async function actualizarUsuario(id, formulario) {
-  return (await put(`/usuarios/${id}`, formulario)).data;
-}
+/** PATCH /usuarios/:id/estado */
+export const cambiarEstadoUsuario = async (id, estado) =>
+  (await solicitar(`/usuarios/${id}/estado`, { method: 'PATCH', body: { estado } })).data;
 
-/** REQ-USR-5: contraseña temporal asignada por el administrador. */
-export async function restablecerContrasenaUsuario(id, contrasena_temporal) {
-  return (await patch(`/usuarios/${id}/contrasena`, { contrasena_temporal })).data;
-}
+/** GET /usuarios/me */
+export const misDatos = async () => (await solicitar('/usuarios/me')).data;
 
-export async function cambiarEstadoUsuario(id, estado) {
-  return (await patch(`/usuarios/${id}/estado`, { estado })).data;
-}
+/** PUT /usuarios/me */
+export const actualizarMisDatos = async (datos, foto) =>
+  (await solicitar('/usuarios/me', { method: 'PUT', body: cuerpo(datos, foto) })).data;
 
-/** Borrado lógico: el usuario queda inactivo (DELETE /usuarios/:id). */
-export async function eliminarUsuario(id) {
-  return (await del(`/usuarios/${id}`)).data;
-}
-
-export async function obtenerMiPerfil() {
-  return (await get('/usuarios/me')).data;
-}
-
-/** @returns {Promise<{ data: object, meta: { campos_cambiados: string[] } }>} */
-export function actualizarMiPerfil(formulario) {
-  return put('/usuarios/me', formulario);
-}
-
-export async function listarMisVehiculos() {
-  return (await get('/usuarios/me/vehiculos')).data;
-}
+/** GET /usuarios/:id/foto → Blob o null */
+export const obtenerFoto = (id) => solicitarArchivo(`/usuarios/${id}/foto`);
