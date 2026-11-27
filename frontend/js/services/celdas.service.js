@@ -1,78 +1,24 @@
-import { get, post, put, patch } from './api.js';
-import { aQuery } from './usuarios.service.js';
+// Una función por endpoint de celdas (spec 004; SRS B.1 §4.3).
+import { solicitar } from '../api/http.js';
 
-export async function listarPisos() {
-  return (await get('/pisos')).data;
-}
+/** GET /celdas?parqueadero&piso&tipo&estado&q&page&limit → { data, meta } */
+export const listarCeldas = ({ parqueadero, piso, tipo, estado, q, page = 1, limit = 100 } = {}) =>
+  solicitar('/celdas', { query: { parqueadero, piso, tipo, estado, q, page, limit } });
 
-/** @param {{ incluir_inactivas?: '1', piso_id?: number, tipo?: string, estado?: string }} filtros */
-export async function listarCeldas(filtros = {}) {
-  return (await get(`/celdas${aQuery(filtros)}`)).data;
-}
+/** GET /celdas/:id (el ocupante solo llega si la sesión tiene movimientos.ver) */
+export const obtenerCelda = async (id) => (await solicitar(`/celdas/${id}`)).data;
 
-export async function obtenerResumen() {
-  return (await get('/celdas/resumen')).data;
-}
+/** POST /celdas */
+export const crearCelda = async ({ idParqueadero, codigo, tipoVehiculo, piso, area }) =>
+  (await solicitar('/celdas', { method: 'POST', body: { idParqueadero, codigo, tipoVehiculo, piso, area } })).data;
 
-/** @returns {Promise<{ data: object, meta: { estado_final: string } }>} */
-export function cambiarEstadoCelda(id, { estado, vehiculo_id, nota }) {
-  return patch(`/celdas/${id}/estado`, { estado, vehiculo_id, nota });
-}
+/** POST /celdas/lote → { creadas: string[], omitidas: string[] } */
+export const crearLoteCeldas = async (datos) => (await solicitar('/celdas/lote', { method: 'POST', body: datos })).data;
 
-export async function crearCelda(datos) {
-  return (await post('/celdas', datos)).data;
-}
+/** PUT /celdas/:id */
+export const actualizarCelda = async (id, { codigo, tipoVehiculo, piso, area }) =>
+  (await solicitar(`/celdas/${id}`, { method: 'PUT', body: { codigo, tipoVehiculo, piso, area } })).data;
 
-export async function actualizarCelda(id, datos) {
-  return (await put(`/celdas/${id}`, datos)).data;
-}
-
-export async function cambiarActivaCelda(id, activa) {
-  return (await patch(`/celdas/${id}/activa`, { activa })).data;
-}
-
-/**
- * Suscripción en tiempo real (SSE) al mapa de celdas.
- * Si la conexión se cae, EventSource reintenta solo; si el servidor la cierra
- * (por ejemplo, tras un reinicio), se vuelve a abrir a los 3 s.
- * @param {{
- *   onCelda: (celda: object) => void,
- *   onResumen?: (resumen: object) => void,
- *   onMovimiento?: (movimiento: object) => void,   // entradas/salidas (solo personal)
- *   onEstado?: (estado: 'conectando'|'en-vivo'|'reconectando', reconectado: boolean) => void,
- * }} manejadores
- * @returns {() => void} cerrar
- */
-export function suscribirCeldas({ onCelda, onResumen, onMovimiento, onEstado }) {
-  let fuente = null;
-  let cerrado = false;
-  let huboCaida = false;
-  let temporizador = null;
-
-  function abrir() {
-    onEstado?.(huboCaida ? 'reconectando' : 'conectando', false);
-    fuente = new EventSource('/api/v1/celdas/stream', { withCredentials: true });
-    fuente.addEventListener('open', () => {
-      onEstado?.('en-vivo', huboCaida);
-      huboCaida = false;
-    });
-    fuente.addEventListener('celda-actualizada', (e) => onCelda(JSON.parse(e.data)));
-    fuente.addEventListener('resumen-actualizado', (e) => onResumen?.(JSON.parse(e.data)));
-    fuente.addEventListener('movimiento-registrado', (e) => onMovimiento?.(JSON.parse(e.data)));
-    fuente.addEventListener('error', () => {
-      huboCaida = true;
-      onEstado?.('reconectando', false);
-      if (fuente.readyState === EventSource.CLOSED && !cerrado) {
-        clearTimeout(temporizador);
-        temporizador = setTimeout(abrir, 3000);
-      }
-    });
-  }
-
-  abrir();
-  return () => {
-    cerrado = true;
-    clearTimeout(temporizador);
-    fuente?.close();
-  };
-}
+/** PATCH /celdas/:id/estado (inhabilitada con motivo | disponible) */
+export const cambiarEstadoCelda = async (id, { estado, motivo }) =>
+  (await solicitar(`/celdas/${id}/estado`, { method: 'PATCH', body: { estado, motivo } })).data;

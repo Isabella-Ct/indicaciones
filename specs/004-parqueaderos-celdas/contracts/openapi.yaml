@@ -1,0 +1,323 @@
+openapi: 3.1.0
+info:
+  title: Parking Lot ABC — API v1 · 004 Parqueaderos y celdas
+  version: 1.0.0
+  description: |
+    Contrato de la spec 004 (SRS v2.0 Apéndice B.1 §4.4). Sobre común { ok, data, meta, error }; errores y paginación
+    como en specs/001-roles-permisos/contracts/openapi.yaml. `x-permiso`: permiso exigido (RNF-SEG-04).
+    /disponibilidad es público (RNF-SEG-03). HU-23 es un efecto de POST /movimientos y de su salida (spec 007).
+servers:
+  - url: http://localhost:3000/api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Parqueaderos
+  - name: Puertas
+  - name: Celdas
+  - name: Disponibilidad
+
+paths:
+  /parqueaderos:
+    post:
+      tags: [Parqueaderos]
+      summary: Registrar un parqueadero (HU-17 · RF-CLD-01)
+      x-permiso: parqueaderos.crear
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/ParqueaderoEntrada' }, example: { nombre: Sede Norte, direccion: Calle 50 # 40-20, pisos: 3, horario: 6:00 a. m. – 10:00 p. m. } } }
+      responses:
+        '201': { description: Creado activo, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaParqueadero' } } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '409': { $ref: '#/components/responses/Conflicto', description: 'PARQUEADERO_DUPLICADO «Ya existe un parqueadero con ese nombre»' }
+        '422': { $ref: '#/components/responses/Validacion' }
+    get:
+      tags: [Parqueaderos]
+      summary: Listar parqueaderos (HU-17 · RF-CLD-02)
+      x-permiso: parqueaderos.ver
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+        - { name: q, in: query, schema: { type: string } }
+        - { name: estado, in: query, schema: { type: string, enum: [activo, inactivo] } }
+      responses:
+        '200': { description: Página con el total de celdas por tipo, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/Parqueadero' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /parqueaderos/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get:
+      tags: [Parqueaderos]
+      summary: Detalle con puertas y resumen de celdas (HU-17 · RF-CLD-03)
+      x-permiso: parqueaderos.ver
+      responses:
+        '200': { description: Detalle, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/ParqueaderoDetalle' } } } } } }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    put:
+      tags: [Parqueaderos]
+      summary: Actualizar o inactivar un parqueadero (HU-18 · RF-CLD-04..06)
+      x-permiso: parqueaderos.editar (y parqueaderos.cambiar_estado si cambia el estado)
+      requestBody:
+        required: true
+        content: { application/json: { schema: { allOf: [{ $ref: '#/components/schemas/ParqueaderoEntrada' }, { type: object, properties: { estado: { type: string, enum: [activo, inactivo] } } }] } } }
+      responses:
+        '200': { description: Parqueadero actualizado, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaParqueadero' } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409':
+          description: Duplicado, vehículos dentro o pisos con celdas
+          content:
+            application/json:
+              examples:
+                vehiculos: { value: { ok: false, error: { code: PARQUEADERO_CON_VEHICULOS, message: Hay 3 vehículos dentro del parqueadero. } } }
+                pisos: { value: { ok: false, error: { code: PISOS_CON_CELDAS, message: Hay celdas registradas en el piso 3. } } }
+        '422': { $ref: '#/components/responses/Validacion' }
+    delete:
+      tags: [Parqueaderos]
+      summary: Inactivar un parqueadero (inactivación lógica, HU-18 · RF-CLD-05)
+      x-permiso: parqueaderos.cambiar_estado
+      responses:
+        '200': { description: Inactivo; sus celdas disponibles quedan inhabilitadas, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaParqueadero' } } } }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflicto' }
+
+  /parqueaderos/{id}/puertas:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get:
+      tags: [Puertas]
+      summary: Puertas del parqueadero (HU-19 · RF-CLD-07, RF-CLD-08)
+      x-permiso: parqueaderos.ver
+      parameters:
+        - { name: uso, in: query, description: 'entrada → activas de tipo entrada o mixta; salida → salida o mixta', schema: { type: string, enum: [entrada, salida] } }
+        - { name: estado, in: query, schema: { type: string, enum: [activo, inactivo] } }
+      responses:
+        '200': { description: Lista, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/Puerta' } } } } } } }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    post:
+      tags: [Puertas]
+      summary: Registrar una puerta (HU-19 · RF-CLD-07)
+      x-permiso: parqueaderos.editar
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/PuertaEntrada' }, example: { nombre: Carrera 43, tipo: mixta } } }
+      responses:
+        '201': { description: Creada, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Puerta' } } } } } }
+        '409': { $ref: '#/components/responses/Conflicto', description: 'PUERTA_DUPLICADA o PARQUEADERO_INACTIVO' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /puertas/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    put:
+      tags: [Puertas]
+      summary: Actualizar o inactivar una puerta (HU-19 · RF-CLD-07)
+      x-permiso: parqueaderos.editar
+      requestBody:
+        required: true
+        content: { application/json: { schema: { allOf: [{ $ref: '#/components/schemas/PuertaEntrada' }, { type: object, properties: { estado: { type: string, enum: [activo, inactivo] } } }] } } }
+      responses:
+        '200': { description: Actualizada, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Puerta' } } } } } }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409': { $ref: '#/components/responses/Conflicto' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /celdas:
+    post:
+      tags: [Celdas]
+      summary: Registrar una celda (HU-20 · RF-CLD-09..11)
+      x-permiso: celdas.crear
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CeldaEntrada' }, example: { idParqueadero: 1, codigo: a-13, tipoVehiculo: carro, piso: 1, area: A } } }
+      responses:
+        '201': { description: Creada disponible, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Celda' } } } } } }
+        '409': { $ref: '#/components/responses/Conflicto', description: 'CELDA_DUPLICADA «La celda ya existe en este parqueadero» o PARQUEADERO_INACTIVO' }
+        '422': { $ref: '#/components/responses/Validacion', description: 'Piso fuera de 1..pisos, código inválido, parqueadero inexistente' }
+    get:
+      tags: [Celdas]
+      summary: Mapa de celdas (HU-22 · RF-CLD-16..18)
+      description: Con movimientos.ver, las ocupadas traen `ocupante` (placa y hora de entrada); sin ese permiso, `ocupante` es null.
+      x-permiso: celdas.ver
+      parameters:
+        - { name: parqueadero, in: query, schema: { type: integer } }
+        - { name: piso, in: query, schema: { type: integer } }
+        - { name: tipo, in: query, schema: { type: string, enum: [carro, moto] } }
+        - { name: estado, in: query, schema: { type: string, enum: [disponible, ocupada, reservada, inhabilitada] } }
+        - { name: q, in: query, description: código contiene, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer } }
+        - { name: limit, in: query, schema: { type: integer, maximum: 100 } }
+      responses:
+        '200': { description: Página de celdas, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/Celda' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /celdas/lote:
+    post:
+      tags: [Celdas]
+      summary: Registrar celdas por rango (HU-20 · RF-CLD-12)
+      x-permiso: celdas.crear
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idParqueadero, prefijo, desde, hasta, tipoVehiculo, piso]
+              properties:
+                idParqueadero: { type: integer }
+                prefijo: { type: string, maxLength: 8, example: M- }
+                desde: { type: integer, minimum: 0 }
+                hasta: { type: integer, description: 'desde ≤ hasta; máximo 200 celdas' }
+                tipoVehiculo: { type: string, enum: [carro, moto] }
+                piso: { type: integer }
+                area: { type: [string, 'null'], maxLength: 20 }
+      responses:
+        '201':
+          description: Creadas y omitidas
+          content: { application/json: { example: { ok: true, data: { creadas: [M-13, M-14], omitidas: [M-01, M-02] } } } }
+        '409': { $ref: '#/components/responses/Conflicto' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /celdas/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get:
+      tags: [Celdas]
+      summary: Detalle de una celda (HU-22)
+      x-permiso: celdas.ver
+      responses:
+        '200': { description: Celda, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Celda' } } } } } }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+    put:
+      tags: [Celdas]
+      summary: Editar una celda (HU-21 · RF-CLD-13)
+      x-permiso: celdas.editar
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [codigo, tipoVehiculo, piso], properties: { codigo: { type: string }, tipoVehiculo: { type: string, enum: [carro, moto] }, piso: { type: integer }, area: { type: [string, 'null'] } } } } }
+      responses:
+        '200': { description: Actualizada, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Celda' } } } } } }
+        '409': { $ref: '#/components/responses/Conflicto', description: 'CELDA_OCUPADA «La celda está ocupada por ABC123» o CELDA_DUPLICADA' }
+        '422': { $ref: '#/components/responses/Validacion' }
+    delete:
+      tags: [Celdas]
+      summary: Inhabilitar una celda (inhabilitación lógica, HU-21 · RF-CLD-14)
+      x-permiso: celdas.cambiar_estado
+      responses:
+        '200': { description: Inhabilitada, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Celda' } } } } } }
+        '409': { $ref: '#/components/responses/Conflicto' }
+
+  /celdas/{id}/estado:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch:
+      tags: [Celdas]
+      summary: Inhabilitar o habilitar una celda (HU-21 · RF-CLD-14, RF-CLD-15, RN-09)
+      x-permiso: celdas.cambiar_estado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [estado], properties: { estado: { type: string, enum: [disponible, ocupada, reservada, inhabilitada] }, motivo: { type: string, minLength: 3, maxLength: 200, description: obligatorio para inhabilitada } } }
+            example: { estado: inhabilitada, motivo: Mantenimiento }
+      responses:
+        '200': { description: Estado actualizado, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Celda' } } } } } }
+        '409':
+          description: Celda ocupada o reservada, o cambio manual no permitido
+          content:
+            application/json:
+              examples:
+                ocupada: { value: { ok: false, error: { code: CELDA_OCUPADA, message: La celda está ocupada por ABC123. } } }
+                manual: { value: { ok: false, error: { code: CAMBIO_ESTADO_NO_PERMITIDO, message: 'La ocupación se registra con una entrada; la reserva, desde Reservas.' } } }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /disponibilidad:
+    get:
+      tags: [Disponibilidad]
+      summary: Disponibilidad en tiempo real (HU-24 · RF-CLD-22, RF-CLD-23) — público
+      security: []
+      responses:
+        '200':
+          description: Por parqueadero activo y tipo de vehículo; sin datos personales
+          content:
+            application/json:
+              example:
+                ok: true
+                data:
+                  actualizadoEn: '2026-11-27T10:15:00-05:00'
+                  parqueaderos:
+                    - idParqueadero: 1
+                      nombre: Parqueadero ABC
+                      direccion: Carrera 43 # 47-53, Medellín
+                      horario: 24 horas
+                      tipos: { carro: { disponibles: 20, total: 23, lleno: false }, moto: { disponibles: 0, total: 12, lleno: true } }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    id: { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+  schemas:
+    Meta: { type: object, properties: { page: { type: integer }, limit: { type: integer }, total: { type: integer } } }
+    ParqueaderoEntrada:
+      type: object
+      required: [nombre, direccion, pisos]
+      properties:
+        nombre: { type: string, minLength: 3, maxLength: 60 }
+        direccion: { type: string, minLength: 5, maxLength: 120 }
+        pisos: { type: integer, minimum: 1, maximum: 20 }
+        horario: { type: string, maxLength: 60, default: 24 horas }
+    Parqueadero:
+      type: object
+      properties:
+        idParqueadero: { type: integer }
+        nombre: { type: string }
+        direccion: { type: string }
+        pisos: { type: integer }
+        horario: { type: string }
+        estado: { type: string, enum: [activo, inactivo] }
+        celdas: { type: object, properties: { carro: { type: integer }, moto: { type: integer }, total: { type: integer } } }
+    ParqueaderoDetalle:
+      allOf:
+        - $ref: '#/components/schemas/Parqueadero'
+        - type: object
+          properties:
+            puertas: { type: array, items: { $ref: '#/components/schemas/Puerta' } }
+            resumen: { type: array, items: { type: object, properties: { piso: { type: integer }, tipoVehiculo: { type: string }, total: { type: integer }, disponibles: { type: integer }, ocupadas: { type: integer }, reservadas: { type: integer }, inhabilitadas: { type: integer } } } }
+    RespuestaParqueadero: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Parqueadero' } } }
+    PuertaEntrada:
+      type: object
+      required: [nombre, tipo]
+      properties:
+        nombre: { type: string, minLength: 2, maxLength: 40 }
+        tipo: { type: string, enum: [entrada, salida, mixta] }
+    Puerta:
+      type: object
+      properties: { idPuerta: { type: integer }, idParqueadero: { type: integer }, nombre: { type: string }, tipo: { type: string }, estado: { type: string } }
+    CeldaEntrada:
+      type: object
+      required: [idParqueadero, codigo, tipoVehiculo, piso]
+      properties:
+        idParqueadero: { type: integer }
+        codigo: { type: string, pattern: '^[A-Za-z0-9-]{1,10}$', description: se guarda en mayúsculas }
+        tipoVehiculo: { type: string, enum: [carro, moto] }
+        piso: { type: integer, minimum: 1 }
+        area: { type: [string, 'null'], maxLength: 20 }
+    Celda:
+      type: object
+      properties:
+        idCelda: { type: integer }
+        idParqueadero: { type: integer }
+        parqueadero: { type: string }
+        codigo: { type: string }
+        tipoVehiculo: { type: string, enum: [carro, moto] }
+        piso: { type: integer }
+        area: { type: [string, 'null'] }
+        estado: { type: string, enum: [disponible, ocupada, reservada, inhabilitada] }
+        motivoInhabilitacion: { type: [string, 'null'] }
+        ocupante: { type: [object, 'null'], description: 'solo con movimientos.ver', properties: { placa: { type: string }, tipo: { type: string }, fechaHoraEntrada: { type: [string, 'null'], format: date-time } } }
+  responses:
+    NoAutenticado: { description: Sin sesión válida }
+    SinPermiso: { description: Sin permiso (403 SIN_PERMISO) }
+    NoEncontrado: { description: 'No existe (404 PARQUEADERO_NO_ENCONTRADO, PUERTA_NO_ENCONTRADA o CELDA_NO_ENCONTRADA)' }
+    Conflicto: { description: Regla de negocio (409) }
+    Validacion: { description: Datos inválidos (422) con detalle por campo }

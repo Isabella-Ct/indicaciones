@@ -1,0 +1,231 @@
+openapi: 3.1.0
+info:
+  title: Parking Lot ABC — API v1 · 003 Gestión de acceso
+  version: 1.0.0
+  description: |
+    Contrato de la spec 003-gestion-acceso (SRS v2.0 Apéndice B.1 §4.3). Completa el login mínimo de la spec 001.
+    Sobre común { ok, data, meta, error }. Públicos: login, registro, recuperar, restablecer (RNF-SEG-03).
+    Con contraseña temporal solo se permiten PUT /auth/contrasena y POST /auth/logout; el resto → 403 CAMBIO_CONTRASENA_REQUERIDO.
+servers:
+  - url: http://localhost:3000/api/v1
+tags:
+  - name: Acceso
+
+paths:
+  /auth/login:
+    post:
+      tags: [Acceso]
+      summary: Iniciar sesión (HU-12, HU-13 · RF-ACC-01..06)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginEntrada' }
+            example: { tipoDocumento: CC, numeroDocumento: '1000000002', contrasena: 'Operador2026*' }
+      responses:
+        '200':
+          description: Sesión iniciada (debeCambiarContrasena indica si debe cambiarla antes de continuar)
+          content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Sesion' } } } } }
+        '401':
+          description: Credenciales incorrectas (genérico) o usuario inactivo
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RespuestaError' }
+              examples:
+                credenciales: { value: { ok: false, error: { code: CREDENCIALES_INVALIDAS, message: Documento o contraseña incorrectos. } } }
+                inactivo: { value: { ok: false, error: { code: USUARIO_INACTIVO, message: Usuario inactivo. Comuníquese con el administrador. } } }
+        '422': { $ref: '#/components/responses/Validacion' }
+        '429':
+          description: Documento bloqueado por 5 fallos en 15 minutos (RN-07) o límite de peticiones por IP
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RespuestaError' }
+              examples:
+                bloqueo: { value: { ok: false, error: { code: CUENTA_BLOQUEADA, message: Demasiados intentos. Intente en 15 minutos. } } }
+                ip: { value: { ok: false, error: { code: DEMASIADAS_PETICIONES, message: Demasiados intentos. Intente más tarde. } } }
+
+  /auth/contrasena:
+    put:
+      tags: [Acceso]
+      summary: Cambiar mi contraseña (HU-12 · RF-ACC-04)
+      description: Permitido también con contraseña temporal pendiente. Al cambiarla deja de exigirse el cambio.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [contrasenaActual, contrasenaNueva, confirmacion]
+              properties:
+                contrasenaActual: { type: string, maxLength: 72 }
+                contrasenaNueva: { $ref: '#/components/schemas/ContrasenaNueva' }
+                confirmacion: { type: string }
+            example: { contrasenaActual: 'Temporal#2026', contrasenaNueva: 'MiClave2026', confirmacion: 'MiClave2026' }
+      responses:
+        '200':
+          description: Contraseña actualizada
+          content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: object, properties: { mensaje: { type: string } } } } } } }
+        '401':
+          description: Sin sesión válida o contraseña actual incorrecta
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RespuestaError' }
+              example: { ok: false, error: { code: CONTRASENA_ACTUAL_INCORRECTA, message: La contraseña actual no es correcta. } }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /auth/registro:
+    post:
+      tags: [Acceso]
+      summary: Registrarme como cliente (HU-14 · RF-ACC-07..09)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [tipoDocumento, numeroDocumento, nombreCompleto, correo, celular, contrasena, confirmacion, aceptaTratamientoDatos]
+              properties:
+                tipoDocumento: { type: string, enum: [CC, CE, TI, PAS, NIT] }
+                numeroDocumento: { type: string }
+                nombreCompleto: { type: string, minLength: 3, maxLength: 100 }
+                correo: { type: string, format: email, maxLength: 120 }
+                celular: { type: string, pattern: '^3[0-9]{9}$' }
+                contrasena: { $ref: '#/components/schemas/ContrasenaNueva' }
+                confirmacion: { type: string }
+                aceptaTratamientoDatos: { const: true }
+            example: { tipoDocumento: CC, numeroDocumento: '1098765432', nombreCompleto: Laura Pérez, correo: laura.perez@correo.co, celular: '3157654321', contrasena: 'Clave2026', confirmacion: 'Clave2026', aceptaTratamientoDatos: true }
+      responses:
+        '201':
+          description: Cuenta creada con rol Cliente activo
+          content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: object, description: Usuario (spec 002) } } } } }
+        '409':
+          description: Documento o correo ya registrados
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RespuestaError' }
+              examples:
+                documento: { value: { ok: false, error: { code: CUENTA_EXISTENTE, message: Ya existe una cuenta con este documento. Use Recuperar contraseña. } } }
+                correo: { value: { ok: false, error: { code: CORREO_DUPLICADO, message: El correo ya está registrado. } } }
+        '422': { $ref: '#/components/responses/Validacion' }
+        '429': { description: Límite de peticiones por IP }
+
+  /auth/recuperar:
+    post:
+      tags: [Acceso]
+      summary: Recuperar mi contraseña (HU-15 · RF-ACC-10, RF-ACC-11)
+      description: Responde siempre lo mismo. Si el documento es de un usuario activo, envía un enlace de 30 minutos al correo.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [tipoDocumento, numeroDocumento]
+              properties:
+                tipoDocumento: { type: string, enum: [CC, CE, TI, PAS, NIT] }
+                numeroDocumento: { type: string }
+            example: { tipoDocumento: CC, numeroDocumento: '1000000004' }
+      responses:
+        '200':
+          description: Mensaje genérico
+          content:
+            application/json:
+              example: { ok: true, data: { mensaje: Si el documento está registrado, recibirá un correo. } }
+        '422': { $ref: '#/components/responses/Validacion' }
+        '429': { description: Límite de peticiones por IP }
+
+  /auth/restablecer:
+    post:
+      tags: [Acceso]
+      summary: Definir una contraseña nueva con el enlace (HU-15 · RF-ACC-12)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [token, contrasenaNueva, confirmacion]
+              properties:
+                token: { type: string, pattern: '^[0-9a-f]{64}$' }
+                contrasenaNueva: { $ref: '#/components/schemas/ContrasenaNueva' }
+                confirmacion: { type: string }
+      responses:
+        '200':
+          description: Contraseña restablecida; sesiones del usuario cerradas
+          content: { application/json: { example: { ok: true, data: { mensaje: Contraseña actualizada. Inicie sesión con su nueva contraseña. } } } }
+        '409':
+          description: Enlace vencido, usado o inexistente
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RespuestaError' }
+              example: { ok: false, error: { code: ENLACE_INVALIDO, message: El enlace no es válido o expiró. } }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /auth/logout:
+    post:
+      tags: [Acceso]
+      summary: Cerrar sesión (HU-16 · RF-ACC-13)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204': { description: Sesión cerrada; el token deja de servir }
+        '401':
+          description: Sin sesión válida (incluye un token ya cerrado)
+          content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaError' } } }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    RespuestaError:
+      type: object
+      properties:
+        ok: { const: false }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            details: { type: array, items: { type: object, properties: { campo: { type: [string, 'null'] }, mensaje: { type: string } } } }
+    LoginEntrada:
+      type: object
+      additionalProperties: false
+      required: [tipoDocumento, numeroDocumento, contrasena]
+      properties:
+        tipoDocumento: { type: string, enum: [CC, CE, TI, PAS, NIT] }
+        numeroDocumento: { type: string, minLength: 3, maxLength: 20 }
+        contrasena: { type: string, minLength: 1, maxLength: 72 }
+    ContrasenaNueva:
+      type: string
+      minLength: 8
+      maxLength: 64
+      description: Al menos una letra y un número; la confirmación debe coincidir
+    Sesion:
+      type: object
+      properties:
+        token: { type: string }
+        expiraEn: { type: string, format: date-time }
+        usuario:
+          type: object
+          properties:
+            idUsuario: { type: integer }
+            nombreCompleto: { type: string }
+            rol: { type: string }
+            debeCambiarContrasena: { type: boolean }
+        permisos: { type: array, items: { type: string } }
+  responses:
+    Validacion:
+      description: Datos inválidos (422) con detalle por campo
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/RespuestaError' }
+          example: { ok: false, error: { code: VALIDACION, message: Hay datos inválidos en la solicitud., details: [{ campo: confirmacion, mensaje: La confirmación no coincide. }] } }

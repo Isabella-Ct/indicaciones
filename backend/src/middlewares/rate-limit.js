@@ -1,41 +1,19 @@
-// Límites de peticiones. Responden con el formato de error del proyecto.
-const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
-const { LOGIN_MAX_INTENTOS, LOGIN_VENTANA_MS } = require('../config/constantes');
+// Límite de peticiones de inicio de sesión por IP (constitución §III; complemento del bloqueo
+// por documento de RN-07, que completa la spec 003). Justificado en plan.md › Complexity Tracking.
+const rateLimit = require('express-rate-limit');
+const env = require('../config/env');
+const { LOGIN_VENTANA_MS } = require('../config/constantes');
+const { cuerpoError } = require('../utils/respuesta');
 
-function responder(codigo, mensaje) {
-  return (_req, res, _next, opciones) => {
-    res.status(opciones.statusCode).json({ error: { codigo, mensaje } });
-  };
-}
-
-// Login: 5 intentos FALLIDOS cada 15 min por IP + documento (los exitosos no cuentan).
 const limiteLogin = rateLimit({
   windowMs: LOGIN_VENTANA_MS,
-  limit: LOGIN_MAX_INTENTOS,
-  skipSuccessfulRequests: true,
-  standardHeaders: 'draft-8',
+  limit: env.LOGIN_LIMITE_IP,
+  standardHeaders: 'draft-7',
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    const tipo = String(req.body?.tipo_documento ?? '').toUpperCase();
-    const numero = String(req.body?.numero_documento ?? '').trim();
-    return `${ipKeyGenerator(req.ip)}|${tipo}|${numero}`;
-  },
-  handler: responder(
-    'DEMASIADOS_INTENTOS',
-    'Demasiados intentos fallidos. Espera 15 minutos antes de volver a intentarlo.'
-  ),
+  handler: (_req, res) =>
+    res
+      .status(429)
+      .json(cuerpoError('DEMASIADAS_PETICIONES', 'Demasiados intentos. Intente más tarde.')),
 });
 
-// Límite general de la API (protección básica contra abuso).
-const limiteApi = rateLimit({
-  windowMs: 60 * 1000,
-  limit: 300,
-  standardHeaders: 'draft-8',
-  legacyHeaders: false,
-  handler: responder(
-    'DEMASIADAS_SOLICITUDES',
-    'Demasiadas solicitudes. Intenta de nuevo en un momento.'
-  ),
-});
-
-module.exports = { limiteLogin, limiteApi };
+module.exports = { limiteLogin };

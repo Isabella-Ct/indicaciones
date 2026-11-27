@@ -1,36 +1,30 @@
-import { get, post, put, patch, del } from './api.js';
-import { aQuery } from './usuarios.service.js';
+// Una función por endpoint de vehículos (spec 005; SRS B.1 §4.5).
+import { solicitar } from '../api/http.js';
 
-export function listarVehiculos(filtros = {}) {
-  return get(`/vehiculos${aQuery(filtros)}`);
-}
+/** GET /vehiculos?page&limit&q&tipo&propietario&dentro → { data, meta } */
+export const listarVehiculos = ({ page = 1, limit = 10, q, tipo, propietario, dentro } = {}) =>
+  solicitar('/vehiculos', { query: { page, limit, q, tipo, propietario, dentro } });
 
-export async function obtenerVehiculoPorPlaca(placa) {
-  return (await get(`/vehiculos/placa/${encodeURIComponent(placa)}`)).data;
-}
+/** GET /vehiculos/:id (con historial de propietarios y últimos 10 movimientos) */
+export const obtenerVehiculo = async (id) => (await solicitar(`/vehiculos/${id}`)).data;
 
-export async function obtenerVehiculo(id) {
-  return (await get(`/vehiculos/${id}`)).data;
-}
+/** POST /vehiculos (idPropietario opcional) */
+export const crearVehiculo = async ({ placa, tipo, color, marca, modelo, idPropietario }) =>
+  (await solicitar('/vehiculos', { method: 'POST', body: { placa, tipo, color, marca, modelo, idPropietario } })).data;
 
-export async function historialPropietarios(id) {
-  return (await get(`/vehiculos/${id}/historial`)).data;
-}
+/** PUT /vehiculos/:id */
+export const actualizarVehiculo = async (id, { placa, tipo, color, marca, modelo }) =>
+  (await solicitar(`/vehiculos/${id}`, { method: 'PUT', body: { placa, tipo, color, marca, modelo } })).data;
 
-export async function crearVehiculo(datos) {
-  return (await post('/vehiculos', datos)).data;
-}
+/** PATCH /vehiculos/:id/propietario — { idUsuario } (null = quitar) o { tipoDocumento, numeroDocumento } */
+export const asignarPropietario = async (id, identificacion) =>
+  (await solicitar(`/vehiculos/${id}/propietario`, { method: 'PATCH', body: identificacion })).data;
 
-export async function actualizarVehiculo(id, datos) {
-  return (await put(`/vehiculos/${id}`, datos)).data;
-}
+/** GET /usuarios/me/vehiculos */
+export const misVehiculos = async () => (await solicitar('/usuarios/me/vehiculos')).data;
 
-/** Borrado lógico: el vehículo queda inactivo (DELETE /vehiculos/:id). */
-export async function eliminarVehiculo(id) {
-  return (await del(`/vehiculos/${id}`)).data;
-}
-
-/** usuario_id null = dejar sin propietario (solo admin). */
-export async function cambiarPropietario(id, { usuario_id, motivo }) {
-  return (await patch(`/vehiculos/${id}/propietario`, { usuario_id, motivo })).data;
+/** Busca un vehículo por placa exacta (ya normalizada) o devuelve null. */
+export async function buscarPorPlaca(placa) {
+  const { data } = await listarVehiculos({ q: placa, limit: 20 });
+  return data.find((v) => v.placa === placa) ?? null;
 }

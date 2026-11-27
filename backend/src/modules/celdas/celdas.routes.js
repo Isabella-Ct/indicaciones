@@ -1,67 +1,36 @@
-// Celdas — REQ-CLD-01 (ver por área/piso), REQ-CLD-02 (cliente, solo lectura), REQ-CLD-03 (estado)
+// /api/v1/celdas — SRS Apéndice B.1 §4.4 (spec 004-parqueaderos-celdas). /lote va antes de /:id.
 const { Router } = require('express');
-const { auth } = require('../../middlewares/auth');
-const { requirePermiso } = require('../../middlewares/require-permiso');
-const { validate } = require('../../middlewares/validate');
-const esquemas = require('./celdas.schemas');
 const controller = require('./celdas.controller');
+const esquemas = require('./celdas.validator');
+const { authorize } = require('../../middlewares/authorize');
+const { validate } = require('../../middlewares/validate');
 
 const router = Router();
-router.use(auth());
 
-// GET /api/v1/celdas — filtros: piso_id, area, tipo, estado, accesible (0/1), incluir_inactivas (admin)
-// Las placas y titulares solo se incluyen para administrador y operador.
-router.get(
-  '/',
-  requirePermiso('celdas.ver'),
-  validate({ query: esquemas.listar }),
-  controller.listar
-);
+// POST /api/v1/celdas — HU-20 · RF-CLD-09, RF-CLD-10, RF-CLD-11
+router.post('/', authorize('celdas.crear'), validate({ body: esquemas.celdaEntrada }), controller.crear);
 
-// GET /api/v1/celdas/resumen — totales por estado, tipo, piso y área
-router.get('/resumen', requirePermiso('celdas.ver'), controller.resumen);
+// POST /api/v1/celdas/lote — HU-20 · RF-CLD-12
+router.post('/lote', authorize('celdas.crear'), validate({ body: esquemas.lote }), controller.crearLote);
 
-// GET /api/v1/celdas/stream — SSE: celda-actualizada, resumen-actualizado (+ heartbeat 25 s)
-router.get('/stream', requirePermiso('celdas.ver'), controller.stream);
+// GET /api/v1/celdas?parqueadero&piso&tipo&estado — HU-22 · RF-CLD-16, RF-CLD-17, RF-CLD-18
+router.get('/', authorize('celdas.ver'), validate({ query: esquemas.listar }), controller.listar);
 
-// GET /api/v1/celdas/:id
-router.get(
-  '/:id',
-  requirePermiso('celdas.ver'),
-  validate({ params: esquemas.params }),
-  controller.obtener
-);
+// GET /api/v1/celdas/:id — HU-22
+router.get('/:id', authorize('celdas.ver'), validate({ params: esquemas.params }), controller.obtener);
 
-// POST /api/v1/celdas — crear (admin)
-router.post(
-  '/',
-  requirePermiso('celdas.gestionar'),
-  validate({ body: esquemas.crear }),
-  controller.crear
-);
+// PUT /api/v1/celdas/:id — HU-21 · RF-CLD-13
+router.put('/:id', authorize('celdas.editar'), validate({ params: esquemas.params, body: esquemas.celdaEdicion }), controller.actualizar);
 
-// PUT /api/v1/celdas/:id — editar (admin)
-router.put(
-  '/:id',
-  requirePermiso('celdas.gestionar'),
-  validate({ params: esquemas.params, body: esquemas.editar }),
-  controller.actualizar
-);
-
-// PATCH /api/v1/celdas/:id/estado — REQ-CLD-03 (admin y operador)
+// PATCH /api/v1/celdas/:id/estado — HU-21 · RF-CLD-14, RF-CLD-15, RN-09
 router.patch(
   '/:id/estado',
-  requirePermiso('celdas.cambiar_estado'),
-  validate({ params: esquemas.params, body: esquemas.cambiarEstado }),
+  authorize('celdas.cambiar_estado'),
+  validate({ params: esquemas.params, body: esquemas.cambioEstado }),
   controller.cambiarEstado
 );
 
-// PATCH /api/v1/celdas/:id/activa — borrado lógico (admin)
-router.patch(
-  '/:id/activa',
-  requirePermiso('celdas.gestionar'),
-  validate({ params: esquemas.params, body: esquemas.cambiarActiva }),
-  controller.cambiarActiva
-);
+// DELETE /api/v1/celdas/:id — HU-21 · RF-CLD-14 (inhabilitación lógica)
+router.delete('/:id', authorize('celdas.cambiar_estado'), validate({ params: esquemas.params }), controller.inhabilitar);
 
 module.exports = router;
