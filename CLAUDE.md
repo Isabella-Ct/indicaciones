@@ -2,6 +2,20 @@
 
 Este archivo es el contexto permanente del proyecto. Léelo completo antes de cualquier tarea. Si algo de este archivo contradice un prompt, **pregunta antes de actuar**.
 
+## 0. Versión 2 — Spec-Driven Development (prevalece sobre el resto de este archivo)
+
+Desde 2026-11-26 el proyecto se rehace con GitHub spec-kit según la rúbrica de entrega del instructor. **Orden de precedencia:** rúbrica → `.specify/memory/constitution.md` → `docs/SRS-Parking_Lot-v2.0.md` (RF-, RNF-, RN-, API del Apéndice B.1, modelo 6.1) → `docs/historias-usuario-Parking_Lot.md` (HU-) → `specs/NNN-modulo/*` → las secciones 1–10 de este archivo (que siguen valiendo para el diseño visual PARKO y para lo que lo anterior no diga).
+
+Lo que cambia respecto a las secciones 1–10:
+- **Trazabilidad:** se usan `HU-`, `RF-`, `RN-` y `FR-` (ya no `REQ-`). Commits: `feat(<modulo>): <descripción> [HU-xx][RF-XXX-yy]`.
+- **API:** los endpoints son exactamente los del Apéndice B.1 del SRS. Las respuestas usan el sobre `{ ok, data, meta: { page, limit, total }, error: { code, message, details } }`. Paginación con `?page&limit&q`. Códigos HTTP: 400 petición mal formada, 401, 403, 404, 409 conflicto/regla de negocio, 422 validación de campos, 500 sin trazas; 502/503/504 para la API externa.
+- **Auth:** JWT en `Authorization: Bearer` (token en `sessionStorage`), revocable al cerrar sesión. Todos los roles inician sesión con documento + contraseña (RF-ACC-05).
+- **BD:** `backend/database/schema.sql` sigue el modelo 6.1 del SRS (PK `id_<entidad>`) y se documenta en `backend/database/CAMBIOS.md`.
+- **Frontend:** estructura de la constitución: `frontend/{index.html, css/, js/{config,api,services,views,components,utils}, assets/}`. Se conserva el estilo visual PARKO (§5.1).
+- **Node 20 LTS** (`engines`). Las dependencias fuera de la lista de la constitución se justifican en el *Complexity Tracking* del `plan.md` de cada spec.
+- **Gitflow:** `main` ← `release/1.0.0` ← `develop` ← una rama `NNN-modulo` por spec, con PR. Tag final `v1.0.0`.
+- **Specs:** `001`–`015` según el SRS §4, más `016-festivos-pico-placa`, que consume la API externa Nager.Date (TBD-03).
+
 ## 1. Qué es
 
 **PARKO** es el sistema web de gestión de parqueaderos; su primera sede es **Parqueadero ABC** (Carrera 43 # 47-53, Medellín, Colombia; carros y motos; abierto 24 h). Reemplaza la operación manual: entradas/salidas, celdas, pico y placa, cobro, membresías, reservas, incidencias, notificaciones y reportes. Incluye una página pública y un portal para clientes.
