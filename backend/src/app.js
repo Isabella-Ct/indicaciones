@@ -26,6 +26,10 @@ function rutasProtegidas() {
     { ruta: '/permisos', router: permisosRouter },
     // spec 002-gestion-usuarios
     { ruta: '/usuarios', router: require('./modules/usuarios/usuarios.routes') },
+    // spec 004-parqueaderos-celdas
+    { ruta: '/parqueaderos', router: require('./modules/parqueaderos/parqueaderos.routes').parqueaderosRouter },
+    { ruta: '/puertas', router: require('./modules/parqueaderos/parqueaderos.routes').puertasRouter },
+    { ruta: '/celdas', router: require('./modules/celdas/celdas.routes') },
   ];
 }
 
@@ -69,6 +73,7 @@ function crearApp() {
   // Públicas (RNF-SEG-03)
   api.use('/health', saludRoutes);
   api.use('/auth', authRoutes);
+  api.use('/disponibilidad', require('./modules/disponibilidad/disponibilidad.routes'));
   // Protegidas
   for (const { ruta, router } of rutasProtegidas()) api.use(ruta, authenticate, router);
   app.use('/api/v1', api);

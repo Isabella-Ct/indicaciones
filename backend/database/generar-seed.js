@@ -66,6 +66,35 @@ const USUARIOS = [
 const EXTRA_SUPERVISOR = ['reportes.ver'];
 const AUDITOR = ['reportes.ver', 'reportes.exportar', 'indicadores.ver'];
 
+
+// Infraestructura (spec 004, research R-11): una sede activa y una zona anexa inactiva.
+const PARQUEADEROS = [
+  [1, 'Parqueadero ABC', 'Carrera 43 # 47-53, Medellín', 2, '24 horas', 'activo'],
+  [2, 'Parqueadero ABC · Zona anexa', 'Carrera 43 # 47-61, Medellín', 1, '6:00 a. m. – 10:00 p. m.', 'inactivo'],
+];
+// [id_parqueadero, nombre, tipo, estado]
+const PUERTAS = [
+  [1, 'Carrera 43', 'mixta', 'activo'],
+  [1, 'Calle 47', 'entrada', 'activo'],
+  [1, 'Calle 48', 'salida', 'activo'],
+  [2, 'Portón anexo', 'mixta', 'activo'],
+];
+
+function construirCeldas() {
+  const celdas = [];
+  const agregar = (idParqueadero, prefijo, cantidad, tipo, piso, area, estado = 'disponible', motivo = null) => {
+    for (let n = 1; n <= cantidad; n++) {
+      celdas.push([idParqueadero, `${prefijo}${String(n).padStart(2, '0')}`, tipo, piso, area, estado, motivo]);
+    }
+  };
+  agregar(1, 'A-', 11, 'carro', 1, 'A');
+  celdas.push([1, 'A-12', 'carro', 1, 'A', 'inhabilitada', 'Mantenimiento de la demarcación']);
+  agregar(1, 'M-', 12, 'moto', 1, 'M');
+  agregar(1, 'B-', 12, 'carro', 2, 'B');
+  agregar(2, 'Z-', 4, 'carro', 1, 'Z', 'inhabilitada', 'Parqueadero inactivo');
+  return celdas;
+}
+
 const CONSECUTIVOS = [
   ['ticket', 'T-'],
   ['factura', 'FV-'],
@@ -150,13 +179,24 @@ async function generarSeed() {
   lineas.push(filas.join(',\n') + ';');
   lineas.push('');
 
+  const celdas = construirCeldas();
+  lineas.push('-- Parqueaderos, puertas y celdas (spec 004, RF-CLD-01, RF-CLD-07, RF-CLD-09)');
+  lineas.push('INSERT INTO parqueadero (id_parqueadero, nombre, direccion, pisos, horario, estado) VALUES');
+  const valores = (filas) => filas.map((f) => `  (${f.map(q).join(', ')})`).join(',\n') + ';';
+  lineas.push(valores(PARQUEADEROS));
+  lineas.push('INSERT INTO puerta_acceso (id_parqueadero, nombre, tipo, estado) VALUES');
+  lineas.push(valores(PUERTAS));
+  lineas.push('INSERT INTO celda (id_parqueadero, codigo, tipo_vehiculo, piso, area, estado, motivo_inhabilitacion) VALUES');
+  lineas.push(valores(celdas));
+  lineas.push('');
+
   lineas.push('-- Consecutivos sin huecos (RN-22)');
   lineas.push('INSERT INTO consecutivo (clave, prefijo, siguiente, longitud) VALUES');
   lineas.push(CONSECUTIVOS.map(([c, p]) => `  (${q(c)}, ${q(p)}, 1, 6)`).join(',\n') + ';');
   lineas.push('');
 
   fs.writeFileSync(DESTINO, lineas.filter((l) => l !== null).join('\n'));
-  return { permisos: permisos.length, usuarios: USUARIOS.length, roles: ROLES.length };
+  return { permisos: permisos.length, usuarios: USUARIOS.length, roles: ROLES.length, parqueaderos: PARQUEADEROS.length, puertas: PUERTAS.length, celdas: construirCeldas().length };
 }
 
 if (require.main === module) {

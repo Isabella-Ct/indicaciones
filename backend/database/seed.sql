@@ -226,13 +226,64 @@ INSERT INTO rol_permiso (id_rol, id_permiso) VALUES
 
 -- Usuarios de prueba (contraseñas en README; bcrypt costo 10)
 INSERT INTO usuario (id_usuario, tipo_documento, numero_documento, nombre_completo, correo, celular, id_rol, contrasena_hash, debe_cambiar_contrasena, estado, acepta_tratamiento_datos, fecha_autorizacion) VALUES
-  (1, 'CC', '1000000001', 'Laura Gómez Restrepo', 'admin@parqueaderoabc.co', '3001000001', 1, '$2b$10$gHt07Y8wDujpfSwaeYQZPeLx715RY8sRAUZH/Q18L2eIsL5YDc38K', FALSE, 'activo', TRUE, NOW()),
-  (2, 'CC', '1000000002', 'Juan Pérez Álvarez', 'operador@parqueaderoabc.co', '3001000002', 2, '$2b$10$O8mYPmrUDWT59o2Cy/qwDuVspLxxcuedX0L60rrY7g5/EpOzdeM2q', FALSE, 'activo', TRUE, NOW()),
-  (3, 'CC', '1000000003', 'Sebastián Duque Mejía', 'supervisor@parqueaderoabc.co', '3001000003', 4, '$2b$10$4X1x4NVKPMKeSr1RBzNWFOyxHINoRHrnm29.jblXh/YEEOQ3601PC', FALSE, 'activo', TRUE, NOW()),
-  (4, 'CC', '1000000004', 'Andrea Salcedo Ríos', 'andrea.salcedo@correo.co', '3101000004', 3, '$2b$10$NVIynjGuU9Dvkx/uqQNIqO9EVMMbcLkoyyDAVd45DnaHBa5xbGe5W', FALSE, 'activo', TRUE, NOW()),
-  (5, 'CE', '1000000005', 'Carlos Medina Toro', 'carlos.medina@correo.co', '3101000005', 3, '$2b$10$l/HbGJ7MfMBpuTR/0g7Uz.64AK4r5GJOBvWOmKzoI/nVF0zZp7X4a', FALSE, 'activo', TRUE, NOW()),
-  (6, 'CC', '1000000006', 'Valentina Ospina Gil', 'valentina.ospina@correo.co', '3101000006', 3, '$2b$10$mn7Ma.nzXyIlC6NAN2LFNOgYj.wGJa1kVGc3NMMMw7GU/E4FKc./a', TRUE, 'activo', TRUE, NOW()),
-  (7, 'CC', '1000000009', 'Mateo Cardona Ruiz', 'mateo.cardona@correo.co', '3101000009', 3, '$2b$10$5BXV43ru2Ww6wqA60536aO.xfwM5JBlbZY4WP//8ZqQy8SgrIaHtm', FALSE, 'inactivo', TRUE, NOW());
+  (1, 'CC', '1000000001', 'Laura Gómez Restrepo', 'admin@parqueaderoabc.co', '3001000001', 1, '$2b$10$zr2KJKLsSJOyeuLpsuLypuqT4q0xL/GR36fvFWktvvKWN1fj6aJ46', FALSE, 'activo', TRUE, NOW()),
+  (2, 'CC', '1000000002', 'Juan Pérez Álvarez', 'operador@parqueaderoabc.co', '3001000002', 2, '$2b$10$XNsD9/7PgiTxXO1.PhUKV.1DiAnxQFbnGZDUKwPoNT6fFXjIs1u5O', FALSE, 'activo', TRUE, NOW()),
+  (3, 'CC', '1000000003', 'Sebastián Duque Mejía', 'supervisor@parqueaderoabc.co', '3001000003', 4, '$2b$10$qNWEzYD8jm6hmxnL0fQqRu8dqnO0scqAQul7bztXT0kTWY4qqRkYi', FALSE, 'activo', TRUE, NOW()),
+  (4, 'CC', '1000000004', 'Andrea Salcedo Ríos', 'andrea.salcedo@correo.co', '3101000004', 3, '$2b$10$zXI4mbnAj9W6eq.EFbSoUe9ExSedYALsjiCrbBKHtciJk68oxuR6W', FALSE, 'activo', TRUE, NOW()),
+  (5, 'CE', '1000000005', 'Carlos Medina Toro', 'carlos.medina@correo.co', '3101000005', 3, '$2b$10$QeonMgQ.lPs/9ryHFSupzutrQlgFzsow/yz2p4iox3d1TUFu3uODC', FALSE, 'activo', TRUE, NOW()),
+  (6, 'CC', '1000000006', 'Valentina Ospina Gil', 'valentina.ospina@correo.co', '3101000006', 3, '$2b$10$Kqe3orgz/RSSv3NEfqdPpuZuj19fDHB2/MmHSDb7BXIj8NAGIRZ8u', TRUE, 'activo', TRUE, NOW()),
+  (7, 'CC', '1000000009', 'Mateo Cardona Ruiz', 'mateo.cardona@correo.co', '3101000009', 3, '$2b$10$P0hp5q6BI2v1NvVXQ1NhS.tNsAUboNEhph2vECYBAMHOTG35QXKiq', FALSE, 'inactivo', TRUE, NOW());
+
+-- Parqueaderos, puertas y celdas (spec 004, RF-CLD-01, RF-CLD-07, RF-CLD-09)
+INSERT INTO parqueadero (id_parqueadero, nombre, direccion, pisos, horario, estado) VALUES
+  (1, 'Parqueadero ABC', 'Carrera 43 # 47-53, Medellín', 2, '24 horas', 'activo'),
+  (2, 'Parqueadero ABC · Zona anexa', 'Carrera 43 # 47-61, Medellín', 1, '6:00 a. m. – 10:00 p. m.', 'inactivo');
+INSERT INTO puerta_acceso (id_parqueadero, nombre, tipo, estado) VALUES
+  (1, 'Carrera 43', 'mixta', 'activo'),
+  (1, 'Calle 47', 'entrada', 'activo'),
+  (1, 'Calle 48', 'salida', 'activo'),
+  (2, 'Portón anexo', 'mixta', 'activo');
+INSERT INTO celda (id_parqueadero, codigo, tipo_vehiculo, piso, area, estado, motivo_inhabilitacion) VALUES
+  (1, 'A-01', 'carro', 1, 'A', 'disponible', NULL),
+  (1, 'A-02', 'carro', 1, 'A', 'disponible', NULL),
+  (1, 'A-03', 'carro', 1, 'A', 'disponible', NULL),
+  (1, 'A-04', 'carro', 1, 'A', 'disponible', NULL),
+  (1, 'A-05', 'carro', 1, 'A', 'disponible', NULL),
+  (1, 'A-06', 'carro', 1, 'A', 'disponible', NULL),
+  (1, 'A-07', 'carro', 1, 'A', 'disponible', NULL),
+  (1, 'A-08', 'carro', 1, 'A', 'disponible', NULL),
+  (1, 'A-09', 'carro', 1, 'A', 'disponible', NULL),
+  (1, 'A-10', 'carro', 1, 'A', 'disponible', NULL),
+  (1, 'A-11', 'carro', 1, 'A', 'disponible', NULL),
+  (1, 'A-12', 'carro', 1, 'A', 'inhabilitada', 'Mantenimiento de la demarcación'),
+  (1, 'M-01', 'moto', 1, 'M', 'disponible', NULL),
+  (1, 'M-02', 'moto', 1, 'M', 'disponible', NULL),
+  (1, 'M-03', 'moto', 1, 'M', 'disponible', NULL),
+  (1, 'M-04', 'moto', 1, 'M', 'disponible', NULL),
+  (1, 'M-05', 'moto', 1, 'M', 'disponible', NULL),
+  (1, 'M-06', 'moto', 1, 'M', 'disponible', NULL),
+  (1, 'M-07', 'moto', 1, 'M', 'disponible', NULL),
+  (1, 'M-08', 'moto', 1, 'M', 'disponible', NULL),
+  (1, 'M-09', 'moto', 1, 'M', 'disponible', NULL),
+  (1, 'M-10', 'moto', 1, 'M', 'disponible', NULL),
+  (1, 'M-11', 'moto', 1, 'M', 'disponible', NULL),
+  (1, 'M-12', 'moto', 1, 'M', 'disponible', NULL),
+  (1, 'B-01', 'carro', 2, 'B', 'disponible', NULL),
+  (1, 'B-02', 'carro', 2, 'B', 'disponible', NULL),
+  (1, 'B-03', 'carro', 2, 'B', 'disponible', NULL),
+  (1, 'B-04', 'carro', 2, 'B', 'disponible', NULL),
+  (1, 'B-05', 'carro', 2, 'B', 'disponible', NULL),
+  (1, 'B-06', 'carro', 2, 'B', 'disponible', NULL),
+  (1, 'B-07', 'carro', 2, 'B', 'disponible', NULL),
+  (1, 'B-08', 'carro', 2, 'B', 'disponible', NULL),
+  (1, 'B-09', 'carro', 2, 'B', 'disponible', NULL),
+  (1, 'B-10', 'carro', 2, 'B', 'disponible', NULL),
+  (1, 'B-11', 'carro', 2, 'B', 'disponible', NULL),
+  (1, 'B-12', 'carro', 2, 'B', 'disponible', NULL),
+  (2, 'Z-01', 'carro', 1, 'Z', 'inhabilitada', 'Parqueadero inactivo'),
+  (2, 'Z-02', 'carro', 1, 'Z', 'inhabilitada', 'Parqueadero inactivo'),
+  (2, 'Z-03', 'carro', 1, 'Z', 'inhabilitada', 'Parqueadero inactivo'),
+  (2, 'Z-04', 'carro', 1, 'Z', 'inhabilitada', 'Parqueadero inactivo');
 
 -- Consecutivos sin huecos (RN-22)
 INSERT INTO consecutivo (clave, prefijo, siguiente, longitud) VALUES
