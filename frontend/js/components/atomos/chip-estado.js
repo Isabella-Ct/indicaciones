@@ -21,6 +21,19 @@ export function ponerChipCelda(chip, estado) {
   ponerChip(chip, texto, variante);
 }
 
+/** Situación de una tarifa (spec 008): vigente | programada | vencida | inactiva. */
+const SITUACION_TARIFA = {
+  vigente: ['Vigente', 'free'],
+  programada: ['Programada', 'reserved'],
+  vencida: ['Vencida', 'neutral'],
+  inactiva: ['Inactiva', 'out'],
+};
+
+export function ponerChipTarifa(chip, situacion) {
+  const [texto, variante] = SITUACION_TARIFA[situacion] ?? [situacion, 'neutral'];
+  ponerChip(chip, texto, variante);
+}
+
 /** Chip de estado activo/inactivo (usuarios, roles, tarifas…). */
 export function ponerChipActivo(chip, estado) {
   ponerChip(chip, estado === 'activo' ? 'Activo' : 'Inactivo', estado === 'activo' ? 'free' : 'out');

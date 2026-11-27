@@ -23,6 +23,8 @@ export const MENU = [
   { id: 'parqueaderos', texto: 'Parqueaderos', href: '/parqueaderos.html', permiso: 'parqueaderos.ver', grupo: 'Configuración' },
   // spec 006: solo quien configura ve la tabla semanal en el menú (el aviso de hoy está en otras pantallas).
   { id: 'pico-placa', texto: 'Pico y placa', href: '/pico-placa.html', permiso: 'restricciones.crear', grupo: 'Configuración' },
+  // spec 008: la lista la ven Operador y Cliente (solo lectura); solo el Administrador la edita.
+  { id: 'tarifas', texto: 'Tarifas', href: '/tarifas.html', permiso: 'tarifas.ver', grupo: 'Configuración' },
   { id: 'roles', texto: 'Roles', href: '/roles.html', permiso: 'roles.ver', grupo: 'Configuración' },
   { id: 'permisos', texto: 'Permisos', href: '/permisos.html', permiso: 'roles.ver', grupo: 'Configuración' },
   { id: 'mi-perfil', texto: 'Mi perfil', href: '/mi-perfil.html', permiso: 'perfil.ver' },

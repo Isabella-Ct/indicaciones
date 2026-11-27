@@ -56,9 +56,35 @@
               <div class="template-app-layout-stack" id="disponibilidad-sedes"></div>
             </div>
           </section>
+          <section class="molecule-panel" aria-labelledby="tarifas-titulo">
+            <div class="molecule-panel-head"><h2 id="tarifas-titulo">Tarifas</h2></div>
+            <div class="molecule-panel-body">
+              <p class="molecule-field-hint" id="tarifas-estado" aria-live="polite">Consultando…</p>
+              <div class="organism-pricing-table" id="tarifas"></div>
+              <p class="molecule-field-hint">Se cobra la primera hora y cada fracción iniciada después de ella, sin superar el tope diario. Con membresía activa, la estadía no tiene costo.</p>
+            </div>
+          </section>
         </div>
       </main>
 
+      <template id="tpl-tarifa-tarjeta">
+        <article class="organism-pricing-table-card">
+          <h3 class="organism-pricing-table-title"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-car"></use></svg><span class="js-tipo"></span></h3>
+          <div class="template-app-layout-stack js-bloques"></div>
+        </article>
+      </template>
+      <template id="tpl-tarifa-cliente">
+        <div>
+          <p class="atom-label-caps js-cliente"></p>
+          <p class="organism-pricing-table-main"><strong class="js-primera"></strong> primera hora</p>
+          <ul class="organism-pricing-table-list">
+            <li>Fracción: <span class="js-fraccion"></span></li>
+            <li>Tope: <span class="js-tope"></span></li>
+            <li>Gracia: <span class="js-gracia"></span></li>
+          </ul>
+        </div>
+      </template>
+      <template id="tpl-tarifa-vacia"><p>Sin tarifa vigente.</p></template>
       <template id="tpl-sede">
         <article class="organism-availability">
           <div class="organism-availability-head">

@@ -1,6 +1,8 @@
-// Página pública · Inicio (HU-24): cupos libres de carros y motos por parqueadero, con «Lleno» y la
+// Página pública · Inicio (HU-24, HU-38): cupos libres de carros y motos por parqueadero, con «Lleno» y la
 // hora de actualización, sin iniciar sesión y sin datos personales (RF-CLD-22, RF-CLD-23).
 import { consultarDisponibilidad } from '../services/disponibilidad.service.js';
+import { tarifasVigentes } from '../services/tarifas.service.js';
+import { conectarTablaTarifas } from '../components/organismos/tabla-tarifas.js';
 import { consultarCada } from '../components/moleculas/consulta-periodica.js';
 import { ponerKpi } from '../components/moleculas/kpi.js';
 import { clonar } from '../utils/plantillas.js';
@@ -41,5 +43,19 @@ async function consultar() {
   }
 }
 
+/** HU-38 (spec 008): tarifas vigentes y programadas, sin sesión. */
+async function mostrarTarifas() {
+  const estado = $('tarifas-estado');
+  try {
+    const lista = await tarifasVigentes();
+    conectarTablaTarifas($('tarifas')).pintar(lista);
+    estado.textContent = lista.length ? '' : 'Aún no hay tarifas publicadas.';
+    mostrar(estado, !lista.length);
+  } catch (error) {
+    estado.textContent = error.message;
+  }
+}
+
 $('pie-anio').textContent = String(new Date().getFullYear());
+mostrarTarifas();
 consultarCada(consultar, 10000);
