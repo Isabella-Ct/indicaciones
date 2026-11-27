@@ -9,7 +9,10 @@ const icono = (id) =>
   `<svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#${id}"></use></svg>`;
 
 const MENU = [
+  ['celdas', 'Celdas', '/celdas.html'],
+  ['disponibilidad', 'Disponibilidad', '/disponibilidad.html'],
   ['usuarios', 'Usuarios', '/usuarios.html'],
+  ['parqueaderos', 'Parqueaderos', '/parqueaderos.html'],
   ['roles', 'Roles', '/roles.html'],
   ['permisos', 'Permisos', '/permisos.html'],
   ['mi-perfil', 'Mi perfil', '/mi-perfil.html'],
@@ -416,4 +419,5 @@ pagina({
 
 require('./paginas-002.js')({ pagina, tablaVacia, icono });
 require('./paginas-003.js')({ pagina, icono, destino });
+require('./paginas-004.js')({ pagina, tablaVacia, icono });
 console.log('Páginas escritas en', destino);

@@ -31,7 +31,7 @@ function iniciarReloj() {
 const enPagina = (ruta) => location.pathname === ruta;
 
 /**
- * @param {{ permiso?: string, alSalir?: () => Promise<void> }} opciones
+ * @param {{ permiso?: string | string[], alSalir?: () => Promise<void> }} opciones
  * @returns {{ sesion: object, permitido: boolean } | null} null si la página redirige
  */
 export function montarMarco({ permiso, alSalir } = {}) {
@@ -44,7 +44,8 @@ export function montarMarco({ permiso, alSalir } = {}) {
     location.replace(RUTA_CAMBIAR_CONTRASENA);
     return null;
   }
-  const permitido = !permiso || sesion.permisos.includes(permiso);
+  // `permiso` puede ser un código o una lista (todos obligatorios).
+  const permitido = [permiso ?? []].flat().every((p) => sesion.permisos.includes(p));
   const inicio = paginaInicial(sesion.permisos);
   if (!permitido && !enPagina(inicio)) {
     location.replace(inicio);

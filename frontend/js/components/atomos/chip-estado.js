@@ -7,6 +7,20 @@ export function ponerChip(chip, textoChip, variante = 'neutral') {
   chip.textContent = textoChip;
 }
 
+/** Texto y variante de cada estado de celda (RF-CLD-16: color y texto, nunca solo color). */
+export const ESTADOS_CELDA = {
+  disponible: { texto: 'Libre', variante: 'free' },
+  ocupada: { texto: 'Ocupada', variante: 'occupied' },
+  reservada: { texto: 'Reservada', variante: 'reserved' },
+  inhabilitada: { texto: 'Inhabilitada', variante: 'out' },
+};
+
+/** Chip del estado de una celda (disponible | ocupada | reservada | inhabilitada). */
+export function ponerChipCelda(chip, estado) {
+  const { texto, variante } = ESTADOS_CELDA[estado] ?? { texto: estado, variante: 'neutral' };
+  ponerChip(chip, texto, variante);
+}
+
 /** Chip de estado activo/inactivo (usuarios, roles, tarifas…). */
 export function ponerChipActivo(chip, estado) {
   ponerChip(chip, estado === 'activo' ? 'Activo' : 'Inactivo', estado === 'activo' ? 'free' : 'out');

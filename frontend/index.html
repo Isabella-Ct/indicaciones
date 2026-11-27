@@ -12,6 +12,7 @@
       href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     />
     <link rel="stylesheet" href="/css/estilos.css" />
+    <script type="module" src="/js/views/inicio.view.js"></script>
   </head>
   <body>
     <div class="template-app-layout template-public-layout">
@@ -38,16 +39,47 @@
             <div class="molecule-panel-head"><h1 id="inicio-titulo">Parqueadero ABC</h1></div>
             <div class="molecule-panel-body">
               <p>Carros y motos · servicio 24 horas · Carrera 43 # 47-53, Medellín.</p>
-              <p>La disponibilidad en tiempo real y las tarifas vigentes estarán aquí muy pronto.</p>
               <p><a class="atom-button" href="/login.html"><span>Ingresar al sistema</span></a> <a class="atom-button atom-button--ghost" href="/registro.html"><span>Crear cuenta</span></a></p>
+            </div>
+          </section>
+
+          <section class="molecule-panel organism-availability" aria-labelledby="disponibilidad-titulo">
+            <div class="molecule-panel-head organism-availability-head">
+              <h2 id="disponibilidad-titulo">Disponibilidad en tiempo real</h2>
+              <p class="organism-availability-time" id="disponibilidad-hora" aria-live="polite">Consultando…</p>
+            </div>
+            <div class="molecule-panel-body">
+              <div class="molecule-alert molecule-alert--error hidden" id="disponibilidad-error" aria-live="assertive">
+                <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-alert"></use></svg>
+                <p></p>
+              </div>
+              <div class="template-app-layout-stack" id="disponibilidad-sedes"></div>
             </div>
           </section>
         </div>
       </main>
+
+      <template id="tpl-sede">
+        <article class="organism-availability">
+          <div class="organism-availability-head">
+            <h3 class="js-nombre"></h3>
+            <p class="organism-availability-time js-datos"></p>
+          </div>
+          <div class="organism-kpis organism-kpis--2 organism-availability-cards js-tarjetas"></div>
+        </article>
+      </template>
+      <template id="tpl-cupo">
+        <article class="molecule-kpi">
+          <p class="atom-label-caps"></p>
+          <p class="molecule-kpi-value"></p>
+          <div class="atom-meter"><span></span></div>
+          <p class="molecule-kpi-note"></p>
+        </article>
+      </template>
       <footer class="organism-footer">
         <div class="organism-footer-inner">
           <p class="organism-footer-brand">PARKO</p>
-          <p>Parqueadero ABC · Carrera 43 # 47-53, Medellín · Abierto 24 horas</p>
+          <p>© <span id="pie-anio"></span> PARKO · Parqueadero ABC · Carrera 43 # 47-53, Medellín · Abierto 24 horas</p>
         </div>
       </footer>
     </div>
