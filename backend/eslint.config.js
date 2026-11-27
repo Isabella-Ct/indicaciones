@@ -49,6 +49,9 @@ const globalesNavegador = {
   FormData: 'readonly',
   Intl: 'readonly',
   HTMLElement: 'readonly',
+  HTMLDialogElement: 'readonly',
+  AbortController: 'readonly',
+  DOMException: 'readonly',
   Node: 'readonly',
   Event: 'readonly',
   CustomEvent: 'readonly',
@@ -65,7 +68,7 @@ const reglasComunes = {
 
 module.exports = [
   {
-    ignores: ['**/node_modules/**', 'backend/uploads/**', 'backend/coverage/**', 'docs/**'],
+    ignores: ['**/node_modules/**', 'backend/uploads/**', 'backend/coverage/**', 'backend/docs/**', 'docs/**'],
   },
   js.configs.recommended,
   {
@@ -82,11 +85,12 @@ module.exports = [
     languageOptions: { ecmaVersion: 2023, sourceType: 'module', globals: globalesNavegador },
     rules: {
       ...reglasComunes,
-      // Regla del proyecto: nunca innerHTML con datos (usar textContent / nodos).
+      // Constitución §V: datos externos solo con textContent (nunca HTML interpretado).
       'no-restricted-properties': [
         'error',
-        { property: 'innerHTML', message: 'Usa textContent o crea nodos (CLAUDE.md §5.2).' },
-        { property: 'outerHTML', message: 'Usa textContent o crea nodos (CLAUDE.md §5.2).' },
+        { property: 'innerHTML', message: 'Usa textContent o <template> (constitución §V).' },
+        { property: 'outerHTML', message: 'Usa textContent o <template> (constitución §V).' },
+        { property: 'insertAdjacentHTML', message: 'Usa textContent o <template> (constitución §V).' },
       ],
     },
   },

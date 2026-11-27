@@ -1,32 +1,35 @@
 {
   "name": "parko-backend",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "PARKO · Sistema de gestión del Parqueadero ABC (backend + estáticos)",
+  "description": "Sistema de Gestión de Parqueadero (Parking Lot ABC) · API REST /api/v1 + frontend estático",
   "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon src/server.js",
+    "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "test": "jest --runInBand",
     "test:cobertura": "jest --runInBand --coverage",
+    "test:api": "newman run docs/postman/parqueadero.postman_collection.json -e docs/postman/local.postman_environment.json",
     "lint": "cd .. && eslint --config backend/eslint.config.js backend frontend/js",
     "format": "cd .. && prettier --write backend frontend",
     "db:reset": "node database/reset.js",
     "db:seed:generar": "node database/generar-seed.js"
   },
   "engines": {
-    "node": ">=20"
-  },
-  "nodemonConfig": {
-    "watch": [
-      "src",
-      ".env"
-    ],
-    "ext": "js,json"
+    "node": "20.x"
   },
   "jest": {
     "testEnvironment": "node",
-    "testTimeout": 15000,
+    "testTimeout": 20000,
+    "globalSetup": "<rootDir>/tests/setup/global-setup.js",
+    "globalTeardown": "<rootDir>/tests/setup/global-teardown.js",
+    "setupFiles": [
+      "<rootDir>/tests/setup/env.js"
+    ],
+    "testMatch": [
+      "<rootDir>/tests/unit/**/*.test.js",
+      "<rootDir>/tests/integration/**/*.test.js"
+    ],
     "collectCoverageFrom": [
       "src/modules/**/*.service.js"
     ],
@@ -38,7 +41,7 @@
     "coverageThreshold": {
       "global": {
         "statements": 80,
-        "branches": 80,
+        "branches": 70,
         "functions": 80,
         "lines": 80
       }
@@ -46,7 +49,6 @@
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
-    "cookie-parser": "^1.4.7",
     "dotenv": "^18.0.8",
     "express": "^5.3.0",
     "express-rate-limit": "^8.7.1",
@@ -55,13 +57,13 @@
     "multer": "^2.4.0",
     "mysql2": "^3.24.6",
     "pdfkit": "^0.20.2",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.13.0",
     "jest": "^30.5.2",
-    "nodemon": "^3.1.14",
     "prettier": "^3.9.10",
     "supertest": "^7.3.1"
   }

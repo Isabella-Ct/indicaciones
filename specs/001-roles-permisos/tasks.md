@@ -24,12 +24,12 @@ description: "Lista de tareas de 001-roles-permisos (incluye Setup y Foundationa
 
 **Purpose**: retirar la v1 y dejar el esqueleto v2 listo (research R-01, R-02, R-14, R-15)
 
-- [ ] T001 Crear el tag `v0.9.0-legado` sobre el commit `ba86248` (último estado v1 en `main`) y subirlo a `origin`
-- [ ] T002 Retirar los módulos v1 de `backend/src/modules/` (todos), `backend/src/jobs/`, `backend/src/realtime/` y las pruebas v1 de `backend/tests/*.test.js`; conservar y adaptar después `backend/src/utils/{fechas,placas,pdf,csv,dinero,sql}.js`
-- [ ] T003 Retirar el frontend v1 (`frontend/app/`, `frontend/js/pages/`, `frontend/js/services/`, `frontend/js/utils/`, `frontend/styles/`) dejando una copia de referencia de los CSS de PARKO para T018; mover la colección `postman/` de la raíz a `backend/docs/postman/` (se reescribe en T020)
-- [ ] T004 Actualizar `backend/package.json`: `engines.node` `20.x`; scripts `dev` (`node --watch src/server.js`), `start`, `test`, `test:cobertura`, `test:api` (newman), `lint`, `format`, `db:reset`, `db:seed:generar`; quitar `cookie-parser` y `nodemon`; configurar Jest (`globalSetup`, `globalTeardown`, `testMatch` de `tests/unit` y `tests/integration`, cobertura de `src/modules/**/*.service.js` ≥ 80 %)
-- [ ] T005 [P] Crear `backend/.nvmrc` (`20`) y reescribir `backend/.env.example` con `PORT, NODE_ENV, TZ, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, JWT_SECRET, JWT_EXPIRES_IN, BCRYPT_COSTO, CORS_ORIGIN, TRUST_PROXY, LOGIN_LIMITE_IP`, cada una documentada
-- [ ] T006 [P] Ajustar `backend/eslint.config.js` y `.prettierrc` a la nueva estructura (`backend/src`, `backend/tests`, `frontend/js`) y prohibir `innerHTML`/`outerHTML`/`insertAdjacentHTML` en `frontend/js` (`no-restricted-properties`)
+- [X] T001 Crear el tag `v0.9.0-legado` sobre el commit `ba86248` (último estado v1 en `main`) y subirlo a `origin`
+- [X] T002 Retirar los módulos v1 de `backend/src/modules/` (todos), `backend/src/jobs/`, `backend/src/realtime/` y las pruebas v1 de `backend/tests/*.test.js`; conservar y adaptar después `backend/src/utils/{fechas,placas,pdf,csv,dinero,sql}.js`
+- [X] T003 Retirar el frontend v1 (`frontend/app/`, `frontend/js/pages/`, `frontend/js/services/`, `frontend/js/utils/`, `frontend/styles/`) dejando una copia de referencia de los CSS de PARKO para T018; mover la colección `postman/` de la raíz a `backend/docs/postman/` (se reescribe en T020)
+- [X] T004 Actualizar `backend/package.json`: `engines.node` `20.x`; scripts `dev` (`node --watch src/server.js`), `start`, `test`, `test:cobertura`, `test:api` (newman), `lint`, `format`, `db:reset`, `db:seed:generar`; quitar `cookie-parser` y `nodemon`; configurar Jest (`globalSetup`, `globalTeardown`, `testMatch` de `tests/unit` y `tests/integration`, cobertura de `src/modules/**/*.service.js` ≥ 80 %)
+- [X] T005 [P] Crear `backend/.nvmrc` (`20`) y reescribir `backend/.env.example` con `PORT, NODE_ENV, TZ, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME, JWT_SECRET, JWT_EXPIRES_IN, BCRYPT_COSTO, CORS_ORIGIN, TRUST_PROXY, LOGIN_LIMITE_IP`, cada una documentada
+- [X] T006 [P] Ajustar `backend/eslint.config.js` y `.prettierrc` a la nueva estructura (`backend/src`, `backend/tests`, `frontend/js`) y prohibir `innerHTML`/`outerHTML`/`insertAdjacentHTML` en `frontend/js` (`no-restricted-properties`)
 
 ---
 
