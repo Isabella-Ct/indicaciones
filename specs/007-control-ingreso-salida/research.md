@@ -21,7 +21,7 @@ Precedencia: rúbrica → constitución → SRS v2.0 → HU → spec → `CLAUDE
 
 - **Decisión**: dentro de `withTransaction`:
   1. puerta (bloqueada) activa, de tipo `entrada` o `mixta`, de un parqueadero activo → si no, 409 `PUERTA_NO_VALIDA`;
-  2. vehículo por placa (`FOR UPDATE`); si no existe y no viene `tipo` → 422; si no existe → se inserta como ocasional (sin propietario, bitácora `crear` del vehículo); si existe y el `tipo` enviado es otro → 422;
+  2. vehículo por placa (`FOR UPDATE`); si no existe y no viene `tipo` → 422; si no existe → se inserta como ocasional (sin propietario, bitácora `crear` del vehículo). Como 6.1 exige color, marca y modelo, la entrada los acepta opcionales (el modal de la caseta los pide solo para una placa nueva); si no llegan, se guardan «Sin registrar» y el año actual, y el Administrador los corrige luego en Vehículos (spec 005); si existe y el `tipo` enviado es otro → 422;
   3. movimiento abierto del vehículo → 409 `VEHICULO_DENTRO` «El vehículo ya se encuentra dentro (celda A-07)»;
   4. `evaluar` (pico y placa) con la hora del reloj → si está restringido, se aborta y se guarda el intento (R-04): 409 `PICO_Y_PLACA` «Vehículo con restricción de pico y placa hoy (dígito 3)», con el motivo completo en `details`;
   5. celda: la elegida (debe ser `disponible`, del tipo y del parqueadero de la puerta; si no → 409 `CELDA_NO_DISPONIBLE` o 422) o `sugerir` → si no hay, 409 `SIN_CELDAS` «Sin celdas disponibles para moto»;

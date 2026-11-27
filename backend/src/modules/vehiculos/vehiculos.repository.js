@@ -80,6 +80,12 @@ async function obtenerPorId(id, { conexion = pool, bloquear = false } = {}) {
   return aVehiculo(fila) ?? null;
 }
 
+/** Vehículo por placa (normalizada); `bloquear` toma la fila con FOR UPDATE (entrada de la spec 007). */
+async function obtenerPorPlaca(placa, { conexion = pool, bloquear = false } = {}) {
+  const [[fila]] = await conexion.query(`SELECT id_vehiculo FROM vehiculo WHERE placa = ? ${bloquear ? 'FOR UPDATE' : ''}`, [placa]);
+  return fila ? obtenerPorId(fila.id_vehiculo, { conexion }) : null;
+}
+
 async function insertar({ placa, tipo, color, marca, modelo }, { conexion = pool } = {}) {
   const [r] = await conexion.query('INSERT INTO vehiculo (placa, tipo, color, marca, modelo) VALUES (?, ?, ?, ?, ?)', [
     placa,
@@ -162,6 +168,7 @@ async function ultimosMovimientos(id) {
 module.exports = {
   listar,
   obtenerPorId,
+  obtenerPorPlaca,
   insertar,
   actualizar,
   cambiarPropietario,

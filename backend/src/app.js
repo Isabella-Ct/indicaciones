@@ -34,6 +34,9 @@ function rutasProtegidas() {
     { ruta: '/vehiculos', router: require('./modules/vehiculos/vehiculos.routes') },
     // spec 006-pico-y-placa
     { ruta: '/restricciones-placa', router: require('./modules/restricciones/restricciones.routes') },
+    // spec 007-control-ingreso-salida
+    { ruta: '/movimientos', router: require('./modules/movimientos/movimientos.routes') },
+    { ruta: '/tickets', router: require('./modules/tickets/tickets.routes') },
   ];
 }
 

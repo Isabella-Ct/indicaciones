@@ -8,37 +8,37 @@
 
 ## Fase 1: Preparación
 
-- [ ] T001 `backend/database/schema.sql` 2.2.0: `ticket.extraviado` (data-model.md Ticket.extraviado) y tabla `ingreso_rechazado` (data-model.md IngresoRechazado.placa, IngresoRechazado.motivo, IngresoRechazado.fecha_hora); `migrations/002_ingresos_rechazados_y_ticket_extraviado.sql`; entrada 2.2.0 en `CAMBIOS.md`; `npm run db:reset`
-- [ ] T002 [P] `backend/src/utils/reloj.js` (`ahora()`) y su uso documentado para las pruebas
+- [X] T001 `backend/database/schema.sql` 2.2.0: `ticket.extraviado` (data-model.md Ticket.extraviado) y tabla `ingreso_rechazado` (data-model.md IngresoRechazado.placa, IngresoRechazado.motivo, IngresoRechazado.fecha_hora); `migrations/002_ingresos_rechazados_y_ticket_extraviado.sql`; entrada 2.2.0 en `CAMBIOS.md`; `npm run db:reset`
+- [X] T002 [P] `backend/src/utils/reloj.js` (`ahora()`) y su uso documentado para las pruebas
 
 ## Fase 2: Fundacional
 
-- [ ] T003 [P] `backend/src/modules/movimientos/movimientos.reglas.js` (`minutosEstadia`, `masDe24h`, `puedeAnularOperador(entrada, ahora)`, `mensajePicoPlaca(placa, restriccion)`, `enmascararCorreo`) + `backend/tests/unit/movimientos.reglas.test.js`
+- [X] T003 [P] `backend/src/modules/movimientos/movimientos.reglas.js` (`minutosEstadia`, `masDe24h`, `puedeAnularOperador(entrada, ahora)`, `mensajePicoPlaca(placa, restriccion)`, `enmascararCorreo`) + `backend/tests/unit/movimientos.reglas.test.js`
 
 ## Fase 3: US1 — Registrar la entrada (P1) — HU-31
 
-- [ ] T004 [US1] `backend/tests/integration/movimientos.test.js` bloque HU-31 E1–E6 (reloj fijado; parqueadero propio de la prueba)
-- [ ] T005 [US1] `backend/src/modules/movimientos/` validator (data-model.md Movimiento.id_puerta_entrada, Movimiento.id_celda; placa y tipo como en la spec 005), repository (insertar movimiento y ticket, abierto por vehículo, obtener con joins, insertar intento rechazado), service `registrarEntrada` (R-03, R-04), controller y `POST /movimientos`; `obtenerPorPlaca` en `vehiculos.repository`; registro en `rutasProtegidas()`
+- [X] T004 [US1] `backend/tests/integration/movimientos.test.js` bloque HU-31 E1–E6 (reloj fijado; parqueadero propio de la prueba)
+- [X] T005 [US1] `backend/src/modules/movimientos/` validator (data-model.md Movimiento.id_puerta_entrada, Movimiento.id_celda; placa y tipo como en la spec 005), repository (insertar movimiento y ticket, abierto por vehículo, obtener con joins, insertar intento rechazado), service `registrarEntrada` (R-03, R-04), controller y `POST /movimientos`; `obtenerPorPlaca` en `vehiculos.repository`; registro en `rutasProtegidas()`
 
 ## Fase 4: US2 — Ticket (P1) — HU-32
 
-- [ ] T006 [US2] `backend/tests/integration/tickets.test.js` HU-32 E1–E3 (correo con el transporte en memoria)
-- [ ] T007 [US2] `backend/src/modules/tickets/` (R-05): `GET /tickets/:codigo` y `POST /tickets/:codigo/envio`
+- [X] T006 [US2] `backend/tests/integration/tickets.test.js` HU-32 E1–E3 (correo con el transporte en memoria)
+- [X] T007 [US2] `backend/src/modules/tickets/` (R-05): `GET /tickets/:codigo` y `POST /tickets/:codigo/envio`
 
 ## Fase 5: US3 — Registrar la salida (P1) — HU-33
 
-- [ ] T008 [US3] Bloque HU-33 E1–E5 en `movimientos.test.js` (entrada a las 08:10 y salida a las 10:25 con el reloj)
-- [ ] T009 [US3] Service `registrarSalida` (R-06; data-model.md Movimiento.minutos_estadia, Movimiento.fecha_hora_salida, Movimiento.id_puerta_salida, Ticket.extraviado) y `POST /movimientos/:id/salida`
+- [X] T008 [US3] Bloque HU-33 E1–E5 en `movimientos.test.js` (entrada a las 08:10 y salida a las 10:25 con el reloj)
+- [X] T009 [US3] Service `registrarSalida` (R-06; data-model.md Movimiento.minutos_estadia, Movimiento.fecha_hora_salida, Movimiento.id_puerta_salida, Ticket.extraviado) y `POST /movimientos/:id/salida`
 
 ## Fase 6: US4 — Vehículos dentro (P2) — HU-34
 
-- [ ] T010 [US4] Bloque HU-34 E1–E3 en `movimientos.test.js`
-- [ ] T011 [US4] Repository `listar({ estado, placa, q, limit, offset })` y service `listar` con `minutosTranscurridos` y `masDe24h` (R-07); `GET /movimientos`
+- [X] T010 [US4] Bloque HU-34 E1–E3 en `movimientos.test.js`
+- [X] T011 [US4] Repository `listar({ estado, placa, q, limit, offset })` y service `listar` con `minutosTranscurridos` y `masDe24h` (R-07); `GET /movimientos`
 
 ## Fase 7: US5 — Anular una entrada (P2) — HU-35
 
-- [ ] T012 [US5] Bloque HU-35 E1–E4 en `movimientos.test.js`
-- [ ] T013 [US5] Service `anular` (R-08; data-model.md Movimiento.motivo_anulacion, Movimiento.id_usuario_anulacion, Movimiento.fecha_anulacion, Ticket.valido) y `PATCH /movimientos/:id/anulacion`
+- [X] T012 [US5] Bloque HU-35 E1–E4 en `movimientos.test.js`
+- [X] T013 [US5] Service `anular` (R-08; data-model.md Movimiento.motivo_anulacion, Movimiento.id_usuario_anulacion, Movimiento.fecha_anulacion, Ticket.valido) y `PATCH /movimientos/:id/anulacion`
 
 ## Fase 8: Interfaz (Atomic Design)
 

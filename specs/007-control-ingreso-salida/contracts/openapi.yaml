@@ -32,6 +32,9 @@ paths:
                 idPuerta: { type: integer }
                 tipo: { type: string, enum: [carro, moto], description: obligatorio si la placa no está registrada }
                 idCelda: { type: integer, description: opcional; si no, la disponible de menor código }
+                color: { type: string, description: 'solo placa nueva; por defecto «Sin registrar»' }
+                marca: { type: string, description: 'solo placa nueva; por defecto «Sin registrar»' }
+                modelo: { type: integer, description: 'solo placa nueva; por defecto el año actual' }
             example: { placa: abc 123, idPuerta: 1 }
       responses:
         '201': { description: Movimiento abierto con su ticket, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaMovimiento' } } } }

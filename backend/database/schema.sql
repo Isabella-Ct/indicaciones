@@ -1,5 +1,5 @@
 -- =====================================================================
--- Sistema de Gestión de Parqueadero (Parking Lot ABC) · esquema v2.1.0
+-- Sistema de Gestión de Parqueadero (Parking Lot ABC) · esquema v2.2.0
 -- Fuente: SRS v2.0 §6.1 (modelo lógico) + tablas [Propuesta] de
 -- specs/001-roles-permisos/research.md R-09. Cambios: database/CAMBIOS.md
 -- MySQL 8 · InnoDB · utf8mb4_0900_ai_ci · hora America/Bogota (-05:00)
@@ -339,12 +339,34 @@ CREATE TABLE ticket (
   fecha_emision DATETIME     NOT NULL,
   impreso       BOOLEAN      NOT NULL DEFAULT FALSE,
   valido        BOOLEAN      NOT NULL DEFAULT TRUE,
+  extraviado    BOOLEAN      NOT NULL DEFAULT FALSE,  -- [Propuesta] spec 007: salida sin ticket (HU-33 E4)
   created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id_ticket),
   UNIQUE KEY uq_ticket_movimiento (id_movimiento),
   UNIQUE KEY uq_ticket_codigo (codigo),
   CONSTRAINT fk_ticket_movimiento FOREIGN KEY (id_movimiento) REFERENCES movimiento (id_movimiento)
+    ON DELETE RESTRICT ON UPDATE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE ingreso_rechazado (
+  -- [Propuesta] spec 007 R-04: intentos de entrada negados por pico y placa (RF-MOV-02, RF-REP-06)
+  id_ingreso_rechazado INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  placa                VARCHAR(7)   NOT NULL,
+  tipo_vehiculo        ENUM('carro','moto') NOT NULL,
+  id_vehiculo          INT UNSIGNED NULL,
+  id_puerta            INT UNSIGNED NOT NULL,
+  fecha_hora           DATETIME     NOT NULL,
+  motivo               VARCHAR(200) NOT NULL,
+  id_operador          INT UNSIGNED NOT NULL,
+  PRIMARY KEY (id_ingreso_rechazado),
+  KEY idx_ingreso_rechazado_fecha (fecha_hora),
+  KEY idx_ingreso_rechazado_placa (placa),
+  CONSTRAINT fk_rechazo_vehiculo FOREIGN KEY (id_vehiculo) REFERENCES vehiculo (id_vehiculo)
+    ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT fk_rechazo_puerta FOREIGN KEY (id_puerta) REFERENCES puerta_acceso (id_puerta)
+    ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT fk_rechazo_operador FOREIGN KEY (id_operador) REFERENCES usuario (id_usuario)
     ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB;
 

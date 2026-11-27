@@ -4,6 +4,19 @@ Historial de `schema.sql` y de las migraciones en `migrations/`. Cada entrada in
 
 ---
 
+## 2.2.0 — 2026-11-27 · spec `007-control-ingreso-salida`
+
+Migración: `migrations/002_ingresos_rechazados_y_ticket_extraviado.sql` (para una BD 2.1.0 con datos; `npm run db:reset` ya crea la 2.2.0).
+
+| Cambio | Detalle | RF / decisión |
+|---|---|---|
+| Columna `ticket.extraviado` `[Propuesta]` | `BOOLEAN NOT NULL DEFAULT FALSE`: la salida se registró sin el ticket (búsqueda por placa) | criterio 4 de HU-33 · research R-05 de la spec 007 |
+| Tabla `ingreso_rechazado` `[Propuesta]` | `placa`, `tipo_vehiculo`, `id_vehiculo` (NULL si la placa no estaba registrada), `id_puerta`, `fecha_hora`, `motivo`, `id_operador`; índices por fecha y por placa | RF-MOV-02, RF-REP-06 (spec 015), RF-MON-04 (alertas, spec 014) · research R-04 |
+
+El intento rechazado se guarda en una transacción aparte, después del rollback de la entrada, para que quede aunque la entrada no se cree. La semilla no cambia: la operación empieza sin movimientos; el consecutivo `ticket` (T-, 6 dígitos) ya existía.
+
+---
+
 ## 2.1.0 (sin cambios en el esquema; semilla ampliada) — 2026-11-27 · spec `006-pico-y-placa`
 
 La spec 006 usa `restriccion_placa` tal como está (sus `CHECK` de día, dígitos, horas y vigencia ya cumplen RF-PYP-02). Solo cambia `seed.sql`: 10 restricciones de ejemplo de Medellín (lunes a viernes × carro y moto, 05:00–20:00, vigentes desde 2026-01-01): lunes 6,9 · martes 5,7 · miércoles 1,8 · jueves 0,2 · viernes 3,4; carros por el último dígito y motos por el primero (research R-08; el calendario oficial es TBD-03).
@@ -108,5 +121,4 @@ Reescritura completa según el **modelo lógico 6.1 del SRS v2.0**. Reemplaza el
 
 | Elemento | Spec | Origen |
 |---|---|---|
-| intentos de ingreso rechazados por pico y placa | 007 | RF-REP-06, RF-MOV-02 |
 | festivos de pico y placa (API externa Nager.Date) | 016 | TBD-03 |
