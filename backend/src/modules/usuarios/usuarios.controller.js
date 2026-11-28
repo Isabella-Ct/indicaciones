@@ -1,82 +1,43 @@
-const usuariosService = require('./usuarios.service');
-const vehiculosService = require('../vehiculos/vehiculos.service');
+// Traduce HTTP ↔ servicio de usuarios (sin SQL ni reglas de negocio).
+const servicio = require('./usuarios.service');
+const { ok, creado } = require('../../utils/respuesta');
 
-async function listar(req, res) {
-  res.json(await usuariosService.listar(req.validado.query));
+/** Quién actúa: id, permisos de la sesión (alcance, research R-08) e IP para la bitácora. */
+const actor = (req) => ({ idUsuario: req.usuario.idUsuario, permisos: req.usuario.permisos, ip: req.ip });
+
+async function crear(req, res) {
+  return creado(res, await servicio.crear(req.validado.body, req.foto, actor(req)));
 }
 
-async function buscar(req, res) {
-  res.json({ data: await usuariosService.buscarClientes(req.validado.query.documento) });
+async function listar(req, res) {
+  const { data, meta } = await servicio.listar(req.validado.query, actor(req));
+  return ok(res, data, meta);
 }
 
 async function obtener(req, res) {
-  res.json({ data: await usuariosService.obtener(req.validado.params.id, req.usuario) });
+  return ok(res, await servicio.obtener(req.validado.params.id, actor(req)));
 }
 
-async function crear(req, res) {
-  const usuario = await usuariosService.crear(req.body, req.imagen, req.usuario);
-  res.status(201).json({ data: usuario });
+async function foto(req, res) {
+  const { ruta, tipo } = await servicio.foto(req.validado.params.id, actor(req));
+  res.set('Cache-Control', 'private, no-store');
+  return res.type(tipo).sendFile(ruta);
 }
 
 async function actualizar(req, res) {
-  const usuario = await usuariosService.actualizar(
-    req.validado.params.id,
-    req.body,
-    req.imagen,
-    req.usuario
-  );
-  res.json({ data: usuario });
-}
-
-async function restablecerContrasena(req, res) {
-  const usuario = await usuariosService.restablecerContrasena(
-    req.validado.params.id,
-    req.body.contrasena_temporal,
-    req.usuario
-  );
-  res.json({ data: usuario });
+  return ok(res, await servicio.actualizar(req.validado.params.id, req.validado.body, req.foto, actor(req)));
 }
 
 async function cambiarEstado(req, res) {
-  const usuario = await usuariosService.cambiarEstado(
-    req.validado.params.id,
-    req.body.estado,
-    req.usuario
-  );
-  res.json({ data: usuario });
+  return ok(res, await servicio.cambiarEstado(req.validado.params.id, req.validado.body.estado, actor(req)));
 }
 
-async function eliminar(req, res) {
-  res.json({ data: await usuariosService.eliminar(req.validado.params.id, req.usuario) });
+async function misDatos(req, res) {
+  return ok(res, await servicio.misDatos(actor(req)));
 }
 
-async function miPerfil(req, res) {
-  res.json({ data: await usuariosService.obtenerMiPerfil(req.usuario.id) });
+async function actualizarMisDatos(req, res) {
+  return ok(res, await servicio.actualizarMisDatos(req.validado.body, req.foto, actor(req)));
 }
 
-async function actualizarMiPerfil(req, res) {
-  const { usuario, cambiados } = await usuariosService.actualizarMiPerfil(
-    req.usuario.id,
-    req.body,
-    req.imagen
-  );
-  res.json({ data: usuario, meta: { campos_cambiados: cambiados } });
-}
-
-async function misVehiculos(req, res) {
-  res.json({ data: await vehiculosService.listarDeUsuario(req.usuario.id) });
-}
-
-module.exports = {
-  listar,
-  buscar,
-  obtener,
-  crear,
-  actualizar,
-  cambiarEstado,
-  eliminar,
-  restablecerContrasena,
-  miPerfil,
-  actualizarMiPerfil,
-  misVehiculos,
-};
+module.exports = { crear, listar, obtener, foto, actualizar, cambiarEstado, misDatos, actualizarMisDatos };

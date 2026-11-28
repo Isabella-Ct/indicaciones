@@ -1,0 +1,268 @@
+// Carpeta «009 Facturación y pagos» (quickstart.md § Colección Postman). La API usa la hora real: la entrada y
+// la salida son seguidas, así la estadía cae en el tiempo de gracia (total $ 0); el cambio se prueba pagando
+// $ 1.000 en efectivo. La placa se elige libre según el pico y placa de hoy. Todo lo que se abre se cierra.
+// Puertas de la semilla: 1 Carrera 43 (mixta), 3 Calle 48 (salida).
+const PREPARAR = [
+  "const base = pm.environment.get('baseUrl');",
+  "const letra = () => String.fromCharCode(65 + Math.floor(Math.random() * 26));",
+  "pm.sendRequest({ url: base + '/restricciones-placa/hoy', header: { Authorization: 'Bearer ' + pm.collectionVariables.get('tokenOperador') } }, (err, res) => {",
+  "  const hoy = res.json().data;",
+  "  const prohibidos = hoy.tipos.carro ? hoy.tipos.carro.digitos : [];",
+  "  const libres = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].filter((d) => !prohibidos.includes(d));",
+  "  pm.collectionVariables.set('placaCobro', letra() + letra() + letra() + Math.floor(Math.random() * 10) + Math.floor(Math.random() * 10) + libres[Math.floor(Math.random() * libres.length)]);",
+  "  pm.collectionVariables.set('hoyFecha', hoy.fecha);",
+  "});",
+];
+
+module.exports = {
+  nombre: '009 Facturación y pagos',
+  descripcion: 'SRS B.1 §4.9 — HU-39..HU-44. Ejecutar con la BD sembrada; usa la hora real del servidor.',
+  casos: [
+    // ------------------------------------------------------------ liquidación (HU-39)
+    {
+      nombre: 'HU-39 POST /movimientos — 201 entrada para cobrar',
+      metodo: 'POST',
+      ruta: '/movimientos',
+      token: 'tokenOperador',
+      antes: PREPARAR,
+      body: { placa: '{{placaCobro}}', tipo: 'carro', idPuerta: 1 },
+      status: 201,
+      guardar: { idMovCobro: 'cuerpo.data.idMovimiento' },
+    },
+    {
+      nombre: 'HU-39 GET /movimientos/:id/liquidacion — 200 vista previa de un abierto (no se guarda)',
+      metodo: 'GET',
+      ruta: '/movimientos/{{idMovCobro}}/liquidacion',
+      token: 'tokenOperador',
+      status: 200,
+      pruebas: ["pm.test('vista previa', () => pm.expect(cuerpo.data).to.include({ persistida: false, tipoCliente: 'ocasional' }));"],
+    },
+    {
+      nombre: 'HU-40 POST /pagos — 409 el movimiento sigue abierto',
+      metodo: 'POST',
+      ruta: '/pagos',
+      token: 'tokenOperador',
+      body: { idMovimiento: '{{idMovCobro}}', metodo: 'efectivo', valorRecibido: 1000 },
+      status: 409,
+      code: 'MOVIMIENTO_NO_CERRADO',
+    },
+    {
+      nombre: 'HU-39 POST /movimientos/:id/salida — 200 con la liquidación guardada',
+      metodo: 'POST',
+      ruta: '/movimientos/{{idMovCobro}}/salida',
+      token: 'tokenOperador',
+      body: { idPuerta: 3 },
+      status: 200,
+      pruebas: [
+        "pm.test('liquidada con la tarifa de carro ocasional', () => pm.expect(cuerpo.data.liquidacion).to.include({ persistida: true, pagada: false }) && pm.expect(cuerpo.data.liquidacion.tarifa.nombre).to.eql('Carro ocasional'));",
+        "pm.test('dentro de la gracia: $ 0', () => pm.expect(cuerpo.data.liquidacion.total).to.eql(0));",
+      ],
+    },
+    {
+      nombre: 'HU-39 GET /movimientos/:id/liquidacion — 200 la guardada con el detalle',
+      metodo: 'GET',
+      ruta: '/movimientos/{{idMovCobro}}/liquidacion',
+      token: 'tokenOperador',
+      status: 200,
+      pruebas: ["pm.test('detalle del cálculo', () => pm.expect(cuerpo.data).to.include.keys('minutos', 'valorBruto', 'valorDescuento', 'cubiertoPorMembresia', 'total', 'explicacion'));"],
+    },
+    { nombre: 'GET /movimientos/999999/liquidacion — 404', metodo: 'GET', ruta: '/movimientos/999999/liquidacion', token: 'tokenOperador', status: 404, code: 'MOVIMIENTO_NO_ENCONTRADO' },
+
+    // ------------------------------------------------------------ pago (HU-40)
+    {
+      nombre: 'HU-40 POST /pagos — 422 tarjeta sin referencia',
+      metodo: 'POST',
+      ruta: '/pagos',
+      token: 'tokenOperador',
+      body: { idMovimiento: '{{idMovCobro}}', metodo: 'tarjeta' },
+      status: 422,
+      code: 'VALIDACION',
+      pruebas: ["pm.test('campo referencia', () => pm.expect(cuerpo.error.details[0].campo).to.eql('referencia'));"],
+    },
+    {
+      nombre: 'HU-40 POST /pagos — 422 efectivo sin valor recibido',
+      metodo: 'POST',
+      ruta: '/pagos',
+      token: 'tokenOperador',
+      body: { idMovimiento: '{{idMovCobro}}', metodo: 'efectivo' },
+      status: 422,
+      code: 'VALIDACION',
+    },
+    {
+      nombre: 'HU-40 POST /pagos — 201 efectivo con cambio y factura numerada',
+      metodo: 'POST',
+      ruta: '/pagos',
+      token: 'tokenOperador',
+      body: { idMovimiento: '{{idMovCobro}}', metodo: 'efectivo', valorRecibido: 1000 },
+      status: 201,
+      pruebas: [
+        "pm.test('cambio = recibido − total', () => pm.expect(cuerpo.data.pago.cambio).to.eql(1000 - cuerpo.data.pago.valor));",
+        "pm.test('factura FV-', () => pm.expect(cuerpo.data.factura.numero).to.match(/^FV-\\d{6}$/));",
+        "pm.test('pendiente de envío electrónico', () => pm.expect(cuerpo.data.factura.electronica.estado).to.eql('pendiente'));",
+      ],
+      guardar: { idFactura: 'cuerpo.data.factura.idFactura' },
+    },
+    {
+      nombre: 'HU-40 POST /pagos — 409 el servicio ya fue pagado',
+      metodo: 'POST',
+      ruta: '/pagos',
+      token: 'tokenOperador',
+      body: { idMovimiento: '{{idMovCobro}}', metodo: 'efectivo', valorRecibido: 1000 },
+      status: 409,
+      code: 'YA_PAGADO',
+    },
+    {
+      nombre: 'POST /pagos — 403 cliente',
+      metodo: 'POST',
+      ruta: '/pagos',
+      token: 'tokenCliente',
+      body: { idMovimiento: '{{idMovCobro}}', metodo: 'efectivo', valorRecibido: 1000 },
+      status: 403,
+      code: 'SIN_PERMISO',
+    },
+
+    // ------------------------------------------------------------ comprobante (HU-41)
+    {
+      nombre: 'HU-41 POST /facturas — 200 emite a nombre de un tercero',
+      metodo: 'POST',
+      ruta: '/facturas',
+      token: 'tokenOperador',
+      body: { idFactura: '{{idFactura}}', tercero: { documento: '900123456-7', nombre: 'Logística Andina S.A.S.' } },
+      status: 200,
+      pruebas: [
+        "pm.test('tercero', () => pm.expect(cuerpo.data.tercero.nombre).to.eql('Logística Andina S.A.S.'));",
+        "pm.test('vehículo ocasional: sin correo', () => pm.expect(cuerpo.data.enviadaA).to.eql(null));",
+      ],
+    },
+    { nombre: 'HU-41 POST /facturas — 404', metodo: 'POST', ruta: '/facturas', token: 'tokenOperador', body: { idFactura: 999999 }, status: 404, code: 'FACTURA_NO_ENCONTRADA' },
+    {
+      nombre: 'HU-41 GET /facturas/:id — 200 detalle con el servicio',
+      metodo: 'GET',
+      ruta: '/facturas/{{idFactura}}',
+      token: 'tokenOperador',
+      status: 200,
+      pruebas: ["pm.test('placa, pago y liquidación', () => { pm.expect(cuerpo.data.movimiento.placa).to.eql(pm.collectionVariables.get('placaCobro')); pm.expect(cuerpo.data.pago.metodo).to.eql('efectivo'); pm.expect(cuerpo.data.liquidacion).to.be.an('object'); });"],
+    },
+    {
+      nombre: 'HU-41 GET /facturas/:id/pdf — 200 PDF de 80 mm',
+      metodo: 'GET',
+      ruta: '/facturas/{{idFactura}}/pdf',
+      token: 'tokenOperador',
+      status: 200,
+      binario: true,
+      pruebas: ["pm.test('application/pdf', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf'));"],
+    },
+    {
+      nombre: 'HU-43 GET /facturas/:id/pdf — 403 factura de otro (cliente)',
+      metodo: 'GET',
+      ruta: '/facturas/{{idFactura}}/pdf',
+      token: 'tokenCliente',
+      status: 403,
+      code: 'SIN_PERMISO',
+    },
+
+    // ------------------------------------------------------------ consultas (HU-43)
+    {
+      nombre: 'HU-43 GET /facturas?desde&hasta&metodo — 200 con el total filtrado',
+      metodo: 'GET',
+      ruta: '/facturas?desde={{hoyFecha}}&hasta={{hoyFecha}}&metodo=efectivo&limit=100',
+      token: 'tokenAdmin',
+      status: 200,
+      pruebas: [
+        "pm.test('incluye la factura', () => pm.expect(cuerpo.data.map((f) => f.idFactura)).to.include(pm.collectionVariables.get('idFactura')));",
+        "pm.test('sumaTotal', () => pm.expect(cuerpo.meta.sumaTotal).to.be.a('number'));",
+      ],
+    },
+    { nombre: 'GET /facturas — 403 cliente', metodo: 'GET', ruta: '/facturas', token: 'tokenCliente', status: 403, code: 'SIN_PERMISO' },
+    { nombre: 'GET /facturas?desde=ayer — 422 fecha mal formada', metodo: 'GET', ruta: '/facturas?desde=ayer', token: 'tokenAdmin', status: 422, code: 'VALIDACION' },
+    {
+      nombre: 'HU-43 GET /usuarios/me/facturas — 200 solo las del cliente',
+      metodo: 'GET',
+      ruta: '/usuarios/me/facturas',
+      token: 'tokenCliente',
+      status: 200,
+      pruebas: ["pm.test('todas del cliente 4', () => cuerpo.data.forEach((f) => pm.expect(f.cliente.idUsuario).to.eql(4)));"],
+    },
+    { nombre: 'GET /usuarios/me/facturas — 401 sin token', metodo: 'GET', ruta: '/usuarios/me/facturas', status: 401, code: 'NO_AUTENTICADO' },
+
+    // ------------------------------------------------------------ caja (HU-44)
+    {
+      nombre: 'HU-44 GET /caja/turno-actual — 200 cuadre del turno',
+      metodo: 'GET',
+      ruta: '/caja/turno-actual',
+      token: 'tokenOperador',
+      status: 200,
+      pruebas: [
+        "pm.test('totales por método', () => pm.expect(cuerpo.data.totalesPorMetodo).to.have.keys('efectivo', 'tarjeta', 'transferencia', 'qr'));",
+        "pm.test('incluye la factura del turno', () => pm.expect(cuerpo.data.facturas.map((f) => f.idFactura)).to.include(pm.collectionVariables.get('idFactura')));",
+      ],
+    },
+    { nombre: 'GET /caja/turno-actual — 403 cliente', metodo: 'GET', ruta: '/caja/turno-actual', token: 'tokenCliente', status: 403, code: 'SIN_PERMISO' },
+
+    // ------------------------------------------------------------ anulación (HU-42)
+    {
+      nombre: 'HU-42 PATCH /facturas/:id/anulacion — 403 operador',
+      metodo: 'PATCH',
+      ruta: '/facturas/{{idFactura}}/anulacion',
+      token: 'tokenOperador',
+      body: { motivo: 'Cobro duplicado' },
+      status: 403,
+      code: 'SIN_PERMISO',
+    },
+    {
+      nombre: 'HU-42 PATCH /facturas/:id/anulacion — 422 motivo corto',
+      metodo: 'PATCH',
+      ruta: '/facturas/{{idFactura}}/anulacion',
+      token: 'tokenAdmin',
+      body: { motivo: 'Error' },
+      status: 422,
+      code: 'VALIDACION',
+    },
+    {
+      nombre: 'HU-42 PATCH /facturas/:id/anulacion — 200 anulada con motivo',
+      metodo: 'PATCH',
+      ruta: '/facturas/{{idFactura}}/anulacion',
+      token: 'tokenAdmin',
+      body: { motivo: 'Cobro duplicado' },
+      status: 200,
+      pruebas: ["pm.test('anulada', () => pm.expect(cuerpo.data.anulacion.motivo).to.eql('Cobro duplicado'));"],
+    },
+    {
+      nombre: 'HU-42 PATCH /facturas/:id/anulacion — 409 ya anulada',
+      metodo: 'PATCH',
+      ruta: '/facturas/{{idFactura}}/anulacion',
+      token: 'tokenAdmin',
+      body: { motivo: 'Cobro duplicado' },
+      status: 409,
+      code: 'FACTURA_ANULADA',
+    },
+
+    // ------------------------------------------------------------ cierre (HU-44)
+    {
+      nombre: 'HU-44 POST /caja/cierres — 201 cierre con la diferencia',
+      metodo: 'POST',
+      ruta: '/caja/cierres',
+      token: 'tokenOperador',
+      body: { efectivoContado: 0, observaciones: 'Cierre de la colección Postman' },
+      status: 201,
+      pruebas: ["pm.test('diferencia = contado − esperado', () => pm.expect(cuerpo.data.diferencia).to.eql(0 - cuerpo.data.efectivoEsperado));"],
+    },
+    {
+      nombre: 'HU-44 POST /caja/cierres — 409 turno sin pagos',
+      metodo: 'POST',
+      ruta: '/caja/cierres',
+      token: 'tokenOperador',
+      body: { efectivoContado: 0 },
+      status: 409,
+      code: 'TURNO_SIN_PAGOS',
+    },
+    {
+      nombre: 'HU-44 GET /caja/cierres — 200 el Administrador ve los cierres',
+      metodo: 'GET',
+      ruta: '/caja/cierres?limit=10',
+      token: 'tokenAdmin',
+      status: 200,
+      pruebas: ["pm.test('con facturas', () => pm.expect(cuerpo.data[0]).to.include.keys('facturas', 'diferencia', 'operador'));"],
+    },
+  ],
+};

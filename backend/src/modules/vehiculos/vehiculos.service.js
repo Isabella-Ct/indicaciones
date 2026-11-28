@@ -1,211 +1,133 @@
-// Reglas de negocio de vehículos — REQ-CAR-1..3, REQ-USR-6.
-const { enTransaccion } = require('../../config/db');
+// Reglas de vehículos (spec 005): RF-VEH-01..12, RN-02, RN-11, RN-12. Escrituras en transacción con
+// bloqueo del vehículo, historial de propietarios y bitácora.
+const { withTransaction } = require('../../config/db');
+const repositorio = require('./vehiculos.repository');
 const { AppError, errores } = require('../../utils/errores');
+const { registrarBitacora } = require('../../utils/bitacora');
 const { aLimites, meta } = require('../../utils/paginacion');
-const { normalizarPlaca } = require('../../utils/placas');
-const usuariosService = require('../usuarios/usuarios.service');
-const repo = require('./vehiculos.repository');
 
-function aPublico(v) {
-  return {
-    id: v.id,
-    placa: v.placa,
-    tipo: v.tipo,
-    color: v.color,
-    marca: v.marca,
-    modelo: v.modelo,
-    activo: Boolean(v.activo),
-    propietario: v.usuario_id
-      ? {
-          id: v.usuario_id,
-          nombre_completo: v.prop_nombre,
-          tipo_documento: v.prop_tipo_documento,
-          numero_documento: v.prop_numero_documento,
+const NO_ENCONTRADO = () => errores.noEncontrado('Registre primero el vehículo.', 'VEHICULO_NO_ENCONTRADO');
+const SOLO_ADMIN = () => new AppError(403, 'SOLO_ADMIN_REASIGNA', 'Solo el Administrador puede reasignar el vehículo.');
+const CAMPOS = ['placa', 'tipo', 'color', 'marca', 'modelo'];
+
+function traducirDuplicado(error) {
+  if (error.code === 'ER_DUP_ENTRY' && String(error.message).includes('uq_vehiculo_placa')) {
+    throw errores.conflicto('La placa ya está registrada.', 'PLACA_DUPLICADA');
+  }
+  throw error;
+}
+
+const bitacora = (conexion, actor, accion, idRegistro, anterior, nuevo) =>
+  registrarBitacora(conexion, { idUsuario: actor.idUsuario, accion, entidad: 'vehiculo', idRegistro, anterior, nuevo, ip: actor.ip });
+
+/** Usuario existente (404) y activo (409) para recibir un vehículo (RF-VEH-05, RN-12). */
+async function usuarioActivo(identificacion, conexion) {
+  const usuario = await repositorio.buscarUsuario(identificacion, { conexion });
+  if (!usuario) throw errores.noEncontrado('El usuario no está registrado.', 'USUARIO_NO_ENCONTRADO');
+  if (usuario.estado !== 'activo') throw errores.conflicto('El usuario está inactivo.', 'USUARIO_INACTIVO');
+  return usuario;
+}
+
+/**
+ * Cambia el propietario dentro de la transacción (data-model.md § Transiciones, research R-06):
+ * sin propietario → asociar; con otro (o quitarlo) → exige vehiculos.editar.
+ * @returns {Promise<boolean>} true si hubo cambio
+ */
+async function aplicarPropietario(conexion, vehiculo, identificacion, actor) {
+  const quitar = identificacion.idUsuario === null;
+  const nuevo = quitar ? null : await usuarioActivo(identificacion, conexion);
+  const actual = vehiculo.propietario?.idUsuario ?? null;
+  const destino = nuevo?.idUsuario ?? null;
+  if (actual === destino) return false;
+  if (actual !== null && !actor.permisos.includes('vehiculos.editar')) throw SOLO_ADMIN();
+  await repositorio.cambiarPropietario(vehiculo.idVehiculo, destino, actor.idUsuario, { conexion });
+  await bitacora(conexion, actor, 'asignar_propietario', vehiculo.idVehiculo, { idPropietario: actual }, { idPropietario: destino });
+  return true;
+}
+
+// ---------------------------------------------------------------- HU-25
+/** RF-VEH-01..03: registra el vehículo (y su propietario, si viene). */
+async function crear({ idPropietario, ...datos }, actor) {
+  try {
+    const id = await withTransaction(async (conexion) => {
+      const idVehiculo = await repositorio.insertar(datos, { conexion });
+      await bitacora(conexion, actor, 'crear', idVehiculo, null, datos);
+      if (idPropietario) {
+        const vehiculo = await repositorio.obtenerPorId(idVehiculo, { conexion });
+        await aplicarPropietario(conexion, vehiculo, { idUsuario: idPropietario }, actor);
+      }
+      return idVehiculo;
+    });
+    return repositorio.obtenerPorId(id);
+  } catch (error) {
+    return traducirDuplicado(error);
+  }
+}
+
+// ---------------------------------------------------------------- HU-26
+/** RF-VEH-04..06, RF-VEH-08. */
+async function asignarPropietario(id, identificacion, actor) {
+  await withTransaction(async (conexion) => {
+    const vehiculo = await repositorio.obtenerPorId(id, { conexion, bloquear: true });
+    if (!vehiculo) throw NO_ENCONTRADO();
+    await aplicarPropietario(conexion, vehiculo, identificacion, actor);
+  });
+  return repositorio.obtenerPorId(id);
+}
+
+// ---------------------------------------------------------------- HU-27
+/** RF-VEH-07..09: actualiza los datos (solo las diferencias en la bitácora) y, si viene, el propietario. */
+async function actualizar(id, { idPropietario, ...datos }, actor) {
+  try {
+    await withTransaction(async (conexion) => {
+      const vehiculo = await repositorio.obtenerPorId(id, { conexion, bloquear: true });
+      if (!vehiculo) throw NO_ENCONTRADO();
+      const anterior = {};
+      const nuevo = {};
+      for (const campo of CAMPOS) {
+        if (vehiculo[campo] !== datos[campo]) {
+          anterior[campo] = vehiculo[campo];
+          nuevo[campo] = datos[campo];
         }
-      : null,
-    created_at: v.created_at,
-  };
-}
-
-const persona = (id, nombre, tipo, numero) =>
-  id ? { id, nombre_completo: nombre, tipo_documento: tipo, numero_documento: numero } : null;
-
-async function obtenerExistente(id) {
-  const vehiculo = await repo.buscarPorId(id);
-  if (!vehiculo) throw errores.noEncontrado('El vehículo no existe.');
-  return vehiculo;
-}
-
-async function validarPlacaUnica(placa, excluirId) {
-  if (await repo.existePlaca(placa, excluirId)) {
-    throw new AppError(409, 'PLACA_DUPLICADA', `Ya existe un vehículo con la placa ${placa}.`, [
-      { campo: 'placa', mensaje: 'Esta placa ya está registrada.' },
-    ]);
+      }
+      // R-07: con el vehículo dentro, la placa y el tipo no cambian (celda y ticket dependen de ellos).
+      if (vehiculo.dentro && ('placa' in nuevo || 'tipo' in nuevo)) {
+        throw errores.conflicto('El vehículo está dentro del parqueadero.', 'VEHICULO_DENTRO');
+      }
+      if (Object.keys(nuevo).length) {
+        await repositorio.actualizar(id, datos, { conexion });
+        await bitacora(conexion, actor, 'editar', id, anterior, nuevo);
+      }
+      if (idPropietario !== undefined) await aplicarPropietario(conexion, vehiculo, { idUsuario: idPropietario }, actor);
+    });
+    return repositorio.obtenerPorId(id);
+  } catch (error) {
+    return traducirDuplicado(error);
   }
 }
 
-/** Solo clientes activos pueden ser propietarios (decisión Fase 1). */
-async function validarPropietario(usuarioId) {
-  const cliente = await usuariosService.obtenerClienteActivo(usuarioId);
-  if (!cliente) {
-    throw errores.validacion(
-      [{ campo: 'usuario_id', mensaje: 'El propietario debe ser un cliente activo.' }],
-      'El propietario debe ser un cliente activo.'
-    );
-  }
-  return cliente;
-}
-
+// ---------------------------------------------------------------- HU-28
+/** RF-VEH-10. */
 async function listar(filtros) {
-  const { filas, total } = await repo.listar({ ...filtros, ...aLimites(filtros) });
-  return { data: filas.map(aPublico), meta: meta(filtros, total) };
+  const { filas, total } = await repositorio.listar({ ...filtros, ...aLimites(filtros) });
+  return { data: filas, meta: meta(filtros, total) };
 }
 
+/** RF-VEH-11: detalle con historial de propietarios y últimos 10 movimientos. */
 async function obtener(id) {
-  return aPublico(await obtenerExistente(id));
+  const vehiculo = await repositorio.obtenerPorId(id);
+  if (!vehiculo) throw errores.noEncontrado('Vehículo no encontrado.', 'VEHICULO_NO_ENCONTRADO');
+  const [historialPropietarios, ultimosMovimientos] = await Promise.all([
+    repositorio.historial(id),
+    repositorio.ultimosMovimientos(id),
+  ]);
+  return { ...vehiculo, historialPropietarios, ultimosMovimientos };
 }
 
-/** Búsqueda exacta por placa (se usará en entradas y salidas). */
-async function obtenerPorPlaca(placa) {
-  const vehiculo = await repo.buscarPorPlaca(normalizarPlaca(placa));
-  if (!vehiculo) throw errores.noEncontrado(`No hay un vehículo registrado con la placa ${placa}.`);
-  return aPublico(vehiculo);
+/** RF-VEH-12: solo los vehículos de la sesión. */
+async function misVehiculos(actor) {
+  const { filas } = await repositorio.listar({ idPropietarioSesion: actor.idUsuario, limit: 100, offset: 0 });
+  return filas;
 }
 
-/** REQ-CAR-1 (+ REQ-USR-6 si llega usuario_id). */
-async function crear(datos, solicitante) {
-  await validarPlacaUnica(datos.placa);
-  if (datos.usuario_id) await validarPropietario(datos.usuario_id);
-
-  const id = await enTransaccion(async (conexion) => {
-    const nuevoId = await repo.insertar({ ...datos, creado_por: solicitante.id }, conexion);
-    if (datos.usuario_id) {
-      await repo.insertarHistorial(
-        {
-          vehiculo_id: nuevoId,
-          usuario_anterior_id: null,
-          usuario_nuevo_id: datos.usuario_id,
-          cambiado_por: solicitante.id,
-          motivo: 'Registro del vehículo',
-        },
-        conexion
-      );
-    }
-    return nuevoId;
-  });
-  return aPublico(await repo.buscarPorId(id));
-}
-
-/** REQ-CAR-2: solo el administrador actualiza los datos (el propietario va aparte). */
-async function actualizar(id, datos) {
-  const actual = await obtenerExistente(id);
-  await validarPlacaUnica(datos.placa, id);
-  const enCurso = await repo.tieneEstadiaAbierta(id);
-  if (enCurso && (!datos.activo || datos.tipo !== actual.tipo || datos.placa !== actual.placa)) {
-    throw new AppError(
-      409,
-      'VEHICULO_DENTRO',
-      'El vehículo está dentro del parqueadero: registra su salida antes de cambiar la placa, el tipo o inactivarlo.'
-    );
-  }
-  await repo.actualizar(id, datos);
-  return aPublico(await repo.buscarPorId(id));
-}
-
-/**
- * DELETE /vehiculos/:id — borrado lógico (activo = 0): conserva estadías, facturas e historial.
- */
-async function eliminar(id) {
-  const actual = await obtenerExistente(id);
-  if (!actual.activo) {
-    throw new AppError(409, 'YA_ELIMINADO', 'El vehículo ya estaba eliminado (inactivo).');
-  }
-  if (await repo.tieneEstadiaAbierta(id)) {
-    throw new AppError(
-      409,
-      'VEHICULO_DENTRO',
-      'El vehículo está dentro del parqueadero: registra su salida antes de eliminarlo.'
-    );
-  }
-  await repo.inactivar(id);
-  return aPublico(await repo.buscarPorId(id));
-}
-
-/**
- * Asigna o cambia el propietario.
- * - Sin propietario → cualquiera con vehiculos.crear (admin/operador; REQ-USR-6).
- * - Con propietario → solo con vehiculos.reasignar (admin; REQ-CAR-3), también para quitarlo.
- * Cada cambio queda en vehiculos_historial_propietario.
- */
-async function cambiarPropietario(id, { usuario_id, motivo }, solicitante) {
-  const actual = await obtenerExistente(id);
-  const anterior = actual.usuario_id ?? null;
-  const nuevo = usuario_id ?? null;
-
-  if (anterior !== null && !solicitante.permisos.includes('vehiculos.reasignar')) {
-    throw errores.prohibido(
-      'Solo el administrador puede cambiar el propietario de un vehículo que ya tiene dueño.'
-    );
-  }
-  if (anterior === nuevo) {
-    throw new AppError(
-      409,
-      'MISMO_PROPIETARIO',
-      nuevo ? 'El vehículo ya pertenece a ese cliente.' : 'El vehículo ya está sin propietario.'
-    );
-  }
-  if (nuevo !== null) await validarPropietario(nuevo);
-
-  await enTransaccion(async (conexion) => {
-    await repo.actualizarPropietario(id, nuevo, conexion);
-    await repo.insertarHistorial(
-      {
-        vehiculo_id: id,
-        usuario_anterior_id: anterior,
-        usuario_nuevo_id: nuevo,
-        cambiado_por: solicitante.id,
-        motivo,
-      },
-      conexion
-    );
-  });
-  return aPublico(await repo.buscarPorId(id));
-}
-
-async function historial(id) {
-  await obtenerExistente(id);
-  return (await repo.listarHistorial(id)).map((h) => ({
-    id: h.id,
-    fecha: h.fecha,
-    motivo: h.motivo,
-    anterior: persona(
-      h.usuario_anterior_id,
-      h.anterior_nombre,
-      h.anterior_tipo_documento,
-      h.anterior_numero_documento
-    ),
-    nuevo: persona(
-      h.usuario_nuevo_id,
-      h.nuevo_nombre,
-      h.nuevo_tipo_documento,
-      h.nuevo_numero_documento
-    ),
-    cambiado_por: h.cambiado_por_nombre,
-  }));
-}
-
-async function listarDeUsuario(usuarioId) {
-  return (await repo.listarPorUsuario(usuarioId)).map(aPublico);
-}
-
-module.exports = {
-  listar,
-  obtener,
-  obtenerPorPlaca,
-  crear,
-  actualizar,
-  eliminar,
-  cambiarPropietario,
-  historial,
-  listarDeUsuario,
-};
+module.exports = { crear, asignarPropietario, actualizar, listar, obtener, misVehiculos };

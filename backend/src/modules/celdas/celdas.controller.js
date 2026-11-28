@@ -1,69 +1,19 @@
-const celdasService = require('./celdas.service');
-const { aPublico, puedeVerOcupantes } = require('./celdas.mapper');
-const { abrirStream } = require('../../realtime/sse');
+// Traduce HTTP ↔ servicio de celdas (sin SQL ni reglas de negocio).
+const servicio = require('./celdas.service');
+const { ok, creado } = require('../../utils/respuesta');
 
-async function listar(req, res) {
-  res.json({ data: await celdasService.listar(req.validado.query, req.usuario) });
-}
-
-async function obtener(req, res) {
-  res.json({ data: await celdasService.obtener(req.validado.params.id, req.usuario) });
-}
-
-async function resumen(_req, res) {
-  res.json({ data: await celdasService.resumen() });
-}
-
-/** SSE: cada conexión recibe las celdas filtradas según su rol. */
-async function stream(req, res) {
-  const verOcupantes = puedeVerOcupantes(req.usuario);
-  // El cliente recibe marcadas sus propias celdas (reserva, mensualidad, su vehículo).
-  const propios = verOcupantes ? null : await celdasService.vehiculosDeUsuario(req.usuario.id);
-  const verInactivas = req.usuario.permisos.includes('celdas.gestionar');
-  abrirStream(req, res, {
-    inicial: [['resumen-actualizado', await celdasService.resumen()]],
-    eventos: {
-      'celda-actualizada': (fila) =>
-        fila.activa || verInactivas
-          ? aPublico(fila, verOcupantes, propios)
-          : { id: fila.id, activa: false },
-      'resumen-actualizado': (datos) => datos,
-      // Bitácora de entradas/salidas: lleva placas, solo para el personal.
-      'movimiento-registrado': (mov) => (verOcupantes ? mov : null),
-    },
-  });
-}
-
-async function crear(req, res) {
-  res.status(201).json({ data: await celdasService.crear(req.body, req.usuario) });
-}
-
-async function actualizar(req, res) {
-  res.json({ data: await celdasService.actualizar(req.validado.params.id, req.body, req.usuario) });
-}
-
-async function cambiarEstado(req, res) {
-  const { id } = req.validado.params;
-  const { estado } = await celdasService.cambiarEstado(id, req.body);
-  res.json({ data: await celdasService.obtener(id, req.usuario), meta: { estado_final: estado } });
-}
-
-async function cambiarActiva(req, res) {
-  const celda = await celdasService.cambiarActiva(
-    req.validado.params.id,
-    req.body.activa,
-    req.usuario
-  );
-  res.json({ data: celda });
-}
+const actor = (req) => ({ idUsuario: req.usuario.idUsuario, permisos: req.usuario.permisos, ip: req.ip });
+const id = (req) => req.validado.params.id;
 
 module.exports = {
-  listar,
-  obtener,
-  resumen,
-  stream,
-  crear,
-  actualizar,
-  cambiarEstado,
-  cambiarActiva,
+  crear: async (req, res) => creado(res, await servicio.crear(req.validado.body, actor(req))),
+  crearLote: async (req, res) => creado(res, await servicio.crearLote(req.validado.body, actor(req))),
+  listar: async (req, res) => {
+    const { data, meta } = await servicio.listar(req.validado.query, actor(req));
+    return ok(res, data, meta);
+  },
+  obtener: async (req, res) => ok(res, await servicio.obtener(id(req), actor(req))),
+  actualizar: async (req, res) => ok(res, await servicio.actualizar(id(req), req.validado.body, actor(req))),
+  cambiarEstado: async (req, res) => ok(res, await servicio.cambiarEstado(id(req), req.validado.body, actor(req))),
+  inhabilitar: async (req, res) => ok(res, await servicio.inhabilitar(id(req), actor(req))),
 };

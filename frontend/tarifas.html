@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PARKO · Tarifas</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    />
+    <link rel="stylesheet" href="/css/estilos.css" />
+    <script type="module" src="/js/views/tarifas.view.js"></script>
+  </head>
+  <body>
+    <div class="template-app-layout hidden" id="app">
+      <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+      <!-- organism-header -->
+      <header class="organism-header">
+        <div class="organism-header-inner">
+          <a class="molecule-brand molecule-brand--link" href="/">
+            <span class="atom-brand-mark" aria-hidden="true">P</span>
+            <div>PARKO<small>Parking Lot ABC</small></div>
+          </a>
+          <div class="molecule-shift">
+            <div>Fecha<strong id="marco-fecha">—</strong></div>
+            <div>Hora<strong id="marco-hora">—</strong></div>
+          </div>
+          <div class="molecule-user-menu" id="menu-usuario">
+            <button
+              class="molecule-user-menu-button"
+              id="menu-usuario-boton"
+              type="button"
+              aria-expanded="false"
+              aria-controls="menu-usuario-lista"
+              aria-haspopup="true"
+            >
+              <span class="atom-avatar" aria-hidden="true"><span id="menu-usuario-iniciales"></span></span>
+              <span class="molecule-user-menu-name"
+                ><span id="menu-usuario-nombre"></span><small id="menu-usuario-rol"></small
+              ></span>
+              <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-chevron-down"></use></svg>
+            </button>
+            <ul class="molecule-user-menu-list hidden" id="menu-usuario-lista">
+              <li>
+                <a class="molecule-user-menu-item" href="/mi-perfil.html"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-user"></use></svg>Mi perfil</a>
+              </li>
+              <li>
+                <a class="molecule-user-menu-item" href="/cambiar-contrasena.html"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-key"></use></svg>Cambiar contraseña</a>
+              </li>
+              <li>
+                <button class="molecule-user-menu-item" id="menu-usuario-salir" type="button">
+                  <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-logout"></use></svg>Cerrar sesión
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </header>
+
+      <!-- organism-navbar (navbar.js oculta los ítems sin permiso) -->
+      <nav class="organism-navbar" id="navbar" aria-label="Principal">
+        <div class="organism-navbar-inner">
+          <div class="organism-navbar-bar">
+            <span class="organism-navbar-current">Tarifas</span>
+            <button
+              class="atom-icon-button"
+              id="navbar-alternar"
+              type="button"
+              aria-label="Abrir menú de navegación"
+              title="Menú"
+              aria-expanded="false"
+              aria-controls="navbar-lista"
+            >
+              <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-menu"></use></svg>
+            </button>
+          </div>
+          <ul class="organism-navbar-list" id="navbar-lista">
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="movimientos" href="/movimientos.html">Movimientos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="facturas" href="/facturas.html">Facturación</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="caja" href="/caja.html">Caja</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="celdas" href="/celdas.html">Celdas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="disponibilidad" href="/disponibilidad.html">Disponibilidad</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="vehiculos" href="/vehiculos.html">Vehículos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mis-vehiculos" href="/mis-vehiculos.html">Mis vehículos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mis-facturas" href="/mis-facturas.html">Mis facturas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="membresias" href="/membresias.html">Membresías</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mi-membresia" href="/mi-membresia.html">Mi membresía</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="usuarios" href="/usuarios.html">Usuarios</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="parqueaderos" href="/parqueaderos.html">Parqueaderos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="pico-placa" href="/pico-placa.html">Pico y placa</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item is-active" data-id="tarifas" href="/tarifas.html" aria-current="page">Tarifas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="planes" href="/planes.html">Planes</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="roles" href="/roles.html">Roles</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="permisos" href="/permisos.html">Permisos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mi-perfil" href="/mi-perfil.html">Mi perfil</a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <div class="atom-hazard-strip" aria-hidden="true"></div>
+
+      <div class="template-app-layout-page hidden" id="sin-permiso">
+        <div class="molecule-empty-state">
+          <strong>No tiene permiso para ver esta pantalla</strong>
+          <p>Use el menú para ir a las secciones de su perfil.</p>
+        </div>
+      </div>
+
+      <main class="template-app-layout-page hidden" id="contenido" tabindex="-1">
+        <div class="molecule-page-head">
+          <div>
+            <h1>Tarifas</h1>
+            <p>// Configuración › primera hora, fracción, tope diario y gracia por tipo de vehículo y cliente</p>
+          </div>
+          <div class="molecule-page-head-actions">
+            <button class="atom-button hidden" type="button" id="accion-nueva"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-calendar"></use></svg><span>Nueva tarifa</span></button>
+          </div>
+        </div>
+
+        <section class="molecule-panel" aria-labelledby="panel-tarifas-titulo">
+          <div class="molecule-panel-head"><h2 id="panel-tarifas-titulo">Tarifas registradas</h2></div>
+          <div class="molecule-panel-body">
+            <div class="molecule-filters">
+              <div class="molecule-field">
+                <label for="filtro-vehiculo">Vehículo</label>
+                <select class="atom-select" id="filtro-vehiculo">
+                  <option value="">Carros y motos</option>
+                  <option value="carro">Carros</option>
+                  <option value="moto">Motos</option>
+                </select>
+              </div>
+              <div class="molecule-field">
+                <label for="filtro-cliente">Cliente</label>
+                <select class="atom-select" id="filtro-cliente">
+                  <option value="">Todos</option>
+                  <option value="ocasional">Ocasional</option>
+                  <option value="registrado">Registrado</option>
+                </select>
+              </div>
+              <div class="molecule-field">
+                <label for="filtro-estado">Estado</label>
+                <select class="atom-select" id="filtro-estado">
+                  <option value="">Todos</option>
+                  <option value="activo">Activas</option>
+                  <option value="inactivo">Inactivas</option>
+                </select>
+              </div>
+            </div>
+
+          <div class="organism-data-table" id="tabla-tarifas">
+            <div class="organism-data-table-scroll" tabindex="0" role="region" aria-label="Tarifas registradas">
+              <table class="organism-log-table organism-data-table-table organism-data-table-table--w980">
+                <caption class="visually-hidden">Tarifas registradas</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Tarifa</th>
+                    <th scope="col" class="organism-log-table-right">Primera hora</th>
+                    <th scope="col" class="organism-log-table-right">Fracción</th>
+                    <th scope="col" class="organism-log-table-right">Tope diario</th>
+                    <th scope="col">Gracia</th>
+                    <th scope="col">Vigencia</th>
+                    <th scope="col">Situación</th>
+                    <th scope="col" class="organism-log-table-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="molecule-empty-state hidden">
+              <strong>Sin tarifas</strong>
+              <p>Ninguna tarifa coincide con los filtros.</p>
+            </div>
+            <nav class="molecule-pagination hidden" aria-label="Paginación">
+              <button class="atom-button atom-button--ghost atom-button--sm" type="button"><span>Anterior</span></button>
+              <p class="molecule-pagination-status" aria-live="polite"></p>
+              <button class="atom-button atom-button--ghost atom-button--sm" type="button"><span>Siguiente</span></button>
+            </nav>
+            <div class="organism-data-table-loading hidden">
+              <span class="atom-spinner" role="status"><span class="visually-hidden">Cargando datos…</span></span>
+            </div>
+          </div>
+          </div>
+        </section>
+
+        <template id="tpl-tarifa">
+          <tr>
+            <td><strong class="js-nombre"></strong><span class="organism-data-table-cell-sub js-combinacion"></span></td>
+            <td class="organism-log-table-right js-primera"></td>
+            <td class="organism-log-table-right js-fraccion"></td>
+            <td class="organism-log-table-right js-tope"></td>
+            <td class="js-gracia"></td>
+            <td class="organism-data-table-cell-nowrap js-vigencia"></td>
+            <td><span class="atom-status-chip js-situacion"></span> <span class="atom-status-chip hidden js-usada">Usada</span></td>
+            <td class="organism-log-table-right">
+              <div class="organism-data-table-row-actions">
+                <button class="atom-button atom-button--ghost atom-button--sm hidden js-editar" type="button"><span>Editar</span></button>
+                <button class="atom-button atom-button--ghost atom-button--sm hidden js-estado" type="button"><span></span></button>
+              </div>
+            </td>
+          </tr>
+        </template>
+      </main>
+
+      <!-- organism-footer -->
+      <footer class="organism-footer">
+        <div class="organism-footer-inner">
+          <p class="organism-footer-brand">PARKO</p>
+          <p>© <span id="pie-anio"></span> PARKO · Sistema de Gestión de Parqueadero · Parking Lot ABC</p>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Diálogo de confirmación (constitución §V: <dialog>) -->
+    <dialog class="organism-modal organism-modal--sm" id="dialogo-confirmar" aria-labelledby="confirmar-titulo">
+      <header class="organism-modal-head">
+        <div><h2 id="confirmar-titulo"></h2></div>
+        <button class="atom-icon-button" type="button" data-cerrar aria-label="Cerrar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-x"></use></svg></button>
+      </header>
+      <div class="organism-modal-body"><p id="confirmar-mensaje"></p></div>
+      <footer class="organism-modal-foot">
+        <button class="atom-button atom-button--ghost" type="button" data-cerrar><span>Cancelar</span></button>
+        <button class="atom-button atom-button--dark" id="confirmar-aceptar" type="button"><span>Confirmar</span></button>
+      </footer>
+    </dialog>
+
+    <dialog class="organism-modal" id="dialogo-tarifa" aria-labelledby="dialogo-tarifa-titulo">
+      <header class="organism-modal-head">
+        <div><h2 id="dialogo-tarifa-titulo">Nueva tarifa</h2><p>// Valores en pesos; fechas en hora de Bogotá</p></div>
+        <button class="atom-icon-button" type="button" data-cerrar aria-label="Cerrar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-x"></use></svg></button>
+      </header>
+      <div class="organism-modal-body">
+        <form class="organism-form--grid" id="form-tarifa" novalidate>
+          <div class="molecule-alert molecule-alert--error molecule-field--full hidden" id="tarifa-alerta" aria-live="assertive">
+            <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-alert"></use></svg><p></p>
+          </div>
+          <div class="molecule-field--full hidden" id="tarifa-cerrar-campo">
+            <button class="atom-button atom-button--sm" type="button" id="tarifa-cerrar-anterior"><span>Cerrar la anterior y crear</span></button>
+          </div>
+          <p class="molecule-field-hint molecule-field--full hidden" id="tarifa-usada-aviso">Esta tarifa ya se usó en liquidaciones: solo se puede cambiar el nombre y cerrar su vigencia. Para cambiar precios, cree una tarifa nueva.</p>
+          <div class="molecule-field">
+            <label for="tarifa-nombre">Nombre<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="tarifa-nombre" type="text" required maxlength="60" autocomplete="off" placeholder="Carro ocasional" aria-describedby="tarifa-nombre-error" />
+            
+            <p class="molecule-field-error" id="tarifa-nombre-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="tarifa-vehiculo">Tipo de vehículo<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <select class="atom-select" id="tarifa-vehiculo" required aria-describedby="tarifa-vehiculo-error">
+              <option value="carro">Carro</option>
+              <option value="moto">Moto</option>
+            </select>
+            <p class="molecule-field-error" id="tarifa-vehiculo-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="tarifa-cliente">Tipo de cliente<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <select class="atom-select" id="tarifa-cliente" required aria-describedby="tarifa-cliente-error">
+              <option value="ocasional">Ocasional (sin propietario)</option>
+              <option value="registrado">Registrado (con propietario)</option>
+            </select>
+            <p class="molecule-field-error" id="tarifa-cliente-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="tarifa-primera">Valor de la primera hora ($)<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="tarifa-primera" type="number" required min="1" step="any" inputmode="decimal" aria-describedby="tarifa-primera-error" />
+            
+            <p class="molecule-field-error" id="tarifa-primera-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="tarifa-minutos-fraccion">Minutos de la fracción<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="tarifa-minutos-fraccion" type="number" required min="1" max="60" step="1" inputmode="numeric" aria-describedby="tarifa-minutos-fraccion-hint tarifa-minutos-fraccion-error" />
+            <p class="molecule-field-hint" id="tarifa-minutos-fraccion-hint">De 1 a 60.</p>
+            <p class="molecule-field-error" id="tarifa-minutos-fraccion-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="tarifa-valor-fraccion">Valor de la fracción ($)<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="tarifa-valor-fraccion" type="number" required min="0" step="any" inputmode="decimal" aria-describedby="tarifa-valor-fraccion-error" />
+            
+            <p class="molecule-field-error" id="tarifa-valor-fraccion-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="tarifa-tope">Tope diario ($)</label>
+            <input class="atom-input" id="tarifa-tope" type="number" min="0" step="any" inputmode="decimal" aria-describedby="tarifa-tope-hint tarifa-tope-error" />
+            <p class="molecule-field-hint" id="tarifa-tope-hint">Opcional; mayor o igual que la primera hora.</p>
+            <p class="molecule-field-error" id="tarifa-tope-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="tarifa-gracia">Minutos de gracia<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="tarifa-gracia" type="number" required min="0" max="30" step="1" inputmode="numeric" aria-describedby="tarifa-gracia-hint tarifa-gracia-error" />
+            <p class="molecule-field-hint" id="tarifa-gracia-hint">De 0 a 30.</p>
+            <p class="molecule-field-error" id="tarifa-gracia-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="tarifa-desde">Vigente desde<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="tarifa-desde" type="datetime-local" required  aria-describedby="tarifa-desde-error" />
+            
+            <p class="molecule-field-error" id="tarifa-desde-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="tarifa-hasta">Vigente hasta</label>
+            <input class="atom-input" id="tarifa-hasta" type="datetime-local"  aria-describedby="tarifa-hasta-hint tarifa-hasta-error" />
+            <p class="molecule-field-hint" id="tarifa-hasta-hint">Vacío: sin fecha de fin.</p>
+            <p class="molecule-field-error" id="tarifa-hasta-error" aria-live="polite"></p>
+          </div>
+        </form>
+      </div>
+      <footer class="organism-modal-foot">
+        <button class="atom-button atom-button--ghost" type="button" data-cerrar><span>Cancelar</span></button>
+        <button class="atom-button" type="submit" form="form-tarifa" id="tarifa-guardar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-check"></use></svg><span>Guardar</span></button>
+      </footer>
+    </dialog>
+
+    <div class="molecule-toast-region" id="avisos" aria-live="polite"></div>
+
+    <template id="tpl-aviso">
+      <div class="molecule-toast" role="status">
+        <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-info"></use></svg>
+        <p></p>
+        <button class="molecule-toast-close" type="button" aria-label="Cerrar aviso"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-x"></use></svg></button>
+      </div>
+    </template>
+  </body>
+</html>
