@@ -1,0 +1,228 @@
+openapi: 3.1.0
+info:
+  title: Parking Lot ABC — API v1 · 009 Facturación y pagos
+  version: 1.0.0
+  description: |
+    Contrato de la spec 009 (SRS v2.0 Apéndice B.1 §4.9). Sobre común { ok, data, meta, error }; errores y paginación
+    como en specs/001-roles-permisos/contracts/openapi.yaml. `x-permiso`: permiso exigido (RNF-SEG-04).
+    La fecha del pago, de la factura y del cierre la pone el servidor.
+servers:
+  - url: http://localhost:3000/api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Liquidación
+  - name: Pagos
+  - name: Facturas
+  - name: Caja
+
+paths:
+  /movimientos/{id}/liquidacion:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get:
+      tags: [Liquidación]
+      summary: Liquidar el valor del servicio (HU-39 · RF-FAC-01..04)
+      x-permiso: movimientos.ver
+      description: Cerrado → la guarda la primera vez; abierto → vista previa sin guardar.
+      responses:
+        '200': { description: Liquidación con su detalle, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Liquidacion' } } } } } }
+        '404': { description: MOVIMIENTO_NO_ENCONTRADO }
+        '409': { description: 'SIN_TARIFA «No hay tarifa vigente para moto» (y alerta) · MOVIMIENTO_ANULADO' }
+
+  /pagos:
+    post:
+      tags: [Pagos]
+      summary: Registrar el pago y numerar la factura (HU-40 · RF-FAC-05..09)
+      x-permiso: facturas.crear
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idMovimiento, metodo]
+              properties:
+                idMovimiento: { type: integer }
+                metodo: { type: string, enum: [efectivo, tarjeta, transferencia, qr] }
+                valorRecibido: { type: number, description: 'efectivo: ≥ total' }
+                referencia: { type: string, minLength: 4, maxLength: 40, description: obligatoria salvo efectivo }
+                tercero: { $ref: '#/components/schemas/Tercero' }
+            example: { idMovimiento: 12, metodo: efectivo, valorRecibido: 10000 }
+      responses:
+        '201': { description: '{ pago, factura }', content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: object, properties: { pago: { $ref: '#/components/schemas/Pago' }, factura: { $ref: '#/components/schemas/Factura' } } } } } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { description: MOVIMIENTO_NO_ENCONTRADO }
+        '409': { description: 'YA_PAGADO «El servicio ya fue pagado» · MOVIMIENTO_NO_CERRADO · SIN_TARIFA' }
+        '422': { $ref: '#/components/responses/Validacion', description: '«Faltan $ 1.000» en valorRecibido · referencia' }
+
+  /facturas:
+    post:
+      tags: [Facturas]
+      summary: Emitir el comprobante (tercero y envío del PDF) (HU-41 · RF-FAC-10..12)
+      x-permiso: facturas.crear
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [idFactura], properties: { idFactura: { type: integer }, tercero: { $ref: '#/components/schemas/Tercero' } } } } }
+      responses:
+        '200': { description: 'Factura con enviadaA (correo enmascarado o null)', content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Factura' } } } } } }
+        '404': { description: FACTURA_NO_ENCONTRADA }
+        '409': { description: 'FACTURA_ANULADA · FACTURA_YA_ENVIADA (al cambiar el tercero)' }
+        '422': { $ref: '#/components/responses/Validacion' }
+    get:
+      tags: [Facturas]
+      summary: Consultar facturas (HU-43 · RF-FAC-15)
+      x-permiso: facturas.ver
+      parameters:
+        - { name: q, in: query, description: número, placa, nombre o documento del cliente o tercero, schema: { type: string } }
+        - { name: desde, in: query, schema: { type: string, format: date } }
+        - { name: hasta, in: query, schema: { type: string, format: date } }
+        - { name: metodo, in: query, schema: { type: string, enum: [efectivo, tarjeta, transferencia, qr] } }
+        - { name: estado, in: query, schema: { type: string, enum: [emitida, anulada] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200': { description: 'Página; meta.sumaTotal = suma de las emitidas del filtro', content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/FacturaResumen' } }, meta: { $ref: '#/components/schemas/MetaFacturas' } } } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /facturas/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get:
+      tags: [Facturas]
+      summary: Detalle de la factura (HU-41)
+      x-permiso: facturas.ver
+      responses:
+        '200': { description: Detalle, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Factura' } } } } } }
+        '404': { description: FACTURA_NO_ENCONTRADA }
+
+  /facturas/{id}/pdf:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get:
+      tags: [Facturas]
+      summary: PDF de 80 mm (HU-41, HU-43 · RF-FAC-10, RF-FAC-16)
+      x-permiso: 'facturas.ver, o el Cliente dueño de la factura'
+      responses:
+        '200': { description: PDF, content: { application/pdf: { schema: { type: string, format: binary } } } }
+        '403': { description: 'Factura de otro cliente' }
+        '404': { description: FACTURA_NO_ENCONTRADA }
+
+  /facturas/{id}/anulacion:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch:
+      tags: [Facturas]
+      summary: Anular una factura (HU-42 · RF-FAC-13, RF-FAC-14)
+      x-permiso: facturas.anular
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [motivo], properties: { motivo: { type: string, minLength: 10, maxLength: 200 } } } } }
+      responses:
+        '200': { description: Anulada, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Factura' } } } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { description: FACTURA_NO_ENCONTRADA }
+        '409': { description: FACTURA_ANULADA }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /usuarios/me/facturas:
+    get:
+      tags: [Facturas]
+      summary: Mis facturas (HU-43 · RF-FAC-16)
+      x-permiso: perfil.ver
+      responses:
+        '200': { description: Solo las del cliente de la sesión, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/FacturaResumen' } }, meta: { $ref: '#/components/schemas/MetaFacturas' } } } } } }
+
+  /caja/turno-actual:
+    get:
+      tags: [Caja]
+      summary: Cuadre del turno abierto del operador (HU-44 · RF-FAC-17)
+      x-permiso: caja.ver
+      responses:
+        '200': { description: Turno, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Turno' } } } } } }
+
+  /caja/cierres:
+    post:
+      tags: [Caja]
+      summary: Cerrar la caja del turno (HU-44 · RF-FAC-18)
+      x-permiso: caja.crear
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [efectivoContado], properties: { efectivoContado: { type: number, minimum: 0 }, observaciones: { type: string, maxLength: 200 } } } } }
+      responses:
+        '201': { description: Cierre con diferencia, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Cierre' } } } } } }
+        '409': { description: TURNO_SIN_PAGOS }
+        '422': { $ref: '#/components/responses/Validacion' }
+    get:
+      tags: [Caja]
+      summary: Cierres de caja con sus facturas (HU-44 · RF-FAC-19)
+      x-permiso: 'caja.ver (el Administrador ve todos; los demás, los suyos)'
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200': { description: Cierres, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/Cierre' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    id: { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+  schemas:
+    Meta: { type: object, properties: { page: { type: integer }, limit: { type: integer }, total: { type: integer } } }
+    MetaFacturas:
+      allOf:
+        - $ref: '#/components/schemas/Meta'
+        - type: object
+          properties: { sumaTotal: { type: number, description: suma de las facturas emitidas del filtro } }
+    Tercero:
+      type: object
+      required: [documento, nombre]
+      properties: { documento: { type: string, minLength: 5, maxLength: 20 }, nombre: { type: string, minLength: 3, maxLength: 100 } }
+    Liquidacion:
+      type: object
+      properties:
+        idMovimiento: { type: integer }
+        persistida: { type: boolean }
+        minutos: { type: integer }
+        tarifa: { type: object }
+        tipoCliente: { type: string, enum: [ocasional, registrado] }
+        fracciones: { type: integer }
+        dias: { type: integer }
+        valorBruto: { type: number }
+        valorDescuento: { type: number }
+        cubiertoPorMembresia: { type: boolean }
+        total: { type: number }
+        explicacion: { type: string }
+        pagada: { type: boolean }
+        idFactura: { type: [integer, 'null'] }
+    Pago:
+      type: object
+      properties: { idPago: { type: integer }, metodo: { type: string }, valor: { type: number }, valorRecibido: { type: number }, cambio: { type: [number, 'null'] }, referencia: { type: [string, 'null'] }, fecha: { type: string } }
+    FacturaResumen:
+      type: object
+      properties: { idFactura: { type: integer }, numero: { type: string }, fechaEmision: { type: string }, placa: { type: string }, cliente: { type: [string, 'null'] }, total: { type: number }, metodo: { type: string }, estado: { type: string, enum: [emitida, anulada] } }
+    Factura:
+      type: object
+      properties:
+        idFactura: { type: integer }
+        numero: { type: string }
+        estado: { type: string }
+        fechaEmision: { type: string }
+        total: { type: number }
+        cliente: { type: [object, 'null'] }
+        tercero: { type: [object, 'null'] }
+        parqueadero: { type: object }
+        movimiento: { type: object }
+        liquidacion: { $ref: '#/components/schemas/Liquidacion' }
+        pago: { $ref: '#/components/schemas/Pago' }
+        anulacion: { type: [object, 'null'] }
+        electronica: { type: object, properties: { estado: { type: string, enum: [pendiente, enviada] }, cufe: { type: [string, 'null'] } } }
+        enviada: { type: boolean }
+        enviadaA: { type: [string, 'null'], description: solo en la respuesta de POST /facturas }
+    Turno:
+      type: object
+      properties: { inicio: { type: [string, 'null'] }, servicios: { type: integer }, totalesPorMetodo: { type: object }, total: { type: number }, efectivoEsperado: { type: number }, anuladas: { type: integer } }
+    Cierre:
+      type: object
+      properties: { idCierre: { type: integer }, operador: { type: object }, inicioTurno: { type: string }, finTurno: { type: string }, totalesPorMetodo: { type: object }, efectivoEsperado: { type: number }, efectivoContado: { type: number }, diferencia: { type: number }, observaciones: { type: [string, 'null'] }, facturas: { type: array, items: { $ref: '#/components/schemas/FacturaResumen' } } }
+  responses:
+    SinPermiso: { description: Sin permiso (403 SIN_PERMISO) }
+    Validacion: { description: Datos inválidos (422) con detalle por campo }

@@ -1,260 +1,294 @@
-# PARKO · Sistema de gestión del Parqueadero ABC
+# Sistema de Gestión de Parqueadero · Parking Lot ABC
 
-**PARKO** es la aplicación web que reemplaza la operación manual del **Parqueadero ABC** (Carrera 43 # 47-53, Medellín; carros y motos; 24 horas). Cubre entradas y salidas por puerta, mapa de celdas en tiempo real, pico y placa, cobro por minuto con tope diario, facturas en PDF, membresías, reservas, incidencias, notificaciones internas y 11 reportes. Incluye un **portal para clientes** y una **página pública** con la disponibilidad en vivo.
+Aplicación web para el **Parqueadero ABC** (Carrera 43 # 47-53, Medellín, servicio 24 horas para carros y motos). Es un monolito **Node.js 20 + Express + MySQL 8** que expone la API REST `/api/v1` y sirve un frontend en HTML, CSS y JavaScript vanilla con el sistema de diseño **PARKO**.
 
-- **Backend:** Node.js + Express 5 + MySQL 8 (`mysql2/promise`, SQL plano parametrizado, sin ORM), validación con zod, JWT en cookie httpOnly, SSE para tiempo real, PDFKit para tickets y facturas.
-- **Frontend:** HTML + CSS + JavaScript vanilla (ES modules, sin frameworks ni bundler), **Atomic Design** y el sistema de diseño **PARKO** ("plano industrial", [`docs/diseno-parko/`](docs/diseno-parko/)). Express lo sirve como estático.
+Se construye con **Spec-Driven Development (GitHub spec-kit)** y **Gitflow**, una spec por módulo:
 
-| Documento | Contenido |
+| Fuente | Ruta |
 |---|---|
-| [`docs/manual-usuario.md`](docs/manual-usuario.md) | Guía por rol: administrador, operador y cliente |
-| [`docs/api.md`](docs/api.md) | Los 109 endpoints con permiso, parámetros y ejemplos reales |
-| [`docs/modelo-datos.md`](docs/modelo-datos.md) | Tablas y diagrama entidad-relación (Mermaid) |
-| [`docs/trazabilidad.md`](docs/trazabilidad.md) | Cada requerimiento → endpoints → pantallas → pruebas → estado |
-| [`docs/verificacion-manual.md`](docs/verificacion-manual.md) | Lista de verificación de cada pantalla con los 3 roles (escritorio y 375 px) |
-| [`docs/requerimientos.md`](docs/requerimientos.md) · [`CLAUDE.md`](CLAUDE.md) | Requerimientos y reglas del proyecto |
+| Constitución | [.specify/memory/constitution.md](.specify/memory/constitution.md) |
+| Requerimientos (SRS v2.0) | [docs/SRS-Parking_Lot-v2.0.md](docs/SRS-Parking_Lot-v2.0.md) |
+| Historias de usuario (66 HU) | [docs/historias-usuario-Parking_Lot.md](docs/historias-usuario-Parking_Lot.md) |
+| Specs, planes y tareas | [specs/](specs/) |
+| Esquema de BD y cambios | [backend/database/](backend/database/) · [CAMBIOS.md](backend/database/CAMBIOS.md) |
+| Colección de pruebas de la API | [backend/docs/postman/](backend/docs/postman/) |
 
-## Capturas
+## Estado de las specs
 
-| | |
-|---|---|
-| ![Página pública](docs/capturas/01-pagina-publica.png) **Página pública** con cupos en vivo, tarifas y pico y placa de hoy | ![Control de espacios](docs/capturas/02-control-de-espacios.png) **Control de espacios** (operador): mapa en vivo, KPIs y detalle con el cobro |
-| ![Registrar ingreso](docs/capturas/03-registrar-ingreso.png) **Registrar ingreso** con el ticket en vivo | ![Dashboard](docs/capturas/04-dashboard-admin.png) **Inicio del administrador** |
-| ![Reportes](docs/capturas/05-reportes.png) **Reportes** (11, con CSV e impresión) | ![Disponibilidad del cliente](docs/capturas/06-portal-disponibilidad.png) **Portal del cliente**: disponibilidad y reservas |
-| ![Mis movimientos](docs/capturas/07-portal-mis-movimientos.png) **Mis movimientos** del cliente | ![Móvil](docs/capturas/08-movil-celdas.png) **Móvil (375 px)**: menú desplegable y mapa con scroll propio |
+| Spec | Módulo | Estado |
+|---|---|---|
+| `001-roles-permisos` | Roles y permisos + fundación del backend v2 | ✅ implementada |
+| `002-gestion-usuarios` | Usuarios, foto, mis datos y avisos al administrador | ✅ implementada |
+| `003-gestion-acceso` | Bloqueo por intentos, cambio de contraseña, autorregistro, recuperación y cierre de sesión | ✅ implementada |
+| `004-parqueaderos-celdas` | Parqueaderos, puertas, celdas, mapa por piso y disponibilidad pública | ✅ implementada |
+| `005-vehiculos` | Vehículos, propietario con historial y «Mis vehículos» (esquema 2.1.0) | ✅ implementada |
+| `006-pico-y-placa` | Restricción de pico y placa: tabla semanal, superposición, aviso de hoy y evaluación de placas | ✅ implementada |
+| `007-control-ingreso-salida` | Entradas con pico y placa y ticket, salidas con tiempo de estadía, vehículos dentro y anulación (esquema 2.2.0) | ✅ implementada |
+| `008-tarifas` | Tarifas por tipo de vehículo y cliente, superposición con cierre de la anterior y consulta pública | ✅ implementada |
+| `009-facturacion-pagos` | Liquidación (RN-20), pago con factura numerada, comprobante PDF de 80 mm, anulación, consultas y caja | ✅ implementada |
+| `010-membresias` | Planes, suscripción con pago, renovación, cancelación, vencimiento diario y «Mi membresía» | ✅ implementada |
+| `011-descuentos` | Descuentos por porcentaje o valor fijo, el de mayor valor en la liquidación, activar/inactivar | ✅ implementada |
+| `012`–`015` | reservas, incidencias, monitoreo, reportes | pendientes |
+| `016-festivos-pico-placa` | API externa Nager.Date (festivos para pico y placa, TBD-03) | pendiente |
+
+La versión anterior (PARKO v1, trazabilidad `REQ-`) se conserva en el tag `v0.9.0-legado`.
 
 ## Requisitos
 
-| Programa | Versión | Nota |
-|---|---|---|
-| **Node.js** | 20 LTS o superior (probado con 24) | Incluye `npm` |
-| **MySQL Server** | **8.0** (probado con 8.0.46) | El esquema usa la collation `utf8mb4_0900_ai_ci`, que solo existe en MySQL 8 |
-| Git | cualquiera | Para clonar el repositorio |
-| Navegador | Chrome, Edge o Firefox actuales | |
+- **Node.js 20 LTS**, 20.19 o superior (ver `backend/.nvmrc`; con nvm-windows: `nvm install 20 && nvm use 20`). ESLint 10 pide 20.19+.
+- **MySQL 8** en `localhost:3306` (MySQL Server o XAMPP con MySQL 8).
+- Git. Para la colección de pruebas: `npm i -g newman`.
 
-> **¿XAMPP?** XAMPP instala **MariaDB**, no MySQL 8, y la base de datos de PARKO **no carga en MariaDB** (no tiene la collation `utf8mb4_0900_ai_ci`). Si ya usas XAMPP, detén su MySQL/MariaDB desde el panel de control (para liberar el puerto 3306) e instala MySQL Server 8 como se explica abajo, o cámbiale el puerto y usa ese en `DB_PORT`.
+> **Certificados TLS:** si el antivirus o el proxy de la red inspecciona HTTPS y `npm install` falla con `UNABLE_TO_GET_ISSUER_CERT`, exporta el certificado raíz de la red y ejecuta `npm config set cafile <ruta.pem>`.
 
-## Instalación paso a paso (Windows)
-
-### 1. Instalar MySQL Server 8
-
-1. Descarga **MySQL Installer for Windows** desde <https://dev.mysql.com/downloads/installer/> y elige la opción *Server only* (o *Developer Default* si también quieres MySQL Workbench).
-2. En *Type and Networking* deja el puerto **3306**.
-3. En *Accounts and Roles* define la contraseña del usuario **root** y anótala.
-4. En *Windows Service* deja marcado que MySQL arranque como servicio.
-5. Comprueba que funciona: abre *MySQL 8.0 Command Line Client*, escribe la contraseña y luego `SELECT VERSION();` (debe empezar por `8.0`).
-
-### 2. Instalar Node.js
-
-Descarga la versión **LTS** desde <https://nodejs.org/> e instálala con las opciones por defecto. En una terminal nueva (PowerShell o CMD) comprueba con `node -v` y `npm -v`.
-
-### 3. Descargar el proyecto e instalar dependencias
+## Instalación
 
 ```bash
-git clone <url-del-repositorio> parko
-cd parko/backend
+cd backend
 npm install
+cp .env.example .env          # completa DB_PASSWORD y JWT_SECRET (≥ 32 caracteres)
+cp .env.example .env.test     # mismo contenido con NODE_ENV=test y DB_NAME=parqueaderodb_test
+npm run db:reset              # crea parqueaderodb con schema.sql + seed.sql
+npm run dev                   # http://localhost:3000 (API en /api/v1)
 ```
 
-### 4. Configurar las variables de entorno
-
-```bash
-copy .env.example .env
-```
-
-Genera la clave de las sesiones y pégala en `JWT_SECRET`:
+Genera el `JWT_SECRET` con:
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
 
-Abre `backend/.env` y completa:
+### Variables de entorno (`backend/.env`)
 
-| Variable | Descripción | Ejemplo |
+| Variable | Uso | Ejemplo |
 |---|---|---|
-| `PORT` | Puerto HTTP (API + frontend) | `3000` |
-| `NODE_ENV` | `development` (muestra detalle de errores), `test` o `production` | `development` |
-| `TZ` | Zona horaria del proceso (**no cambiar**) | `America/Bogota` |
-| `DB_HOST` / `DB_PORT` | Servidor MySQL | `127.0.0.1` / `3306` |
-| `DB_USER` / `DB_PASSWORD` | Usuario de MySQL con permiso para crear bases de datos | `root` / *(la clave del paso 1)* |
-| `DB_NAME` | Nombre de la base de datos (solo letras, números y `_`) | `parking_lot_abc` |
-| `JWT_SECRET` | Cadena aleatoria de 32+ caracteres que firma las sesiones | *(la generada arriba)* |
-| `JWT_EXPIRES_IN` | Duración de la sesión | `8h` |
-| `TRUST_PROXY` | Proxies inversos delante de Express (0 = ninguno; 1 detrás de un proxy HTTPS) | `0` |
+| `PORT` | Puerto HTTP | `3000` |
+| `NODE_ENV` | `development`, `test` o `production` | `development` |
+| `TZ` | Zona horaria del proceso (no cambiar) | `America/Bogota` |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD` | Conexión a MySQL | `127.0.0.1`, `3306`, `root` |
+| `DB_NAME` | Base de datos (`*_test` en pruebas) | `parqueaderodb` |
+| `JWT_SECRET` | Firma de los tokens (≥ 32 caracteres) | — |
+| `JWT_EXPIRES_IN` | Vigencia del token (RNF-SEG-03) | `8h` |
+| `BCRYPT_COSTO` | Costo de bcrypt (≥ 10) | `10` |
+| `CORS_ORIGIN` | Solo si el frontend se sirve desde otro origen | vacío |
+| `TRUST_PROXY` | Proxies HTTPS delante de Express | `0` |
+| `LOGIN_LIMITE_IP` | Peticiones por IP cada 15 min a login, registro, recuperar y restablecer (en desarrollo, 200 para correr Newman varias veces) | `20` |
+| `URL_PUBLICA` | Base de los enlaces de recuperación que llegan por correo | `http://localhost:3000` |
+| `CORREO_TRANSPORTE` | `smtp`, `archivo` (`.eml` en `backend/correos/`) o `memoria` (pruebas) | `archivo` |
+| `CORREO_REMITENTE` | Remitente de los correos | `Parking Lot ABC <no-responder@…>` |
+| `SMTP_HOST`, `SMTP_PUERTO`, `SMTP_SEGURO`, `SMTP_USUARIO`, `SMTP_CLAVE` | Servidor SMTP (solo con `smtp`; TBD-09) | — |
 
-### 5. Crear la base de datos con los datos de prueba
-
-```bash
-npm run db:reset
-```
-
-Crea la base de datos `DB_NAME` (si existe, **la borra**), carga [`database/schema.sql`](backend/database/schema.sql) y una semilla recién generada. Al terminar muestra un conteo como `Datos cargados: { usuarios: 9, celdas: 44, … }`.
-
-### 6. Arrancar
-
-```bash
-npm run dev          # con recarga automática (nodemon)
-npm start            # sin recarga
-```
-
-Abre <http://localhost:3000> y entra con uno de los usuarios de prueba.
-
-**Problemas frecuentes**
-
-| Síntoma | Causa y solución |
-|---|---|
-| `ECONNREFUSED 127.0.0.1:3306` | MySQL no está corriendo: inicia el servicio *MySQL80* (Servicios de Windows) |
-| `Access denied for user 'root'` | `DB_PASSWORD` no coincide con la clave de root |
-| `Unknown collation: 'utf8mb4_0900_ai_ci'` | Estás conectado a MariaDB (XAMPP), no a MySQL 8 |
-| `JWT_SECRET debe tener al menos 32 caracteres` | Falta generar la clave del paso 4 |
-| `EADDRINUSE :::3000` | Otro programa usa el puerto: cambia `PORT` |
+`.env` y `.env.test` nunca se suben al repositorio.
 
 ## Usuarios de prueba
 
-Todos entran con **tipo de documento + número + contraseña**.
+Todos inician sesión con **tipo y número de documento + contraseña**.
 
-| Rol | Tipo | Documento | Contraseña | Nombre | Observación |
-|---|---|---|---|---|---|
-| Administrador | CC | `1000000001` | `Admin2026*` | Laura Gómez | |
-| Operador | CC | `1000000002` | `Operador2026*` | Juan Pérez | |
-| Operador | CC | `1000000003` | `Operador2026*` | Sebastián Duque | |
-| Cliente | CC | `1000000004` | `Cliente2026*` | Andrea Salcedo | Mensualidad con celda fija A-04 |
-| Cliente | CC | `1000000005` | `Cliente2026*` | Paula Giraldo | Mensualidad con celda fija B-09 (vence en 2 días) |
-| Cliente | CC | `1000000006` | `Cliente2026*` | Hernán Quintero | Mensualidad sin celda fija |
-| Cliente | CE | `1000000007` | `Cliente2026*` | Lucía Ortega | |
-| Cliente | CC | `1000000008` | `Cliente2026*` | Camilo Restrepo | **Debe cambiar la contraseña** al entrar |
-| Cliente | CC | `1000000009` | `Cliente2026*` | Felipe Mora | **Inactivo**: no puede iniciar sesión |
+| Rol | Documento | Contraseña | Nombre | Nota |
+|---|---|---|---|---|
+| Administrador | CC 1000000001 | `Admin2026*` | Laura Gómez Restrepo | todos los permisos |
+| Operador | CC 1000000002 | `Operador2026*` | Juan Pérez Álvarez | operación diaria |
+| Supervisor de turno | CC 1000000003 | `Operador2026*` | Sebastián Duque Mejía | rol no base |
+| Cliente | CC 1000000004 | `Cliente2026*` | Andrea Salcedo Ríos | |
+| Cliente | CE 1000000005 | `Cliente2026*` | Carlos Medina Toro | |
+| Cliente | CC 1000000006 | `Cliente2026*` | Valentina Ospina Gil | debe cambiar la contraseña (spec 003) |
+| Cliente inactivo | CC 1000000009 | `Cliente2026*` | Mateo Cardona Ruiz | no puede iniciar sesión |
 
-La semilla trae además la sede con 2 puertas (Norte y Sur), 2 sótanos con **44 celdas** (la distribución de la maqueta; A-01/B-01 accesibles, A-09 fuera de servicio), 122 vehículos, 3 mensualidades, 7 vehículos dentro, **~2.900 estadías y facturas de los últimos 60 días** (con horas pico y fines de semana más tranquilos), ~85 rechazos por pico y placa, 10 incidencias, tarifas (carro $ 120/min con tope de $ 28.000 por día; moto $ 60/min con tope de $ 12.000), 3 descuentos y los parámetros del negocio. Las fechas son relativas al día en que se ejecuta `db:reset`.
+Para regenerar los hashes de la semilla: `npm run db:seed:generar`.
+
+Los usuarios que registra el administrador u operador reciben por correo una **contraseña temporal** y, hasta cambiarla, la API solo les permite cambiarla o cerrar sesión (403 `CAMBIO_CONTRASENA_REQUERIDO`). Cualquier persona puede crear su cuenta de cliente en `/registro.html` y recuperar la contraseña en `/recuperar.html` (el enlace dura 30 minutos y sirve una sola vez). Con `CORREO_TRANSPORTE=archivo`, ese correo queda en `backend/correos/*.eml` (ábralo con cualquier cliente de correo).
 
 ## Scripts (`backend/`)
 
-| Comando | Qué hace |
+| Script | Qué hace |
 |---|---|
-| `npm run dev` / `npm start` | Arranca el servidor en `PORT` |
-| `npm run db:reset` | **Borra** y recrea la BD: genera `seed.sql` y carga `schema.sql` + `seed.sql` (bloqueado con `NODE_ENV=production`) |
-| `npm run db:seed:generar` | Solo regenera `database/seed.sql` |
-| `npm test` | Pruebas Jest + supertest |
-| `npm run test:cobertura` | Pruebas + cobertura de los services (umbral 80 % en sentencias, ramas, funciones y líneas; informe HTML en `backend/coverage/`) |
-| `npm run lint` | ESLint sobre `backend/` y `frontend/js/` |
-| `npm run format` | Prettier |
+| `npm run dev` | Servidor con recarga (`node --watch`) |
+| `npm start` | Servidor en producción |
+| `npm test` | Pruebas Jest + Supertest (recrea `parqueaderodb_test`) |
+| `npm run test:cobertura` | Pruebas con cobertura (services ≥ 80 %) |
+| `npm run test:api` | Colección Postman con Newman (servidor en marcha y BD recién sembrada) |
+| `npm run postman:generar` | Regenera la colección desde `docs/postman/casos/*.js` |
+| `npm run lint` / `npm run format` | ESLint y Prettier (backend y `frontend/js`) |
+| `npm run db:reset` | Borra y recrea la BD de `DB_NAME` (bloqueado en producción) |
+
+## API v1
+
+Respuesta común: `{ "ok": true, "data": …, "meta": { "page", "limit", "total" } }` o `{ "ok": false, "error": { "code", "message", "details": [{ "campo", "mensaje" }] } }`.
+
+Códigos HTTP:
+- `200`/`201`/`204` éxito;
+- `400` JSON mal formado;
+- `401` sin sesión válida;
+- `403` sin permiso;
+- `404` no existe;
+- `409` conflicto o regla de negocio;
+- `422` validación de campos;
+- `429` demasiados intentos;
+- `500` error interno sin traza.
+
+Autenticación con `Authorization: Bearer <token>`. Listados con `?page&limit&q`.
+
+| Método | Ruta | Permiso | HU |
+|---|---|---|---|
+| GET | `/api/v1/health` | público | — |
+| POST | `/api/v1/auth/login` | público (bloqueo: 5 fallos en 15 min → 429) | HU-12, HU-13 |
+| PUT | `/api/v1/auth/contrasena` | token (también con contraseña temporal) | HU-12 |
+| POST | `/api/v1/auth/registro` | público | HU-14 |
+| POST | `/api/v1/auth/recuperar` | público | HU-15 |
+| POST | `/api/v1/auth/restablecer` | público | HU-15 |
+| POST | `/api/v1/auth/logout` | token | HU-16 |
+| GET | `/api/v1/roles?page&limit&q&estado` | `roles.ver` | HU-01, HU-03 |
+| POST | `/api/v1/roles` | `roles.crear` | HU-02 |
+| GET | `/api/v1/roles/:id` | `roles.ver` | HU-03 |
+| PUT | `/api/v1/roles/:id` | `roles.editar` | HU-04 |
+| PATCH | `/api/v1/roles/:id/estado` | `roles.cambiar_estado` | HU-05 |
+| GET | `/api/v1/permisos` | `roles.ver` | HU-06 |
+| POST | `/api/v1/usuarios` (JSON o multipart con `foto`) | `usuarios.crear` (Operador: solo Clientes) | HU-07 |
+| GET | `/api/v1/usuarios?page&limit&q&rol&estado` | `usuarios.ver` | HU-08 |
+| GET | `/api/v1/usuarios/:id` | `usuarios.ver` | HU-08 |
+| GET | `/api/v1/usuarios/:id/foto` `[Propuesta]` | propia o `usuarios.ver` | HU-08 |
+| PUT | `/api/v1/usuarios/:id` | `usuarios.editar` | HU-09 |
+| PATCH | `/api/v1/usuarios/:id/estado` | `usuarios.cambiar_estado` | HU-10 |
+| GET | `/api/v1/usuarios/me` | `perfil.ver` | HU-11 |
+| PUT | `/api/v1/usuarios/me` | `perfil.editar` | HU-11 |
+| POST | `/api/v1/parqueaderos` | `parqueaderos.crear` | HU-17 |
+| GET | `/api/v1/parqueaderos?page&limit&q&estado` | `parqueaderos.ver` | HU-17 |
+| GET | `/api/v1/parqueaderos/:id` (con puertas y resumen por piso) | `parqueaderos.ver` | HU-17 |
+| PUT | `/api/v1/parqueaderos/:id` (`estado` exige `parqueaderos.cambiar_estado`) | `parqueaderos.editar` | HU-18 |
+| DELETE | `/api/v1/parqueaderos/:id` (inactiva) | `parqueaderos.cambiar_estado` | HU-18 |
+| GET | `/api/v1/parqueaderos/:id/puertas?uso&estado` | `parqueaderos.ver` | HU-19 |
+| POST | `/api/v1/parqueaderos/:id/puertas` | `parqueaderos.editar` | HU-19 |
+| PUT | `/api/v1/puertas/:id` | `parqueaderos.editar` | HU-19 |
+| POST | `/api/v1/celdas` | `celdas.crear` | HU-20 |
+| POST | `/api/v1/celdas/lote` (máximo 200) | `celdas.crear` | HU-20 |
+| GET | `/api/v1/celdas?parqueadero&piso&tipo&estado&q&page&limit` | `celdas.ver` (placa solo con `movimientos.ver`) | HU-22 |
+| GET | `/api/v1/celdas/:id` | `celdas.ver` | HU-22 |
+| PUT | `/api/v1/celdas/:id` | `celdas.editar` | HU-21 |
+| PATCH | `/api/v1/celdas/:id/estado` | `celdas.cambiar_estado` | HU-21 |
+| DELETE | `/api/v1/celdas/:id` (inhabilita) | `celdas.cambiar_estado` | HU-21 |
+| GET | `/api/v1/disponibilidad?parqueadero` | público, `Cache-Control: no-store` | HU-24 |
+| POST | `/api/v1/vehiculos` (placa normalizada; `idPropietario` opcional) | `vehiculos.crear` | HU-25 |
+| GET | `/api/v1/vehiculos?page&limit&q&tipo&propietario&dentro` (`propietario=ninguno`) | `vehiculos.ver` | HU-28 |
+| GET | `/api/v1/vehiculos/:id` (historial y últimos 10 movimientos) | `vehiculos.ver` | HU-28 |
+| PUT | `/api/v1/vehiculos/:id` | `vehiculos.editar` | HU-27 |
+| PATCH | `/api/v1/vehiculos/:id/propietario` (reasignar o quitar exige `vehiculos.editar`) | `vehiculos.crear` | HU-26, HU-27 |
+| GET | `/api/v1/usuarios/me/vehiculos` | `perfil.ver` | HU-28 |
+| GET | `/api/v1/restricciones-placa?page&limit&tipo&dia&estado` | `restricciones.ver` | HU-29 |
+| POST | `/api/v1/restricciones-placa` (dígitos `[6, 9]`, franja `HH:MM`) | `restricciones.crear` | HU-29 |
+| GET | `/api/v1/restricciones-placa/hoy` | `restricciones.ver` | HU-30 |
+| PUT | `/api/v1/restricciones-placa/:id` (`estado` exige `restricciones.cambiar_estado`) | `restricciones.editar` | HU-29 |
+| DELETE | `/api/v1/restricciones-placa/:id` (eliminación lógica) | `restricciones.cambiar_estado` | HU-29 |
+| POST | `/api/v1/movimientos` (`placa`, `idPuerta`, `tipo` si es nueva, `idCelda` opcional) | `movimientos.crear` | HU-31, HU-32 |
+| GET | `/api/v1/movimientos?estado&placa&q&page&limit` (por defecto abiertos) | `movimientos.ver` | HU-33, HU-34 |
+| POST | `/api/v1/movimientos/:id/salida` (`idPuerta`, `ticketExtraviado`) | `movimientos.crear` | HU-33 |
+| PATCH | `/api/v1/movimientos/:id/anulacion` (Operador: 15 min) | `movimientos.anular` | HU-35 |
+| GET | `/api/v1/tickets/:codigo` | `movimientos.ver` | HU-32 |
+| POST | `/api/v1/tickets/:codigo/envio` | `movimientos.crear` | HU-32 |
+| GET | `/api/v1/tarifas?vigentes=true` | público, `Cache-Control: no-store` | HU-38 |
+| GET | `/api/v1/tarifas?tipoVehiculo&tipoCliente&estado&page&limit` | `tarifas.ver` | HU-37 |
+| POST | `/api/v1/tarifas` (`cerrarAnterior` opcional) | `tarifas.crear` | HU-36 |
+| PUT | `/api/v1/tarifas/:id` (si ya se usó: solo nombre y cierre) | `tarifas.editar` | HU-37 |
+| PATCH | `/api/v1/tarifas/:id/estado` (`confirmar` para la única vigente) | `tarifas.cambiar_estado` | HU-37 |
+| GET | `/api/v1/movimientos/:id/liquidacion` (abierto: vista previa) | `movimientos.ver` | HU-39 |
+| POST | `/api/v1/pagos` (crea la factura `FV-` en la misma transacción) | `facturas.crear` | HU-40 |
+| POST | `/api/v1/facturas` (emite el comprobante: tercero y PDF al correo) | `facturas.crear` | HU-41 |
+| GET | `/api/v1/facturas?q&desde&hasta&metodo&estado&page&limit` (`meta.sumaTotal`) | `facturas.ver` | HU-43 |
+| GET | `/api/v1/facturas/:id` | `facturas.ver` | HU-41 |
+| GET | `/api/v1/facturas/:id/pdf` (80 mm) | `facturas.ver` o el Cliente dueño | HU-41, HU-43 |
+| PATCH | `/api/v1/facturas/:id/anulacion` | `facturas.anular` | HU-42 |
+| GET | `/api/v1/usuarios/me/facturas` | `perfil.ver` | HU-43 |
+| GET | `/api/v1/caja/turno-actual` | `caja.ver` | HU-44 |
+| POST | `/api/v1/caja/cierres` | `caja.crear` | HU-44 |
+| GET | `/api/v1/caja/cierres` (Administrador: todos; los demás: los suyos) | `caja.ver` | HU-44 |
+| GET | `/api/v1/planes-membresia?estado&tipoVehiculo&q&page&limit` | `planes.ver` | HU-45, HU-48 |
+| POST | `/api/v1/planes-membresia` | `planes.crear` | HU-45 |
+| PUT | `/api/v1/planes-membresia/:id` | `planes.editar` | HU-45 |
+| PATCH | `/api/v1/planes-membresia/:id/estado` | `planes.cambiar_estado` | HU-45 |
+| POST | `/api/v1/membresias` (membresía, factura `FV-` y pago en la misma transacción) | `membresias.crear` (Cliente: solo sus vehículos) | HU-46 |
+| GET | `/api/v1/membresias?q&estado&page&limit` `[Propuesta]` | `membresias.ver` | HU-47 |
+| POST | `/api/v1/membresias/:id/renovacion` | `membresias.editar` | HU-47 |
+| PATCH | `/api/v1/membresias/:id/cancelacion` | `membresias.editar` | HU-47 |
+| GET | `/api/v1/usuarios/me/membresias` | `perfil.ver` | HU-48 |
+| GET | `/api/v1/descuentos?q&estado&tipoVehiculo&tipoCliente&page&limit` | `descuentos.ver` | HU-49 |
+| POST | `/api/v1/descuentos` | `descuentos.crear` | HU-49 |
+| PUT | `/api/v1/descuentos/:id` | `descuentos.editar` | HU-49 |
+| PATCH | `/api/v1/descuentos/:id/estado` (activar uno vencido → 422) | `descuentos.cambiar_estado` | HU-51 |
+
+Pantallas de la 004: `celdas.html` (mapa por piso que se refresca cada 10 s; personal), `parqueaderos.html`, `parqueadero-detalle.html` (puertas), `disponibilidad.html` (Cliente) y la portada `index.html` (cupos por tipo con «Lleno», sin sesión). El paso de la celda a ocupada y a disponible con cada entrada y salida (HU-23) lo usan los movimientos de la spec 007.
+
+Pantallas de la 005: `vehiculos.html` (búsqueda, filtros y registro), `vehiculo-detalle.html` (propietario, edición, historial y movimientos), «Agregar vehículo» en `usuario-detalle.html` y `mis-vehiculos.html` (Cliente). El esquema pasa a **2.1.0** (`historial_propietario`); para una BD existente se aplica `backend/database/migrations/001_historial_propietario.sql`.
+
+Pantallas de la 006: `pico-placa.html` (Configuración › tabla semanal por día y tipo) y el aviso «Pico y placa hoy» en Celdas, Disponibilidad y Mis vehículos. La semilla trae el calendario de ejemplo de Medellín (lunes a viernes, 05:00–20:00); los festivos los agrega la spec 016.
+
+Pantallas de la 007: `movimientos.html` (caseta: entrada con el aviso de pico y placa, salida por placa o ticket, vehículos dentro con más de 24 h resaltados y anulación) y `ticket.html` (vista de impresión de 80 mm y envío por correo). El esquema pasa a **2.2.0** (`ticket.extraviado`, `ingreso_rechazado`); para una BD existente se aplica `migrations/002_ingresos_rechazados_y_ticket_extraviado.sql`. La hora de entrada y salida la pone el servidor (`utils/reloj.js`); el valor a pagar lo calcula la spec 009.
+
+Pantallas de la 008: `tarifas.html` (Configuración › Tarifas; solo lectura para Operador y Cliente) y la sección «Tarifas» de la portada pública (vigentes y programadas).
+
+Pantallas de la 009: cobro en `movimientos.html` (liquidación con su detalle, método de pago, cambio en vivo y tercero), `facturas.html` (filtros y total filtrado), `factura.html` (comprobante de 80 mm, PDF, envío por correo, tercero y anulación), `caja.html` (cuadre del turno y cierres) y `mis-facturas.html` (Cliente). La facturación electrónica DIAN no se integra (TBD-02): las facturas quedan «pendientes de envío electrónico».
+
+Pantallas de la 010: `planes.html` (Configuración › Planes de membresía), `membresias.html` (listado, nueva suscripción con pago, renovar y cancelar) y `mi-membresia.html` (Cliente: vigencia con días restantes, aviso de renovación a 5 días o menos, historial de pagos, planes disponibles y suscripción de sus vehículos con tarjeta, transferencia o QR). El servidor marca las membresías vencidas al iniciar y cada día a las 00:05 de Bogotá (`src/tareas/programador.js`). La semilla trae 5 planes y ninguna membresía.
+
+Pantallas de la 011: `descuentos.html` (Configuración › Descuentos: listado, nuevo, editar y activar/inactivar con confirmación) y la fila «Descuento» en el cobro de `movimientos.html` y en el comprobante de `factura.html`. La liquidación (`GET /movimientos/:id/liquidacion` y la salida) aplica, como máximo, el descuento activo y vigente a la hora de salida que más descuenta y devuelve `descuento`; con membresía o sin valor bruto no se aplica ninguno. La semilla trae 3 descuentos, ninguno vigente en noviembre de 2026.
+
+El contrato completo de cada spec está en `specs/NNN-*/contracts/openapi.yaml`.
 
 ## Pruebas
 
+- **Jest + Supertest** (`backend/tests/`): unitarias de funciones puras e integración por escenario de aceptación, nombradas `HU-xx Ey …`.
+- **Postman + Newman** (`backend/docs/postman/`): una carpeta por spec, con caso de éxito y de error por endpoint (RNF-CAL-03).
+
 ```bash
 cd backend
-npm run db:reset     # las pruebas usan la BD de .env con la semilla cargada
 npm test
+npm run db:reset && npm run dev   # en otra terminal:
+npm run test:api
 ```
-
-- **14 suites y 234 pruebas**: login y sesión, permisos por rol (401/403), usuarios y vehículos, celdas y SSE, pico y placa, entradas y salidas, cálculo del cobro (gracia, fracción exacta, más de 24 h, membresía, descuento, redondeo), facturas y membresías, incidencias y notificaciones, los 11 reportes y su CSV, reservas y su vencimiento, endpoints públicos sin datos personales, manejo de errores y el **flujo completo** de un cliente nuevo hasta los reportes, con **concurrencia** (dos operadores en la misma celda, dos pagos de la misma estadía, dos reservas de la misma celda).
-- Cobertura de los services: **≥ 80 %** en las cuatro métricas (`npm run test:cobertura` falla si baja).
-- Cada suite deja la base de datos como la encontró. Si una prueba se interrumpe a mitad, `npm run db:reset` la restaura.
-- La prueba manual guiada por pantalla y rol está en [`docs/verificacion-manual.md`](docs/verificacion-manual.md).
-
-### Probar la API con Postman
-
-1. Arranca el backend (`npm run dev`) y comprueba `GET /api/v1/salud` → `{ estado: "ok", bd: "ok" }`.
-2. En Postman: **Import** → los dos archivos de [`postman/`](postman/) (colección `PARKO · API REST` y entorno `PARKO · local`). Arriba a la derecha elige el entorno **PARKO · local**.
-3. Ejecuta un login de la carpeta **0 · Autenticación** (Administrador, Operador o Cliente). La cookie `parko_sesion` queda guardada y se envía sola en las demás peticiones durante 8 h; para cambiar de rol ejecuta otro login.
-4. Las peticiones que crean algo guardan su id en el entorno (`vehiculoId`, `estadiaId`, `facturaId`…), así que las siguientes (editar, pagar, PDF) ya lo usan. La carpeta **Entradas, salidas y cobro** está numerada en el orden del flujo.
-
-No hay métodos `DELETE`: el sistema usa borrado lógico, así que "eliminar" se hace con los `PATCH …/activo`, `…/activa` o `…/estado`. Las peticiones de escritura cambian la BD de verdad; `npm run db:reset` la deja como al principio. Parámetros y permisos de cada ruta: [`docs/api.md`](docs/api.md).
-
-## Base de datos
-
-- [`backend/database/schema.sql`](backend/database/schema.sql): modelo consolidado, **con todas las migraciones aplicadas**. Una instalación nueva solo necesita `schema.sql` + `seed.sql`. Descripción y diagrama en [`docs/modelo-datos.md`](docs/modelo-datos.md).
-- [`backend/database/migrations/`](backend/database/migrations/): solo para actualizar una BD creada en fases anteriores, aplicando en orden los archivos posteriores a su fase (`001`… `005`; la `005` agrega la ubicación de la sede).
-- Los valores del negocio (minutos de reserva, valores de membresía, días de aviso, redondeo, pie del ticket) están en la tabla `configuracion` y el administrador los edita en **Tarifas → Parámetros del negocio**. La ubicación del mapa público sale de `parqueaderos.latitud` / `longitud`.
-
-## Seguridad
-
-- Contraseñas con **bcrypt** (cost 10); nunca se devuelve `contrasena_hash`. La contraseña temporal obliga a cambiarla en el primer acceso.
-- Sesión: JWT en cookie `httpOnly`, `SameSite=Strict`, `Secure` en producción, 8 h. Los usuarios inactivos pierden la sesión al instante.
-- Rate limit: login 5 intentos fallidos / 15 min por IP + documento; API 300 solicitudes/min por IP.
-- `helmet` con CSP propia (scripts solo del mismo origen; fuentes de Google; iframe solo de OpenStreetMap).
-- Consultas siempre parametrizadas; `ORDER BY` solo desde listas blancas; `LIKE` con comodines escapados.
-- Validación zod en **todas** las rutas y `requirePermiso` en cada acción ([tabla en `docs/api.md`](docs/api.md#endpoints-109)). Los recursos ajenos (facturas, reservas, usuarios, notificaciones) responden 403/404.
-- Fotos: solo JPG/PNG verificados por su firma real, ≤ 2 MB, nombre aleatorio; `/uploads` exige sesión y las fotos de lectura de placa solo las ve el personal.
-- Errores 500 sin stack fuera de desarrollo; las páginas muestran la página de error de PARKO.
-- Frontend sin `innerHTML` con datos (ESLint lo bloquea); todo el texto pasa por `textContent`.
 
 ## Estructura
 
 ```
-/
-├── CLAUDE.md                 contexto permanente del proyecto
-├── docs/                     requerimientos, manual, API, modelo de datos, trazabilidad,
-│                             verificación manual, capturas, diseño PARKO, wireframes
-├── backend/
-│   ├── src/
-│   │   ├── app.js            Express: helmet (CSP), json, cookies, rate limit, /api/v1, estáticos, errores
-│   │   ├── server.js         arranque, tareas programadas y apagado ordenado
-│   │   ├── config/           env (validado con zod), pool MySQL, constantes
-│   │   ├── middlewares/      auth, require-permiso, validate, rate-limit, upload, error-handler
-│   │   ├── modules/          un folder por módulo: routes → controller → service → repository (+ schemas)
-│   │   │                     auth, salud, parqueadero, roles, usuarios, vehiculos, pisos, celdas,
-│   │   │                     puertas, publico, pico-placa, estadias, tarifas, descuentos, membresias,
-│   │   │                     facturas, notificaciones, incidencias, reportes, reservas, dashboard,
-│   │   │                     configuracion
-│   │   ├── jobs/             membresías (cada hora) y reservas (cada minuto)
-│   │   ├── utils/            errores, paginación, placas, archivos, fechas (Bogotá), dinero, sql, csv, pdf
-│   │   └── realtime/         emisor, helper SSE y publicación de cambios de celdas
-│   ├── database/             schema.sql, seed.sql, generar-seed.js, reset.js, migrations/
-│   ├── tests/                Jest + supertest (14 suites)
-│   └── uploads/              fotos (ignorado por git)
-└── frontend/
-    ├── index.html · login.html · 404.html · error.html
-    ├── app/                  una página por pantalla, con TODO su marcado escrito en HTML
-    ├── assets/               icons.svg (sprite), favicon.svg
-    ├── styles/
-    │   ├── atomic.css        hoja principal: importa tokens, base y los cuatro niveles
-    │   ├── tokens.css · base.css
-    │   └── atomic/           atoms.css · molecules.css · organisms.css · templates.css
-    └── js/
-        ├── pages/            un controlador por página: solo eventos del DOM y texto
-        │   └── comun/        marco (header, menú, campana), modales, tablas, mapa, gráficos…
-        ├── services/         api.js (fetch) + un servicio por módulo
-        └── utils/            formato (COP, fechas Bogotá), placa, sesión/rol, navegación, almacén
+.specify/                    # spec-kit: constitución, plantillas y scripts
+specs/NNN-modulo/            # spec.md, plan.md, research.md, data-model.md, contracts/, quickstart.md, tasks.md
+docs/                        # SRS, historias de usuario, diseño PARKO, prompts
+backend/
+  src/{app.js, server.js, config/, middlewares/, utils/}
+  src/modules/<modulo>/      # .routes · .controller · .service · .repository · .validator
+  database/                  # schema.sql, seed.sql, CAMBIOS.md, reset.js
+  docs/postman/              # colección y entorno de Newman (generada desde casos/*.js)
+  tests/{unit, integration, setup}
+frontend/
+  index.html, login.html, <pantalla>.html
+  css/                       # tokens, base, átomos, moléculas, organismos, plantillas (PARKO)
+  js/{config, api, services, utils}
+  js/components/{atomos, moleculas, organismos, plantillas}   # Atomic Design: sin llamadas a la API
+  js/views/                  # nivel PÁGINA: una vista por pantalla, llama a services/
+  assets/                    # íconos (sprite SVG) y favicon
 ```
 
-### Frontend: HTML + CSS con Atomic Design, JS solo para eventos
+Capas del backend: `routes → controller → service → repository`. El SQL vive solo en los repositorios y las reglas de negocio en los servicios.
 
-- **El HTML de cada pantalla está escrito completo** en su archivo `.html` (encabezado, menú, paneles, formularios, modales). El JavaScript **no crea componentes**: maneja eventos (clics, teclado, envíos), llama a la API y rellena textos con `textContent`, y muestra u oculta partes con la clase `hidden`.
-- Lo que se repite según los datos de la BD (celdas del mapa, filas de tablas, opciones, notificaciones) está escrito una vez en una etiqueta `<template>` de la página; el JS la copia (`cloneNode`) y le pone el texto.
-- **Clases con el nivel de Atomic Design como prefijo:** `atom-button`, `atom-plate`, `molecule-field`, `molecule-space`, `organism-navbar`, `organism-parking-map-lane`, `template-app-layout-page`… Modificadores con `--` (`atom-button--dark`) y estados con `is-` (`is-active`, `is-selected`). Los valores visuales son los de `docs/diseno-parko/styles.css`, sin cambios.
-- `/app/_catalogo.html` (solo desarrollo) muestra un ejemplo de cada clase.
+## Flujo de trabajo (spec-kit + Gitflow)
 
-## Pantallas
+1. Rama `NNN-modulo` creada desde `develop`.
+2. `/speckit-specify` → `/speckit-clarify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-analyze` → `/speckit-implement`, con un commit por paso.
+3. PR `NNN-modulo` → `develop`, revisado.
+4. Al final: `release/1.0.0` → `main` y el tag `v1.0.0`.
 
-| URL | Pantalla | Roles |
-|---|---|---|
-| `/` | Página pública: cupos en vivo, tarifas y mensualidades, servicios, pico y placa de hoy, ubicación | Todos, sin sesión |
-| `/login.html` · `/app/cambiar-contrasena.html` | Inicio de sesión · cambio de contraseña | Todos |
-| `/app/inicio.html` | Dashboard según el rol | Todos |
-| `/app/celdas.html` | Control de espacios: mapa en vivo, registrar ingreso, salida y cobro, gestión de celdas y de **puertas** (admin) | Admin, operador (cliente: solo lectura) |
-| `/app/historial.html` | Movimientos con filtros, PDF del ticket y CSV | Admin, operador |
-| `/app/usuarios.html` · `/app/vehiculos.html` | Usuarios (el admin edita, activa/inactiva y restablece contraseñas) · vehículos y propietarios | Admin, operador (según permiso) |
-| `/app/pico-placa.html` | Reglas de pico y placa | Admin, operador |
-| `/app/facturacion.html` · `/app/tarifas.html` · `/app/descuentos.html` · `/app/membresias.html` | Cobro y configuración (Tarifas incluye los **parámetros del negocio** para el admin) | Admin (operador: consulta) |
-| `/app/reservas.html` · `/app/incidencias.html` | Reservas (listado, cancelación y **nueva reserva** para un cliente) · incidencias | Admin, operador |
-| `/app/notificaciones.html` | Bandeja y envío de mensajes (envío solo admin) | Todos |
-| `/app/reportes.html` | 11 reportes con CSV e impresión | Admin |
-| `/app/disponibilidad.html` · `/app/mis-movimientos.html` | Portal del cliente: mapa y reservas · estadías, facturas, membresías, reservas e incidencias | Cliente |
-| `/app/mi-cuenta.html` | Mis datos, contraseña, mis vehículos y notificaciones | Todos |
+Formato de los commits: `feat(<modulo>): <descripción> [HU-xx][RF-XXX-yy]`.
 
-Si un rol abre por URL una pantalla que no le corresponde, ve "Sin acceso" y la página no carga datos.
+## Seguridad y datos personales
 
-## Despliegue en producción
+- Contraseñas con bcrypt (costo 10); nunca se devuelven ni se guardan en la bitácora.
+- JWT Bearer de 8 h con sesión revocable por `jti`; los usuarios inactivos no pueden iniciar sesión.
+- Permiso verificado en el servidor en cada endpoint (403 aunque la opción esté oculta); validación zod; SQL parametrizado; `helmet`; límite de intentos de login.
+- Bitácora de cambios en la misma transacción (RNF-SEG-07).
+- Ley 1581 de 2012: autorización de tratamiento de datos obligatoria en usuarios.
 
-1. En el servidor: Node.js LTS y MySQL 8; dentro de `backend/`, `npm ci --omit=dev`.
-2. Crea la BD **una sola vez** con `schema.sql` y los datos que correspondan. No uses `npm run db:reset`: borra todo y está bloqueado con `NODE_ENV=production`. Para empezar sin datos de prueba, carga de `seed.sql` solo las secciones de roles, permisos, sede, pisos, puertas, celdas, tarifas, pico y placa, tipos de incidencia y configuración, y crea el primer administrador.
-3. En `.env`: `NODE_ENV=production`, un `JWT_SECRET` nuevo y un usuario de MySQL **propio** (no `root`) con permisos solo sobre esa base.
-4. Pon delante un proxy con **HTTPS** (Nginx, IIS con ARR o Caddy): en producción la cookie de sesión es `Secure` y no viaja por HTTP. Detrás del proxy usa `TRUST_PROXY=1`.
-5. Mantén el proceso vivo con un gestor de servicios (por ejemplo `pm2 start src/server.js --name parko`, o un servicio de Windows con NSSM). El servidor se apaga ordenadamente con SIGINT/SIGTERM.
-6. Respaldos diarios: `mysqldump --single-transaction parking_lot_abc > respaldo.sql` y una copia de `backend/uploads/` (fotos).
-7. Monitoreo: `GET /api/v1/salud` responde `{ "estado": "ok", "bd": "ok" }` (503 si la BD no responde).
+## Fuera de alcance
 
-## Fuera de alcance (decisión del cliente)
+Facturación electrónica DIAN, pasarela de pagos, motor OCR de placas y control de hardware (barreras). Ver SRS §1.4.
 
-Reconocimiento real de placas (OCR), facturación electrónica DIAN, pasarela de pagos y envío de correos o SMS. La lectura de placa, el pago y la factura son **simulados** dentro del sistema (placa digitada + foto opcional, método de pago registrado, PDF interno).
+## Herramientas de desarrollo
+
+- `node herramientas/armar-paginas.js "$(pwd)/frontend"`: vuelve a escribir las páginas internas con el marco común (encabezado, navbar, pie, diálogos). Cada spec agrega su `paginas-NNN.js`.
+- `node herramientas/verificar-front.js "$(pwd)/frontend"`: comprueba que los imports y exports de `frontend/js` existan y que cada vista use ids presentes en su página.

@@ -1,24 +1,16 @@
-const descuentosService = require('./descuentos.service');
+// Traduce HTTP ↔ servicio de descuentos (sin SQL ni reglas de negocio).
+const servicio = require('./descuentos.service');
+const { ok, creado } = require('../../utils/respuesta');
 
-async function listar(req, res) {
-  // El operador (sin descuentos.gestionar) solo necesita los activos para cobrar.
-  const soloActivos =
-    req.validado.query.activos === '1' || !req.usuario.permisos.includes('descuentos.gestionar');
-  res.json({ data: await descuentosService.listar({ soloActivos }) });
-}
+const actor = (req) => ({ idUsuario: req.usuario.idUsuario, permisos: req.usuario.permisos, ip: req.ip });
+const id = (req) => req.validado.params.id;
 
-async function crear(req, res) {
-  res.status(201).json({ data: await descuentosService.crear(req.body) });
-}
-
-async function actualizar(req, res) {
-  res.json({ data: await descuentosService.actualizar(req.validado.params.id, req.body) });
-}
-
-async function cambiarActivo(req, res) {
-  res.json({
-    data: await descuentosService.cambiarActivo(req.validado.params.id, req.body.activo),
-  });
-}
-
-module.exports = { listar, crear, actualizar, cambiarActivo };
+module.exports = {
+  listar: async (req, res) => {
+    const { data, meta } = await servicio.listar(req.validado.query);
+    return ok(res, data, meta);
+  },
+  crear: async (req, res) => creado(res, await servicio.crear(req.validado.body, actor(req))),
+  actualizar: async (req, res) => ok(res, await servicio.actualizar(id(req), req.validado.body, actor(req))),
+  cambiarEstado: async (req, res) => ok(res, await servicio.cambiarEstado(id(req), req.validado.body, actor(req))),
+};

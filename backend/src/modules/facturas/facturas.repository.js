@@ -1,141 +1,159 @@
-// Acceso a datos de facturas (REQ-FAC-1, REQ-FAC-2) y del consecutivo.
+// Único lugar con SQL de facturas y pagos (spec 009). Acepta una conexión opcional para la transacción.
+// El correo del cliente solo se lee para enviar el comprobante; nunca sale en la API (RNF-PRI-02).
 const { pool } = require('../../config/db');
-const { escaparLike, nombreCompleto: NOMBRE } = require('../../utils/sql');
+const { escapeLike } = require('../../utils/sql');
+const { aIsoBogota } = require('../../utils/fechas');
 
+const numero = (v) => (v === null || v === undefined ? null : Number(v));
 
-/**
- * Siguiente número FAC-000001. Bloquea la fila del consecutivo hasta el commit:
- * dos pagos simultáneos esperan su turno y nunca repiten número; si la
- * transacción falla, el número no se consume (sin huecos).
- */
-async function siguienteNumero(conexion) {
-  const [[fila]] = await conexion.query(
-    "SELECT ultimo FROM consecutivos WHERE nombre = 'factura' FOR UPDATE"
-  );
-  const siguiente = (fila?.ultimo ?? 0) + 1;
-  if (fila)
-    await conexion.query("UPDATE consecutivos SET ultimo = ? WHERE nombre = 'factura'", [
-      siguiente,
-    ]);
-  else
-    await conexion.query("INSERT INTO consecutivos (nombre, ultimo) VALUES ('factura', ?)", [
-      siguiente,
-    ]);
-  return `FAC-${String(siguiente).padStart(6, '0')}`;
+const COLUMNAS = `f.id_factura, f.numero, f.estado, f.fecha_emision, f.total, f.id_liquidacion, f.id_membresia, f.id_cliente,
+  f.tercero_documento, f.tercero_nombre, f.motivo_anulacion, f.fecha_anulacion, f.cufe,
+  u.nombre_completo AS cliente_nombre, u.tipo_documento AS cliente_tipo_documento, u.numero_documento AS cliente_documento,
+  u.correo AS cliente_correo,
+  ua.nombre_completo AS anulada_por,
+  pg.id_pago, pg.metodo, pg.valor, pg.valor_recibido, pg.cambio, pg.referencia, pg.fecha AS pago_fecha, pg.id_cierre,
+  pg.id_operador, uo.nombre_completo AS operador,
+  m.id_movimiento, m.fecha_hora_entrada, m.fecha_hora_salida, m.minutos_estadia,
+  COALESCE(v.placa, vm.placa) AS placa, v.tipo AS tipo_vehiculo, c.codigo AS celda,
+  mb.id_membresia AS membresia_id, pm.nombre AS membresia_plan, vm.placa AS membresia_placa, mb.fecha_fin AS membresia_fin, p.nombre AS parqueadero, p.direccion AS parqueadero_direccion,
+  EXISTS (SELECT 1 FROM bitacora b WHERE b.entidad = 'factura' AND b.id_registro = f.id_factura AND b.accion = 'enviar_factura') AS enviada`;
+
+const DESDE = `FROM factura f
+  LEFT JOIN usuario u ON u.id_usuario = f.id_cliente
+  LEFT JOIN usuario ua ON ua.id_usuario = f.id_usuario_anulacion
+  LEFT JOIN pago pg ON pg.id_factura = f.id_factura
+  LEFT JOIN usuario uo ON uo.id_usuario = pg.id_operador
+  LEFT JOIN liquidacion l ON l.id_liquidacion = f.id_liquidacion
+  LEFT JOIN movimiento m ON m.id_movimiento = l.id_movimiento
+  LEFT JOIN vehiculo v ON v.id_vehiculo = m.id_vehiculo
+  LEFT JOIN celda c ON c.id_celda = m.id_celda
+  LEFT JOIN parqueadero p ON p.id_parqueadero = c.id_parqueadero
+  LEFT JOIN membresia mb ON mb.id_membresia = f.id_membresia
+  LEFT JOIN plan_membresia pm ON pm.id_plan = mb.id_plan
+  LEFT JOIN vehiculo vm ON vm.id_vehiculo = mb.id_vehiculo`;
+
+const aFactura = (f) =>
+  f && {
+    idFactura: f.id_factura,
+    numero: f.numero,
+    estado: f.estado,
+    fechaEmision: aIsoBogota(f.fecha_emision),
+    total: numero(f.total),
+    idLiquidacion: f.id_liquidacion,
+    idMembresia: f.id_membresia,
+    cliente: f.id_cliente ? { idUsuario: f.id_cliente, nombre: f.cliente_nombre, tipoDocumento: f.cliente_tipo_documento, numeroDocumento: f.cliente_documento } : null,
+    tercero: f.tercero_documento ? { documento: f.tercero_documento, nombre: f.tercero_nombre } : null,
+    parqueadero: f.parqueadero ? { nombre: f.parqueadero, direccion: f.parqueadero_direccion } : null,
+    movimiento: f.id_movimiento
+      ? {
+          idMovimiento: f.id_movimiento,
+          placa: f.placa,
+          tipoVehiculo: f.tipo_vehiculo,
+          celda: f.celda,
+          entrada: aIsoBogota(f.fecha_hora_entrada),
+          salida: aIsoBogota(f.fecha_hora_salida),
+          minutos: f.minutos_estadia,
+        }
+      : null,
+    membresia: f.membresia_id
+      ? { idMembresia: f.membresia_id, plan: f.membresia_plan, placa: f.membresia_placa, fechaFin: f.membresia_fin ? aIsoBogota(f.membresia_fin).slice(0, 10) : null }
+      : null,
+    pago: f.id_pago
+      ? {
+          idPago: f.id_pago,
+          metodo: f.metodo,
+          valor: numero(f.valor),
+          valorRecibido: numero(f.valor_recibido),
+          cambio: numero(f.cambio),
+          referencia: f.referencia,
+          fecha: aIsoBogota(f.pago_fecha),
+          operador: f.operador,
+          idCierre: f.id_cierre,
+        }
+      : null,
+    anulacion: f.estado === 'anulada' ? { motivo: f.motivo_anulacion, usuario: f.anulada_por, fecha: aIsoBogota(f.fecha_anulacion) } : null,
+    electronica: { estado: f.cufe ? 'enviada' : 'pendiente', cufe: f.cufe ?? null },
+    enviada: Boolean(f.enviada),
+    // Internos (no salen en la API).
+    _correo: f.cliente_correo ?? null,
+    _idOperador: f.id_operador ?? null,
+  };
+
+async function obtenerPorId(id, { conexion = pool, bloquear = false } = {}) {
+  if (bloquear) await conexion.query('SELECT id_factura FROM factura WHERE id_factura = ? FOR UPDATE', [id]);
+  const [[fila]] = await conexion.query(`SELECT ${COLUMNAS} ${DESDE} WHERE f.id_factura = ?`, [id]);
+  return aFactura(fila) ?? null;
 }
 
-async function insertar(f, conexion) {
+/** RF-FAC-15 (R-08): filtros y suma de las emitidas del filtro. */
+async function listar({ q, desde, hasta, metodo, estado, idCliente, limit, offset }) {
+  const condiciones = [];
+  const valores = [];
+  if (q) {
+    const like = `%${escapeLike(q)}%`;
+    condiciones.push('(f.numero LIKE ? OR COALESCE(v.placa, vm.placa) LIKE ? OR u.nombre_completo LIKE ? OR u.numero_documento LIKE ? OR f.tercero_nombre LIKE ? OR f.tercero_documento LIKE ?)');
+    valores.push(like, `%${escapeLike(q.toUpperCase().replace(/[\s.-]/g, ''))}%`, like, like, like, like);
+  }
+  if (desde) {
+    condiciones.push('f.fecha_emision >= ?');
+    valores.push(desde);
+  }
+  if (hasta) {
+    condiciones.push('f.fecha_emision < ?');
+    valores.push(hasta);
+  }
+  if (metodo) {
+    condiciones.push('pg.metodo = ?');
+    valores.push(metodo);
+  }
+  if (estado) {
+    condiciones.push('f.estado = ?');
+    valores.push(estado);
+  }
+  if (idCliente) {
+    condiciones.push('f.id_cliente = ?');
+    valores.push(idCliente);
+  }
+  const donde = condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '';
+  const [filas] = await pool.query(`SELECT ${COLUMNAS} ${DESDE} ${donde} ORDER BY f.fecha_emision DESC, f.id_factura DESC LIMIT ? OFFSET ?`, [
+    ...valores,
+    limit,
+    offset,
+  ]);
+  const [[totales]] = await pool.query(
+    `SELECT COUNT(*) AS total, COALESCE(SUM(CASE WHEN f.estado = 'emitida' THEN f.total ELSE 0 END), 0) AS suma ${DESDE} ${donde}`,
+    valores
+  );
+  return { filas: filas.map(aFactura), total: Number(totales.total), sumaTotal: Number(totales.suma) };
+}
+
+async function insertarFactura({ numero: num, idLiquidacion, idMembresia, idCliente, tercero, total, fecha }, { conexion }) {
   const [r] = await conexion.query(
-    `INSERT INTO facturas
-       (numero, concepto, estadia_id, membresia_id, cliente_id, subtotal, descuento_id, porcentaje_descuento,
-        valor_descuento, total, metodo_pago, observacion, tarifa_id, detalle_calculo, fecha_pago, registrada_por)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      f.numero,
-      f.concepto,
-      f.estadia_id ?? null,
-      f.membresia_id ?? null,
-      f.cliente_id ?? null,
-      f.subtotal,
-      f.descuento_id ?? null,
-      f.porcentaje_descuento ?? 0,
-      f.valor_descuento ?? 0,
-      f.total,
-      f.metodo_pago,
-      f.observacion ?? null,
-      f.tarifa_id ?? null,
-      f.detalle_calculo ? JSON.stringify(f.detalle_calculo) : null,
-      f.fecha_pago,
-      f.registrada_por,
-    ]
+    `INSERT INTO factura (numero, id_liquidacion, id_membresia, id_cliente, tercero_documento, tercero_nombre, total, fecha_emision)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [num, idLiquidacion ?? null, idMembresia ?? null, idCliente ?? null, tercero?.documento ?? null, tercero?.nombre ?? null, total, fecha]
   );
   return r.insertId;
 }
 
-const SELECT_DETALLE = `
-  SELECT f.id, f.numero, f.concepto, f.estadia_id, f.membresia_id, f.cliente_id, f.subtotal, f.descuento_id,
-         f.porcentaje_descuento, f.valor_descuento, f.total, f.metodo_pago, f.observacion, f.tarifa_id,
-         f.detalle_calculo, f.fecha_pago,
-         ${NOMBRE('uc')} AS cliente_nombre, uc.tipo_documento AS cliente_tipo_documento,
-         uc.numero_documento AS cliente_numero_documento,
-         d.nombre AS descuento_nombre,
-         ${NOMBRE('ur')} AS registrada_por,
-         e.codigo_ticket, e.fecha_hora_entrada, e.fecha_hora_salida, e.minutos_estadia, e.tipo_cliente,
-         c.codigo AS celda_codigo,
-         COALESCE(ve.placa, vm.placa) AS placa, COALESCE(ve.tipo, vm.tipo) AS tipo_vehiculo,
-         m.tipo AS membresia_tipo, m.fecha_inicio AS membresia_inicio, m.fecha_fin AS membresia_fin
-    FROM facturas f
-    LEFT JOIN usuarios uc ON uc.id = f.cliente_id
-    LEFT JOIN descuentos d ON d.id = f.descuento_id
-    JOIN usuarios ur ON ur.id = f.registrada_por
-    LEFT JOIN estadias e ON e.id = f.estadia_id
-    LEFT JOIN celdas c ON c.id = e.celda_id
-    LEFT JOIN vehiculos ve ON ve.id = e.vehiculo_id
-    LEFT JOIN membresias m ON m.id = f.membresia_id
-    LEFT JOIN vehiculos vm ON vm.id = m.vehiculo_id`;
-
-function filtros({ desde, hasta, metodo_pago, concepto, placa, cliente_id }) {
-  const condiciones = [];
-  const valores = [];
-  const agregar = (sql, ...v) => {
-    condiciones.push(sql);
-    valores.push(...v);
-  };
-  if (desde) agregar('f.fecha_pago >= ?', `${desde} 00:00:00`);
-  if (hasta) agregar('f.fecha_pago <= ?', `${hasta} 23:59:59`);
-  if (metodo_pago) agregar('f.metodo_pago = ?', metodo_pago);
-  if (concepto) agregar('f.concepto = ?', concepto);
-  if (placa) agregar('COALESCE(ve.placa, vm.placa) LIKE ?', `%${escaparLike(placa)}%`);
-  if (cliente_id) agregar('f.cliente_id = ?', cliente_id);
-  return { where: condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '', valores };
+async function insertarPago({ idFactura, metodo, valor, valorRecibido, cambio, referencia, idOperador, fecha }, { conexion }) {
+  const [r] = await conexion.query(
+    `INSERT INTO pago (id_factura, metodo, valor, valor_recibido, cambio, referencia, id_operador, fecha)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [idFactura, metodo, valor, valorRecibido ?? null, cambio ?? null, referencia ?? null, idOperador, fecha]
+  );
+  return r.insertId;
 }
 
-async function listar(filtrosConsulta, { limit, offset }) {
-  const { where, valores } = filtros(filtrosConsulta);
-  const [filas] = await pool.query(
-    `${SELECT_DETALLE} ${where} ORDER BY f.fecha_pago DESC, f.id DESC LIMIT ? OFFSET ?`,
-    [...valores, limit, offset]
-  );
-  const [[totales]] = await pool.query(
-    `SELECT COUNT(*) AS cantidad, COALESCE(SUM(f.total), 0) AS suma
-       FROM facturas f
-       LEFT JOIN estadias e ON e.id = f.estadia_id
-       LEFT JOIN vehiculos ve ON ve.id = e.vehiculo_id
-       LEFT JOIN membresias m ON m.id = f.membresia_id
-       LEFT JOIN vehiculos vm ON vm.id = m.vehiculo_id
-       ${where}`,
-    valores
-  );
-  return { filas, total: totales.cantidad, suma: Number(totales.suma) };
+async function guardarTercero(id, tercero, { conexion }) {
+  await conexion.query('UPDATE factura SET tercero_documento = ?, tercero_nombre = ? WHERE id_factura = ?', [tercero.documento, tercero.nombre, id]);
 }
 
-async function buscarDetalle(id) {
-  const [filas] = await pool.query(`${SELECT_DETALLE} WHERE f.id = ?`, [id]);
-  return filas[0] ?? null;
+async function anular(id, { motivo, idUsuario, fecha }, { conexion }) {
+  await conexion.query(
+    "UPDATE factura SET estado = 'anulada', motivo_anulacion = ?, id_usuario_anulacion = ?, fecha_anulacion = ? WHERE id_factura = ?",
+    [motivo, idUsuario, fecha, id]
+  );
 }
 
-/** Indicadores del día (hora de Bogotá). */
-async function resumenDia(fecha) {
-  const [[r]] = await pool.query(
-    `SELECT COALESCE(SUM(total), 0) AS recaudo,
-            SUM(concepto = 'estadia') AS salidas_cobradas,
-            COUNT(*) AS facturas
-       FROM facturas WHERE fecha_pago BETWEEN ? AND ?`,
-    [`${fecha} 00:00:00`, `${fecha} 23:59:59`]
-  );
-  const [[p]] = await pool.query(
-    `SELECT AVG(minutos_estadia) AS promedio, COUNT(*) AS visitas
-       FROM estadias
-      WHERE estado = 'finalizada' AND tipo_cliente = 'visitante' AND fecha_hora_salida BETWEEN ? AND ?`,
-    [`${fecha} 00:00:00`, `${fecha} 23:59:59`]
-  );
-  return {
-    recaudo: Number(r.recaudo),
-    salidas_cobradas: Number(r.salidas_cobradas ?? 0),
-    facturas: Number(r.facturas),
-    permanencia_promedio_min: p.promedio === null ? null : Math.round(Number(p.promedio)),
-    visitas_finalizadas: Number(p.visitas),
-  };
-}
-
-module.exports = { siguienteNumero, insertar, listar, buscarDetalle, resumenDia };
+module.exports = { obtenerPorId, listar, insertarFactura, insertarPago, guardarTercero, anular };

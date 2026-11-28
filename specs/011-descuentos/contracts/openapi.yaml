@@ -1,0 +1,119 @@
+openapi: 3.1.0
+info:
+  title: Parking Lot ABC — API v1 · 011 Beneficios y descuentos
+  version: 1.0.0
+  description: |
+    Contrato de la spec 011 (SRS v2.0 Apéndice B.1 §4.11). Sobre común { ok, data, meta, error }; errores y paginación
+    como en specs/001-roles-permisos/contracts/openapi.yaml. `x-permiso`: permiso exigido (RNF-SEG-04).
+    Fechas en hora de Bogotá: 'AAAA-MM-DD' (desde 00:00:00, hasta 23:59:59) o 'AAAA-MM-DDTHH:MM'.
+servers:
+  - url: http://localhost:3000/api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Descuentos
+  - name: Liquidación
+
+paths:
+  /descuentos:
+    get:
+      tags: [Descuentos]
+      summary: Descuentos con su situación (HU-49)
+      x-permiso: descuentos.ver
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: estado, in: query, schema: { type: string, enum: [activo, inactivo] } }
+        - { name: tipoVehiculo, in: query, schema: { type: string, enum: [carro, moto] } }
+        - { name: tipoCliente, in: query, schema: { type: string, enum: [ocasional, registrado] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200': { description: Descuentos, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/Descuento' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+    post:
+      tags: [Descuentos]
+      summary: Registrar un descuento (HU-49 · RF-DES-01, RF-DES-02)
+      x-permiso: descuentos.crear
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DescuentoEntrada' }
+            example: { nombre: Motos fin de semana, tipo: porcentaje, valor: 20, aplicaTipoVehiculo: moto, vigenteDesde: '2026-12-01', vigenteHasta: '2026-12-31' }
+      responses:
+        '201': { description: Activo, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaDescuento' } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '409': { description: DESCUENTO_DUPLICADO }
+        '422': { $ref: '#/components/responses/Validacion', description: 'porcentaje fuera de 1–100 · valor fijo ≤ 0 · fin antes del inicio' }
+
+  /descuentos/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    put:
+      tags: [Descuentos]
+      summary: Actualizar un descuento (HU-49 · RF-DES-01); no cambia liquidaciones guardadas
+      x-permiso: descuentos.editar
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/DescuentoEntrada' } } } }
+      responses:
+        '200': { description: Actualizado, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaDescuento' } } } }
+        '404': { description: DESCUENTO_NO_ENCONTRADO }
+        '409': { description: DESCUENTO_DUPLICADO }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /descuentos/{id}/estado:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch:
+      tags: [Descuentos]
+      summary: Activar o inactivar (HU-51 · RF-DES-05)
+      x-permiso: descuentos.cambiar_estado
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [estado], properties: { estado: { type: string, enum: [activo, inactivo] } } } } } }
+      responses:
+        '200': { description: Estado cambiado, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaDescuento' } } } }
+        '404': { description: DESCUENTO_NO_ENCONTRADO }
+        '422': { description: 'VALIDACION en vigenteHasta: «Amplíe la vigencia del descuento antes de activarlo»' }
+
+  /movimientos/{id}/liquidacion:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get:
+      tags: [Liquidación]
+      summary: 'Liquidación con el descuento aplicado (HU-50 · RF-DES-03, RF-DES-04; ver spec 009)'
+      x-permiso: movimientos.ver
+      responses:
+        '200':
+          description: 'Agrega `descuento` (o null); `valorDescuento` y `total = valorBruto − valorDescuento`'
+          content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: object, properties: { valorBruto: { type: number }, valorDescuento: { type: number }, total: { type: number }, descuento: { oneOf: [{ $ref: '#/components/schemas/DescuentoAplicado' }, { type: 'null' }] }, explicacion: { type: string } } } } } } }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    id: { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+  schemas:
+    Meta: { type: object, properties: { page: { type: integer }, limit: { type: integer }, total: { type: integer } } }
+    DescuentoEntrada:
+      type: object
+      required: [nombre, tipo, valor, vigenteDesde, vigenteHasta]
+      properties:
+        nombre: { type: string, minLength: 3, maxLength: 60 }
+        tipo: { type: string, enum: [porcentaje, valor_fijo] }
+        valor: { type: number, description: 'porcentaje 1–100 o valor fijo > 0' }
+        aplicaTipoCliente: { type: string, enum: [todos, ocasional, registrado], default: todos }
+        aplicaTipoVehiculo: { type: string, enum: [todos, carro, moto], default: todos }
+        minutosMinimos: { type: [integer, 'null'], minimum: 1, maximum: 10080 }
+        vigenteDesde: { type: string }
+        vigenteHasta: { type: string }
+    Descuento:
+      allOf:
+        - $ref: '#/components/schemas/DescuentoEntrada'
+        - type: object
+          properties:
+            idDescuento: { type: integer }
+            estado: { type: string, enum: [activo, inactivo] }
+            situacion: { type: string, enum: [vigente, programado, vencido, inactivo] }
+            usado: { type: boolean }
+    DescuentoAplicado:
+      type: object
+      properties: { idDescuento: { type: integer }, nombre: { type: string }, tipo: { type: string }, valor: { type: number } }
+    RespuestaDescuento: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Descuento' } } }
+  responses:
+    SinPermiso: { description: Sin permiso (403 SIN_PERMISO) }
+    Validacion: { description: Datos inválidos (422) con detalle por campo }
