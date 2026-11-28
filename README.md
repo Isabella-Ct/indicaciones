@@ -27,7 +27,8 @@ Se construye con **Spec-Driven Development (GitHub spec-kit)** y **Gitflow**, un
 | `008-tarifas` | Tarifas por tipo de vehículo y cliente, superposición con cierre de la anterior y consulta pública | ✅ implementada |
 | `009-facturacion-pagos` | Liquidación (RN-20), pago con factura numerada, comprobante PDF de 80 mm, anulación, consultas y caja | ✅ implementada |
 | `010-membresias` | Planes, suscripción con pago, renovación, cancelación, vencimiento diario y «Mi membresía» | ✅ implementada |
-| `011`–`015` | descuentos, reservas, incidencias, monitoreo, reportes | pendientes |
+| `011-descuentos` | Descuentos por porcentaje o valor fijo, el de mayor valor en la liquidación, activar/inactivar | ✅ implementada |
+| `012`–`015` | reservas, incidencias, monitoreo, reportes | pendientes |
 | `016-festivos-pico-placa` | API externa Nager.Date (festivos para pico y placa, TBD-03) | pendiente |
 
 La versión anterior (PARKO v1, trazabilidad `REQ-`) se conserva en el tag `v0.9.0-legado`.
@@ -208,6 +209,10 @@ Autenticación con `Authorization: Bearer <token>`. Listados con `?page&limit&q`
 | POST | `/api/v1/membresias/:id/renovacion` | `membresias.editar` | HU-47 |
 | PATCH | `/api/v1/membresias/:id/cancelacion` | `membresias.editar` | HU-47 |
 | GET | `/api/v1/usuarios/me/membresias` | `perfil.ver` | HU-48 |
+| GET | `/api/v1/descuentos?q&estado&tipoVehiculo&tipoCliente&page&limit` | `descuentos.ver` | HU-49 |
+| POST | `/api/v1/descuentos` | `descuentos.crear` | HU-49 |
+| PUT | `/api/v1/descuentos/:id` | `descuentos.editar` | HU-49 |
+| PATCH | `/api/v1/descuentos/:id/estado` (activar uno vencido → 422) | `descuentos.cambiar_estado` | HU-51 |
 
 Pantallas de la 004: `celdas.html` (mapa por piso que se refresca cada 10 s; personal), `parqueaderos.html`, `parqueadero-detalle.html` (puertas), `disponibilidad.html` (Cliente) y la portada `index.html` (cupos por tipo con «Lleno», sin sesión). El paso de la celda a ocupada y a disponible con cada entrada y salida (HU-23) lo usan los movimientos de la spec 007.
 
@@ -222,6 +227,8 @@ Pantallas de la 008: `tarifas.html` (Configuración › Tarifas; solo lectura pa
 Pantallas de la 009: cobro en `movimientos.html` (liquidación con su detalle, método de pago, cambio en vivo y tercero), `facturas.html` (filtros y total filtrado), `factura.html` (comprobante de 80 mm, PDF, envío por correo, tercero y anulación), `caja.html` (cuadre del turno y cierres) y `mis-facturas.html` (Cliente). La facturación electrónica DIAN no se integra (TBD-02): las facturas quedan «pendientes de envío electrónico».
 
 Pantallas de la 010: `planes.html` (Configuración › Planes de membresía), `membresias.html` (listado, nueva suscripción con pago, renovar y cancelar) y `mi-membresia.html` (Cliente: vigencia con días restantes, aviso de renovación a 5 días o menos, historial de pagos, planes disponibles y suscripción de sus vehículos con tarjeta, transferencia o QR). El servidor marca las membresías vencidas al iniciar y cada día a las 00:05 de Bogotá (`src/tareas/programador.js`). La semilla trae 5 planes y ninguna membresía.
+
+Pantallas de la 011: `descuentos.html` (Configuración › Descuentos: listado, nuevo, editar y activar/inactivar con confirmación) y la fila «Descuento» en el cobro de `movimientos.html` y en el comprobante de `factura.html`. La liquidación (`GET /movimientos/:id/liquidacion` y la salida) aplica, como máximo, el descuento activo y vigente a la hora de salida que más descuenta y devuelve `descuento`; con membresía o sin valor bruto no se aplica ninguno. La semilla trae 3 descuentos, ninguno vigente en noviembre de 2026.
 
 El contrato completo de cada spec está en `specs/NNN-*/contracts/openapi.yaml`.
 

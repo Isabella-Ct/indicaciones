@@ -12344,6 +12344,992 @@
           }
         }
       ]
+    },
+    {
+      "name": "011 Descuentos",
+      "description": "SRS B.1 §4.11 — HU-49..HU-51. Ejecutar con la BD sembrada.",
+      "item": [
+        {
+          "name": "HU-49 POST /descuentos — 201 porcentaje activo en su periodo",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const sufijo = Date.now().toString(36);",
+                  "pm.collectionVariables.set('nombreDescuento', 'Promo Postman ' + sufijo);",
+                  "pm.collectionVariables.set('nombreDescuentoFijo', 'Fijo Postman ' + sufijo);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('activo y programado', () => pm.expect(cuerpo.data).to.include({ estado: 'activo', situacion: 'programado', tipo: 'porcentaje', valor: 20, aplicaTipoCliente: 'todos' }));",
+                  "pm.test('el último día cuenta completo', () => pm.expect(cuerpo.data.vigenteHasta).to.eql('2030-12-31T23:59:59-05:00'));",
+                  "pm.collectionVariables.set('idDescuento', cuerpo.data.idDescuento);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{nombreDescuento}}\",\n  \"tipo\": \"porcentaje\",\n  \"valor\": 20,\n  \"aplicaTipoVehiculo\": \"moto\",\n  \"vigenteDesde\": \"2030-12-01\",\n  \"vigenteHasta\": \"2030-12-31\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-49 POST /descuentos — 201 valor fijo con minutos mínimos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('fijo', () => pm.expect(cuerpo.data).to.include({ tipo: 'valor_fijo', valor: 2000, minutosMinimos: 120, vigenteHasta: '2030-12-31T18:00:00-05:00' }));",
+                  "pm.collectionVariables.set('idDescuentoFijo', cuerpo.data.idDescuento);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{nombreDescuentoFijo}}\",\n  \"tipo\": \"valor_fijo\",\n  \"valor\": 2000,\n  \"aplicaTipoCliente\": \"registrado\",\n  \"minutosMinimos\": 120,\n  \"vigenteDesde\": \"2030-12-01\",\n  \"vigenteHasta\": \"2030-12-31T18:00\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-49 POST /descuentos — 422 porcentaje de 120",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));",
+                  "pm.test('entre 1 y 100', () => pm.expect(cuerpo.error.details[0]).to.include({ campo: 'valor', mensaje: 'El porcentaje debe estar entre 1 y 100.' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Porcentaje inválido\",\n  \"tipo\": \"porcentaje\",\n  \"valor\": 120,\n  \"aplicaTipoVehiculo\": \"moto\",\n  \"vigenteDesde\": \"2030-12-01\",\n  \"vigenteHasta\": \"2030-12-31\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-49 POST /descuentos — 422 valor fijo de 0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Fijo inválido\",\n  \"tipo\": \"valor_fijo\",\n  \"valor\": 0,\n  \"aplicaTipoVehiculo\": \"moto\",\n  \"vigenteDesde\": \"2030-12-01\",\n  \"vigenteHasta\": \"2030-12-31\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-49 POST /descuentos — 422 el fin antes del inicio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));",
+                  "pm.test('campo vigenteHasta', () => pm.expect(cuerpo.error.details[0].campo).to.eql('vigenteHasta'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Fechas invertidas\",\n  \"tipo\": \"porcentaje\",\n  \"valor\": 20,\n  \"aplicaTipoVehiculo\": \"moto\",\n  \"vigenteDesde\": \"2030-12-31\",\n  \"vigenteHasta\": \"2030-12-01\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-49 POST /descuentos — 409 nombre repetido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code DESCUENTO_DUPLICADO', () => pm.expect(cuerpo.error.code).to.eql('DESCUENTO_DUPLICADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{nombreDescuento}}\",\n  \"tipo\": \"porcentaje\",\n  \"valor\": 20,\n  \"aplicaTipoVehiculo\": \"moto\",\n  \"vigenteDesde\": \"2030-12-01\",\n  \"vigenteHasta\": \"2030-12-31\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-49 POST /descuentos — 403 operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{nombreDescuento}}\",\n  \"tipo\": \"porcentaje\",\n  \"valor\": 20,\n  \"aplicaTipoVehiculo\": \"moto\",\n  \"vigenteDesde\": \"2030-12-01\",\n  \"vigenteHasta\": \"2030-12-31\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-49 PUT /descuentos/:id — 200 edita el valor y el tipo de cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('editado', () => pm.expect(cuerpo.data).to.include({ valor: 25, aplicaTipoCliente: 'ocasional' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos/{{idDescuento}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos",
+                "{{idDescuento}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{nombreDescuento}}\",\n  \"tipo\": \"porcentaje\",\n  \"valor\": 25,\n  \"aplicaTipoVehiculo\": \"moto\",\n  \"vigenteDesde\": \"2030-12-01\",\n  \"vigenteHasta\": \"2030-12-31\",\n  \"aplicaTipoCliente\": \"ocasional\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-49 PUT /descuentos/999999 — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code DESCUENTO_NO_ENCONTRADO', () => pm.expect(cuerpo.error.code).to.eql('DESCUENTO_NO_ENCONTRADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos",
+                "999999"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{nombreDescuento}}\",\n  \"tipo\": \"porcentaje\",\n  \"valor\": 20,\n  \"aplicaTipoVehiculo\": \"moto\",\n  \"vigenteDesde\": \"2030-12-01\",\n  \"vigenteHasta\": \"2030-12-31\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-49 GET /descuentos?q — 200 el operador consulta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('uno por el nombre', () => pm.expect(cuerpo.meta.total).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos?q={{nombreDescuento}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{nombreDescuento}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /descuentos — 403 cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-50 POST /movimientos — 201 entrada para liquidar",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.environment.get('baseUrl');",
+                  "const letra = () => String.fromCharCode(65 + Math.floor(Math.random() * 26));",
+                  "pm.sendRequest({ url: base + '/restricciones-placa/hoy', header: { Authorization: 'Bearer ' + pm.collectionVariables.get('tokenOperador') } }, (err, res) => {",
+                  "  const hoy = res.json().data;",
+                  "  const prohibidos = hoy.tipos.carro ? hoy.tipos.carro.digitos : [];",
+                  "  const libres = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].filter((d) => !prohibidos.includes(d));",
+                  "  pm.collectionVariables.set('placaDescuento', letra() + letra() + letra() + Math.floor(Math.random() * 10) + Math.floor(Math.random() * 10) + libres[Math.floor(Math.random() * libres.length)]);",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.collectionVariables.set('idMovDescuento', cuerpo.data.idMovimiento);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/movimientos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "movimientos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placaDescuento}}\",\n  \"tipo\": \"carro\",\n  \"idPuerta\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-50 POST /movimientos/:id/salida — 200 la liquidación trae el campo descuento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('campo descuento', () => pm.expect(cuerpo.data.liquidacion).to.have.property('descuento'));",
+                  "pm.test('dentro de la gracia: sin descuento', () => pm.expect(cuerpo.data.liquidacion).to.include({ descuento: null, valorDescuento: 0, total: 0 }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/movimientos/{{idMovDescuento}}/salida",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "movimientos",
+                "{{idMovDescuento}}",
+                "salida"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPuerta\": 3\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-51 PATCH /descuentos/:id/estado — 200 inactivo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('inactivo', () => pm.expect(cuerpo.data).to.include({ estado: 'inactivo', situacion: 'inactivo' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos/{{idDescuento}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos",
+                "{{idDescuento}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"inactivo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-51 PATCH /descuentos/:id/estado — 200 vuelve a activarse (vigencia futura)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('activo', () => pm.expect(cuerpo.data.estado).to.eql('activo'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos/{{idDescuento}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos",
+                "{{idDescuento}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"activo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-51 PATCH /descuentos/:id/estado — 422 activar «Promoción de apertura» (vencida)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));",
+                  "pm.test('pide ampliar la vigencia', () => pm.expect(cuerpo.error.details[0]).to.include({ campo: 'vigenteHasta', mensaje: 'Amplíe la vigencia del descuento antes de activarlo.' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos/3/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos",
+                "3",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"activo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-51 PATCH /descuentos/999999/estado — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code DESCUENTO_NO_ENCONTRADO', () => pm.expect(cuerpo.error.code).to.eql('DESCUENTO_NO_ENCONTRADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos/999999/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos",
+                "999999",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"inactivo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-51 PATCH /descuentos/:id/estado — 403 operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos/{{idDescuento}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos",
+                "{{idDescuento}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"inactivo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PATCH /descuentos/:id/estado — 200 deja inactivo el porcentaje",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos/{{idDescuento}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos",
+                "{{idDescuento}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"inactivo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PATCH /descuentos/:id/estado — 200 deja inactivo el valor fijo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/descuentos/{{idDescuentoFijo}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "descuentos",
+                "{{idDescuentoFijo}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"inactivo\"\n}"
+            }
+          }
+        }
+      ]
     }
   ]
 }
