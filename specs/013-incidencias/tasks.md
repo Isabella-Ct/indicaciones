@@ -8,26 +8,26 @@
 
 ## Fase 1: Preparación
 
-- [ ] T001 `subirImagen({ campo, tamanoMaximo })` en `backend/src/middlewares/subir-foto.js` (sin cambiar `subirFoto`) y carpetas `usuarios | incidencias` en `backend/src/utils/archivos.js` (research R-03); las pruebas de la spec 002 siguen en verde; nota en `CAMBIOS.md`
+- [X] T001 `subirImagen({ campo, tamanoMaximo })` en `backend/src/middlewares/subir-foto.js` (sin cambiar `subirFoto`) y carpetas `usuarios | incidencias` en `backend/src/utils/archivos.js` (research R-03); las pruebas de la spec 002 siguen en verde; nota en `CAMBIOS.md`
 
 ## Fase 2: Fundacional
 
-- [ ] T002 [P] `backend/src/modules/incidencias/incidencias.reglas.js` + `backend/tests/unit/incidencias.reglas.test.js`
+- [X] T002 [P] `backend/src/modules/incidencias/incidencias.reglas.js` + `backend/tests/unit/incidencias.reglas.test.js`
 
 ## Fase 3: US1 — Registrar (P1) — HU-56
 
-- [ ] T003 [US1] `backend/tests/integration/incidencias.test.js` bloque HU-56 E1–E5
-- [ ] T004 [US1] `backend/src/modules/incidencias/` validator (data-model.md Incidencia.tipo, Incidencia.fecha_hora_evento, Incidencia.descripcion, Incidencia.id_celda, Incidencia.evidencia_url), repository, service `registrar` (R-02), controller y rutas; registro en `rutasProtegidas()`
+- [X] T003 [US1] `backend/tests/integration/incidencias.test.js` bloque HU-56 E1–E5
+- [X] T004 [US1] `backend/src/modules/incidencias/` validator (data-model.md Incidencia.tipo, Incidencia.fecha_hora_evento, Incidencia.descripcion, Incidencia.id_celda, Incidencia.evidencia_url), repository, service `registrar` (R-02), controller y rutas; registro en `rutasProtegidas()`
 
 ## Fase 4: US2 — Consultar (P2) — HU-57
 
-- [ ] T005 [US2] Bloque HU-57 E1–E2 en `incidencias.test.js`
-- [ ] T006 [US2] Service `listar`, `obtener` y `evidencia` (R-04); `GET /incidencias`, `GET /:id`, `GET /:id/evidencia`
+- [X] T005 [US2] Bloque HU-57 E1–E2 en `incidencias.test.js`
+- [X] T006 [US2] Service `listar`, `obtener` y `evidencia` (R-04); `GET /incidencias`, `GET /:id`, `GET /:id/evidencia`
 
 ## Fase 5: US3 — Seguimiento y cierre (P2) — HU-58
 
-- [ ] T007 [US3] Bloque HU-58 E1–E3 en `incidencias.test.js`
-- [ ] T008 [US3] Service `agregarSeguimiento` (data-model.md SeguimientoIncidencia.nota) y `cerrar` (data-model.md Incidencia.solucion, Incidencia.estado) (R-05); rutas
+- [X] T007 [US3] Bloque HU-58 E1–E3 en `incidencias.test.js`
+- [X] T008 [US3] Service `agregarSeguimiento` (data-model.md SeguimientoIncidencia.nota) y `cerrar` (data-model.md Incidencia.solucion, Incidencia.estado) (R-05); rutas
 
 ## Fase 6: Interfaz (Atomic Design)
 

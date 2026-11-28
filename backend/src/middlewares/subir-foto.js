@@ -1,15 +1,12 @@
-// Subida opcional de la foto (campo `foto` en multipart/form-data) para usuarios (RNF-PRI-03,
-// spec 002 research R-03/R-04). Se valida la firma del contenido, no solo el tipo declarado.
-// Deja req.foto = { buffer, ext, mime } o undefined. Errores → 422 con el campo `foto`.
+// Subida opcional de una imagen en multipart/form-data (RNF-PRI-03): la foto de usuario (campo `foto`, 2 MB; spec
+// 002 research R-03/R-04) y la evidencia de una incidencia (campo `evidencia`, 5 MB; spec 013 research R-03). Se
+// valida la firma del contenido, no solo el tipo declarado. Deja req.<campo> = { buffer, ext, mime } o undefined.
+// Errores → 422 con el nombre del campo.
 const multer = require('multer');
 const { errores } = require('../utils/errores');
 
 const TAMANO_MAXIMO = 2 * 1024 * 1024;
-
-const carga = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: TAMANO_MAXIMO, files: 1, fields: 20 },
-}).single('foto');
+const MB = 1024 * 1024;
 
 /** Tipo real según los primeros bytes: JPG (FF D8 FF) o PNG (89 50 4E 47 0D 0A 1A 0A). */
 function tipoPorFirma(buffer) {
@@ -21,23 +18,35 @@ function tipoPorFirma(buffer) {
   return null;
 }
 
-const errorFoto = (mensaje) => errores.validacion([{ campo: 'foto', mensaje }]);
-
-function subirFoto(req, res, next) {
-  if (!req.is('multipart/form-data')) return next();
-  return carga(req, res, (error) => {
-    if (error) {
-      if (error.code === 'LIMIT_FILE_SIZE') return next(errorFoto('La foto supera 2 MB.'));
-      if (error.code === 'LIMIT_UNEXPECTED_FILE') return next(errorFoto('Solo se admite un archivo en el campo «foto».'));
-      return next(errores.solicitudInvalida('El formulario enviado no es válido.'));
-    }
-    if (req.file) {
-      const tipo = tipoPorFirma(req.file.buffer);
-      if (!tipo) return next(errorFoto('La foto debe ser JPG o PNG.'));
-      req.foto = { buffer: req.file.buffer, ...tipo };
-    }
-    return next();
-  });
+/**
+ * Middleware para una imagen JPG o PNG opcional.
+ * @param {{ campo: string, tamanoMaximo: number, etiqueta: string }} opciones etiqueta: «La foto», «La evidencia»
+ */
+function subirImagen({ campo, tamanoMaximo, etiqueta }) {
+  const carga = multer({ storage: multer.memoryStorage(), limits: { fileSize: tamanoMaximo, files: 1, fields: 20 } }).single(campo);
+  const error = (mensaje) => errores.validacion([{ campo, mensaje }]);
+  return function (req, res, next) {
+    if (!req.is('multipart/form-data')) return next();
+    return carga(req, res, (falla) => {
+      if (falla) {
+        if (falla.code === 'LIMIT_FILE_SIZE') return next(error(`${etiqueta} supera ${Math.round(tamanoMaximo / MB)} MB.`));
+        if (falla.code === 'LIMIT_UNEXPECTED_FILE') return next(error(`Solo se admite un archivo en el campo «${campo}».`));
+        return next(errores.solicitudInvalida('El formulario enviado no es válido.'));
+      }
+      if (req.file) {
+        const tipo = tipoPorFirma(req.file.buffer);
+        if (!tipo) return next(error(`${etiqueta} debe ser JPG o PNG.`));
+        req[campo] = { buffer: req.file.buffer, ...tipo };
+      }
+      return next();
+    });
+  };
 }
 
-module.exports = { subirFoto, tipoPorFirma, TAMANO_MAXIMO };
+/** Foto de usuario (spec 002): req.foto. */
+const subirFoto = subirImagen({ campo: 'foto', tamanoMaximo: TAMANO_MAXIMO, etiqueta: 'La foto' });
+
+/** Evidencia de una incidencia (spec 013): req.evidencia, hasta 5 MB. */
+const subirEvidencia = subirImagen({ campo: 'evidencia', tamanoMaximo: 5 * MB, etiqueta: 'La evidencia' });
+
+module.exports = { subirImagen, subirFoto, subirEvidencia, tipoPorFirma, TAMANO_MAXIMO };

@@ -4,6 +4,12 @@ Historial de `schema.sql` y de las migraciones en `migrations/`. Cada entrada in
 
 ---
 
+## 2.2.0 (sin cambios) — 2026-11-27 · spec `013-incidencias`
+
+La spec 013 usa `incidencia` y `seguimiento_incidencia` tal como están: `UNIQUE uq_incidencia_codigo` (consecutivo `incidencia`, `INC-` + 6 dígitos, ya en la semilla, RF-INC-02), `CHECK ck_inc_cierre` (solución obligatoria al cerrar, RF-INC-08, RN-28) e índices por estado y fecha y por vehículo (RF-INC-05). `evidencia_url` guarda la clave del archivo privado `incidencias/<uuid>.<ext>` (en `backend/uploads/`, fuera de git y de la carpeta pública). La alerta al Administrador usa el tipo `incidencia` de `alerta` (RF-INC-04, RF-MON-04). La semilla no cambia.
+
+---
+
 ## 2.2.0 (sin cambios) — 2026-11-27 · spec `012-reservas`
 
 La spec 012 usa `reserva` tal como está: `UNIQUE uq_reserva_codigo` (consecutivo `reserva`, `R-` + 6 dígitos, ya en la semilla), los índices por celda, vehículo y cliente con estado y hora (para buscar cruces de franjas, RF-RES-02), `minutos_espera` (30 por defecto, TBD-07) e `id_movimiento` (al cumplirse, RF-RES-07). La celda usa su estado `reservada` durante la franja (RN-27) y la notificación su tipo `reserva`. La anticipación máxima (7 días) y la espera (30 min) son variables de entorno (`RESERVA_ANTICIPACION_DIAS`, `RESERVA_MINUTOS_ESPERA`) mientras TBD-07 no se decida; la espera se copia a cada reserva. La semilla no cambia.
