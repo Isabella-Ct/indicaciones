@@ -10904,6 +10904,1446 @@
           }
         }
       ]
+    },
+    {
+      "name": "010 Membresías",
+      "description": "SRS B.1 §4.10 — HU-45..HU-48. Ejecutar con la BD sembrada.",
+      "item": [
+        {
+          "name": "HU-45 POST /planes-membresia — 201 plan activo",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const letra = () => String.fromCharCode(65 + Math.floor(Math.random() * 26));",
+                  "const letras = () => letra() + letra() + letra();",
+                  "const digitos = (n) => String(Math.floor(Math.random() * 10 ** n)).padStart(n, '0');",
+                  "pm.collectionVariables.set('nombrePlan', 'Plan Postman ' + Date.now().toString(36));",
+                  "pm.collectionVariables.set('placaMem', letras() + digitos(3));",
+                  "pm.collectionVariables.set('placaMemMoto', letras() + digitos(2) + letra());",
+                  "pm.collectionVariables.set('placaSinDueno', letras() + digitos(3));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('activo y sin membresías', () => pm.expect(cuerpo.data).to.include({ estado: 'activo', membresiasActivas: 0, valorMensual: 180000, diasVigencia: 30 }));",
+                  "pm.collectionVariables.set('idPlanMem', cuerpo.data.idPlan);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/planes-membresia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "planes-membresia"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{nombrePlan}}\",\n  \"tipoVehiculo\": \"carro\",\n  \"valorMensual\": 180000,\n  \"diasVigencia\": 30,\n  \"beneficios\": \"Entradas y salidas ilimitadas\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-45 POST /planes-membresia — 409 nombre repetido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code PLAN_DUPLICADO', () => pm.expect(cuerpo.error.code).to.eql('PLAN_DUPLICADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/planes-membresia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "planes-membresia"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{nombrePlan}}\",\n  \"tipoVehiculo\": \"carro\",\n  \"valorMensual\": 180000,\n  \"diasVigencia\": 30,\n  \"beneficios\": \"Entradas y salidas ilimitadas\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-45 POST /planes-membresia — 422 valor 0 y 0 días",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));",
+                  "pm.test('campos valorMensual y diasVigencia', () => pm.expect(cuerpo.error.details.map((d) => d.campo)).to.have.members(['valorMensual', 'diasVigencia']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/planes-membresia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "planes-membresia"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Plan inválido\",\n  \"tipoVehiculo\": \"carro\",\n  \"valorMensual\": 0,\n  \"diasVigencia\": 0,\n  \"beneficios\": \"Entradas y salidas ilimitadas\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-45 POST /planes-membresia — 403 operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/planes-membresia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "planes-membresia"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{nombrePlan}}\",\n  \"tipoVehiculo\": \"carro\",\n  \"valorMensual\": 180000,\n  \"diasVigencia\": 30,\n  \"beneficios\": \"Entradas y salidas ilimitadas\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-45 PUT /planes-membresia/:id — 200 edita valor y beneficios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('valor nuevo', () => pm.expect(cuerpo.data).to.include({ valorMensual: 185000, beneficios: 'Lavado mensual incluido' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/planes-membresia/{{idPlanMem}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "planes-membresia",
+                "{{idPlanMem}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{nombrePlan}}\",\n  \"tipoVehiculo\": \"carro\",\n  \"valorMensual\": 185000,\n  \"diasVigencia\": 30,\n  \"beneficios\": \"Lavado mensual incluido\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-45 PUT /planes-membresia/999999 — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code PLAN_NO_ENCONTRADO', () => pm.expect(cuerpo.error.code).to.eql('PLAN_NO_ENCONTRADO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/planes-membresia/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "planes-membresia",
+                "999999"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"{{nombrePlan}}\",\n  \"tipoVehiculo\": \"carro\",\n  \"valorMensual\": 180000,\n  \"diasVigencia\": 30,\n  \"beneficios\": \"Entradas y salidas ilimitadas\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-45 GET /planes-membresia?estado=activo — 200 el cliente consulta los planes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('solo activos', () => pm.expect(cuerpo.data.every((p) => p.estado === 'activo')).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/planes-membresia?estado=activo&limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "planes-membresia"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "activo"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-46 POST /vehiculos — 201 carro de Carlos para suscribir",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.collectionVariables.set('idVehMem', cuerpo.data.idVehiculo);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placaMem}}\",\n  \"tipo\": \"carro\",\n  \"color\": \"Gris\",\n  \"marca\": \"Mazda\",\n  \"modelo\": 2022,\n  \"idPropietario\": 5\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-46 POST /vehiculos — 201 moto de Carlos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.collectionVariables.set('idMotoMem', cuerpo.data.idVehiculo);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placaMemMoto}}\",\n  \"tipo\": \"moto\",\n  \"color\": \"Negro\",\n  \"marca\": \"Yamaha\",\n  \"modelo\": 2021,\n  \"idPropietario\": 5\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-46 POST /membresias — 422 una moto en un plan de carros",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));",
+                  "pm.test('campo idPlan', () => pm.expect(cuerpo.error.details[0].campo).to.eql('idPlan'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idVehiculo\": \"{{idMotoMem}}\",\n  \"idPlan\": \"{{idPlanMem}}\",\n  \"pago\": {\n    \"metodo\": \"tarjeta\",\n    \"referencia\": \"AUT-4455\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-46 POST /membresias — 422 efectivo insuficiente (no queda nada)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));",
+                  "pm.test('faltante', () => pm.expect(cuerpo.error.details[0]).to.include({ campo: 'pago.valorRecibido', mensaje: 'El valor recibido no alcanza: faltan $ 184.000.' }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idVehiculo\": \"{{idVehMem}}\",\n  \"idPlan\": \"{{idPlanMem}}\",\n  \"pago\": {\n    \"metodo\": \"efectivo\",\n    \"valorRecibido\": 1000\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-46 POST /membresias — 422 transferencia sin referencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));",
+                  "pm.test('campo pago.referencia', () => pm.expect(cuerpo.error.details[0].campo).to.eql('pago.referencia'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idVehiculo\": \"{{idVehMem}}\",\n  \"idPlan\": \"{{idPlanMem}}\",\n  \"pago\": {\n    \"metodo\": \"transferencia\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-46 POST /vehiculos — 201 carro sin propietario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.collectionVariables.set('idSinDueno', cuerpo.data.idVehiculo);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placaSinDueno}}\",\n  \"tipo\": \"carro\",\n  \"color\": \"Azul\",\n  \"marca\": \"Kia\",\n  \"modelo\": 2019\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-46 POST /membresias — 422 vehículo sin propietario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));",
+                  "pm.test('asociar primero', () => pm.expect(cuerpo.error.details[0].mensaje).to.eql('Asocie primero el vehículo a un cliente.'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idVehiculo\": \"{{idSinDueno}}\",\n  \"idPlan\": \"{{idPlanMem}}\",\n  \"pago\": {\n    \"metodo\": \"tarjeta\",\n    \"referencia\": \"AUT-4455\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-46 POST /membresias — 403 el cliente con un vehículo ajeno",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idVehiculo\": \"{{idVehMem}}\",\n  \"idPlan\": \"{{idPlanMem}}\",\n  \"pago\": {\n    \"metodo\": \"tarjeta\",\n    \"referencia\": \"AUT-4455\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-46 POST /membresias — 201 activa con su factura",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('activa por los días del plan', () => pm.expect(cuerpo.data.membresia).to.include({ estado: 'activa', diasRestantes: 30, avisoRenovacion: false }));",
+                  "pm.test('factura FV- del plan con cambio', () => { pm.expect(cuerpo.data.factura.numero).to.match(/^FV-\\d{6}$/); pm.expect(cuerpo.data.factura.total).to.eql(185000); pm.expect(cuerpo.data.factura.pago.cambio).to.eql(15000); });",
+                  "pm.collectionVariables.set('idMembresia', cuerpo.data.membresia.idMembresia);",
+                  "pm.collectionVariables.set('finMembresia', cuerpo.data.membresia.fechaFin);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idVehiculo\": \"{{idVehMem}}\",\n  \"idPlan\": \"{{idPlanMem}}\",\n  \"pago\": {\n    \"metodo\": \"efectivo\",\n    \"valorRecibido\": 200000\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-46 POST /membresias — 409 ya tiene una activa (con su fecha de fin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code MEMBRESIA_ACTIVA', () => pm.expect(cuerpo.error.code).to.eql('MEMBRESIA_ACTIVA'));",
+                  "const fin = pm.collectionVariables.get('finMembresia').split('-').reverse().join('/');",
+                  "pm.test('mensaje con la fecha', () => pm.expect(cuerpo.error.message).to.eql('El vehículo ya tiene una membresía activa hasta ' + fin));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idVehiculo\": \"{{idVehMem}}\",\n  \"idPlan\": \"{{idPlanMem}}\",\n  \"pago\": {\n    \"metodo\": \"tarjeta\",\n    \"referencia\": \"AUT-4455\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-47 GET /membresias?q=placa — 200 listado del personal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('una por la placa', () => pm.expect(cuerpo.meta.total).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias?q={{placaMem}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{placaMem}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /membresias — 403 cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-47 POST /membresias/:id/renovacion — 201 desde el día siguiente al fin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "const [a, m, d] = pm.collectionVariables.get('finMembresia').split('-').map(Number);",
+                  "const siguiente = new Date(Date.UTC(a, m - 1, d + 1)).toISOString().slice(0, 10);",
+                  "pm.test('periodo continuo', () => pm.expect(cuerpo.data.periodo.desde).to.eql(siguiente));",
+                  "pm.test('fin = hasta del periodo', () => pm.expect(cuerpo.data.membresia.fechaFin).to.eql(cuerpo.data.periodo.hasta));",
+                  "pm.test('factura nueva', () => pm.expect(cuerpo.data.factura.total).to.eql(185000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias/{{idMembresia}}/renovacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias",
+                "{{idMembresia}}",
+                "renovacion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pago\": {\n    \"metodo\": \"tarjeta\",\n    \"referencia\": \"AUT-4455\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-47 POST /membresias/999999/renovacion — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code MEMBRESIA_NO_ENCONTRADA', () => pm.expect(cuerpo.error.code).to.eql('MEMBRESIA_NO_ENCONTRADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias/999999/renovacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias",
+                "999999",
+                "renovacion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pago\": {\n    \"metodo\": \"tarjeta\",\n    \"referencia\": \"AUT-4455\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-47 PATCH /membresias/:id/cancelacion — 422 motivo corto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias/{{idMembresia}}/cancelacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias",
+                "{{idMembresia}}",
+                "cancelacion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"Vendido\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-47 PATCH /membresias/:id/cancelacion — 200 cancelada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('cancelada', () => pm.expect(cuerpo.data).to.include({ estado: 'cancelada', motivoCancelacion: 'El cliente vendió el vehículo', diasRestantes: 0 }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias/{{idMembresia}}/cancelacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias",
+                "{{idMembresia}}",
+                "cancelacion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"El cliente vendió el vehículo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-47 PATCH /membresias/:id/cancelacion — 409 ya no está activa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code MEMBRESIA_NO_ACTIVA', () => pm.expect(cuerpo.error.code).to.eql('MEMBRESIA_NO_ACTIVA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias/{{idMembresia}}/cancelacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias",
+                "{{idMembresia}}",
+                "cancelacion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motivo\": \"El cliente vendió el vehículo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-47 POST /membresias/:id/renovacion — 409 cancelada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code MEMBRESIA_CANCELADA', () => pm.expect(cuerpo.error.code).to.eql('MEMBRESIA_CANCELADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias/{{idMembresia}}/renovacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias",
+                "{{idMembresia}}",
+                "renovacion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pago\": {\n    \"metodo\": \"tarjeta\",\n    \"referencia\": \"AUT-4455\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-47 POST /membresias/:id/renovacion — 403 cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias/{{idMembresia}}/renovacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias",
+                "{{idMembresia}}",
+                "renovacion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pago\": {\n    \"metodo\": \"tarjeta\",\n    \"referencia\": \"AUT-4455\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-45 PATCH /planes-membresia/:id/estado — 200 inactivo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('inactivo', () => pm.expect(cuerpo.data.estado).to.eql('inactivo'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/planes-membresia/{{idPlanMem}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "planes-membresia",
+                "{{idPlanMem}}",
+                "estado"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"inactivo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-45 POST /membresias — 409 el plan inactivo no admite suscripciones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code PLAN_INACTIVO', () => pm.expect(cuerpo.error.code).to.eql('PLAN_INACTIVO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "membresias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idVehiculo\": \"{{idVehMem}}\",\n  \"idPlan\": \"{{idPlanMem}}\",\n  \"pago\": {\n    \"metodo\": \"tarjeta\",\n    \"referencia\": \"AUT-4455\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-48 GET /usuarios/me/membresias — 200 sus membresías o los planes disponibles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('forma', () => pm.expect(cuerpo.data).to.have.keys('membresias', 'planesDisponibles'));",
+                  "pm.test('sin activa → planes; con activa → ninguno', () => { const activa = cuerpo.data.membresias.some((m) => m.estado === 'activa'); pm.expect(cuerpo.data.planesDisponibles.length > 0).to.eql(!activa); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "membresias"
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /usuarios/me/membresias — 401 sin sesión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "membresias"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
