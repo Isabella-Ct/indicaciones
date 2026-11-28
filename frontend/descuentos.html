@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PARKO · Descuentos</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    />
+    <link rel="stylesheet" href="/css/estilos.css" />
+    <script type="module" src="/js/views/descuentos.view.js"></script>
+  </head>
+  <body>
+    <div class="template-app-layout hidden" id="app">
+      <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+      <!-- organism-header -->
+      <header class="organism-header">
+        <div class="organism-header-inner">
+          <a class="molecule-brand molecule-brand--link" href="/">
+            <span class="atom-brand-mark" aria-hidden="true">P</span>
+            <div>PARKO<small>Parking Lot ABC</small></div>
+          </a>
+          <div class="molecule-shift">
+            <div>Fecha<strong id="marco-fecha">—</strong></div>
+            <div>Hora<strong id="marco-hora">—</strong></div>
+          </div>
+          <div class="molecule-user-menu" id="menu-usuario">
+            <button
+              class="molecule-user-menu-button"
+              id="menu-usuario-boton"
+              type="button"
+              aria-expanded="false"
+              aria-controls="menu-usuario-lista"
+              aria-haspopup="true"
+            >
+              <span class="atom-avatar" aria-hidden="true"><span id="menu-usuario-iniciales"></span></span>
+              <span class="molecule-user-menu-name"
+                ><span id="menu-usuario-nombre"></span><small id="menu-usuario-rol"></small
+              ></span>
+              <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-chevron-down"></use></svg>
+            </button>
+            <ul class="molecule-user-menu-list hidden" id="menu-usuario-lista">
+              <li>
+                <a class="molecule-user-menu-item" href="/mi-perfil.html"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-user"></use></svg>Mi perfil</a>
+              </li>
+              <li>
+                <a class="molecule-user-menu-item" href="/cambiar-contrasena.html"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-key"></use></svg>Cambiar contraseña</a>
+              </li>
+              <li>
+                <button class="molecule-user-menu-item" id="menu-usuario-salir" type="button">
+                  <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-logout"></use></svg>Cerrar sesión
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </header>
+
+      <!-- organism-navbar (navbar.js oculta los ítems sin permiso) -->
+      <nav class="organism-navbar" id="navbar" aria-label="Principal">
+        <div class="organism-navbar-inner">
+          <div class="organism-navbar-bar">
+            <span class="organism-navbar-current">Descuentos</span>
+            <button
+              class="atom-icon-button"
+              id="navbar-alternar"
+              type="button"
+              aria-label="Abrir menú de navegación"
+              title="Menú"
+              aria-expanded="false"
+              aria-controls="navbar-lista"
+            >
+              <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-menu"></use></svg>
+            </button>
+          </div>
+          <ul class="organism-navbar-list" id="navbar-lista">
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="movimientos" href="/movimientos.html">Movimientos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="facturas" href="/facturas.html">Facturación</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="caja" href="/caja.html">Caja</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="celdas" href="/celdas.html">Celdas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="disponibilidad" href="/disponibilidad.html">Disponibilidad</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="vehiculos" href="/vehiculos.html">Vehículos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mis-vehiculos" href="/mis-vehiculos.html">Mis vehículos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mis-facturas" href="/mis-facturas.html">Mis facturas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="membresias" href="/membresias.html">Membresías</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mi-membresia" href="/mi-membresia.html">Mi membresía</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="reservas" href="/reservas.html">Reservas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mis-reservas" href="/mis-reservas.html">Mis reservas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="incidencias" href="/incidencias.html">Incidencias</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="usuarios" href="/usuarios.html">Usuarios</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="parqueaderos" href="/parqueaderos.html">Parqueaderos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="pico-placa" href="/pico-placa.html">Pico y placa</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="tarifas" href="/tarifas.html">Tarifas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="planes" href="/planes.html">Planes</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item is-active" data-id="descuentos" href="/descuentos.html" aria-current="page">Descuentos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="roles" href="/roles.html">Roles</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="permisos" href="/permisos.html">Permisos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mi-perfil" href="/mi-perfil.html">Mi perfil</a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <div class="atom-hazard-strip" aria-hidden="true"></div>
+
+      <div class="template-app-layout-page hidden" id="sin-permiso">
+        <div class="molecule-empty-state">
+          <strong>No tiene permiso para ver esta pantalla</strong>
+          <p>Use el menú para ir a las secciones de su perfil.</p>
+        </div>
+      </div>
+
+      <main class="template-app-layout-page hidden" id="contenido" tabindex="-1">
+        <div class="molecule-page-head">
+          <div>
+            <h1>Descuentos</h1>
+            <p>// Configuración › promociones por porcentaje o valor fijo; se aplica el de mayor valor</p>
+          </div>
+          <div class="molecule-page-head-actions">
+            <button class="atom-button hidden" type="button" id="accion-nuevo"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-calendar"></use></svg><span>Nuevo descuento</span></button>
+          </div>
+        </div>
+
+        <section class="molecule-panel" aria-labelledby="panel-descuentos-titulo">
+          <div class="molecule-panel-head"><h2 id="panel-descuentos-titulo">Descuentos registrados</h2></div>
+          <div class="molecule-panel-body">
+            <div class="molecule-filters">
+              <div class="molecule-search-box" role="search">
+                <label class="molecule-search-box-label" for="filtro-texto">Buscar</label>
+                <input class="atom-input" id="filtro-texto" type="search" placeholder="Nombre del descuento" autocomplete="off" maxlength="60" />
+              </div>
+              <div class="molecule-field">
+                <label for="filtro-vehiculo">Vehículo</label>
+                <select class="atom-select" id="filtro-vehiculo">
+                  <option value="">Carros y motos</option>
+                  <option value="carro">Carros</option>
+                  <option value="moto">Motos</option>
+                </select>
+              </div>
+              <div class="molecule-field">
+                <label for="filtro-estado">Estado</label>
+                <select class="atom-select" id="filtro-estado">
+                  <option value="">Todos</option>
+                  <option value="activo">Activos</option>
+                  <option value="inactivo">Inactivos</option>
+                </select>
+              </div>
+            </div>
+
+          <div class="organism-data-table" id="tabla-descuentos">
+            <div class="organism-data-table-scroll" tabindex="0" role="region" aria-label="Descuentos registrados">
+              <table class="organism-log-table organism-data-table-table organism-data-table-table--w980">
+                <caption class="visually-hidden">Descuentos registrados</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Descuento</th>
+                    <th scope="col" class="organism-log-table-right">Valor</th>
+                    <th scope="col">Aplica a</th>
+                    <th scope="col">Mínimo</th>
+                    <th scope="col">Vigencia</th>
+                    <th scope="col">Situación</th>
+                    <th scope="col" class="organism-log-table-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="molecule-empty-state hidden">
+              <strong>Sin descuentos</strong>
+              <p>Ningún descuento coincide con los filtros.</p>
+            </div>
+            <nav class="molecule-pagination hidden" aria-label="Paginación">
+              <button class="atom-button atom-button--ghost atom-button--sm" type="button"><span>Anterior</span></button>
+              <p class="molecule-pagination-status" aria-live="polite"></p>
+              <button class="atom-button atom-button--ghost atom-button--sm" type="button"><span>Siguiente</span></button>
+            </nav>
+            <div class="organism-data-table-loading hidden">
+              <span class="atom-spinner" role="status"><span class="visually-hidden">Cargando datos…</span></span>
+            </div>
+          </div>
+          </div>
+        </section>
+
+        <template id="tpl-descuento">
+          <tr>
+            <td><strong class="js-nombre"></strong></td>
+            <td class="organism-log-table-right js-valor"></td>
+            <td class="js-aplica"></td>
+            <td class="js-minimo"></td>
+            <td class="organism-data-table-cell-nowrap js-vigencia"></td>
+            <td><span class="atom-status-chip js-situacion"></span> <span class="atom-status-chip hidden js-usado">Usado</span></td>
+            <td class="organism-log-table-right">
+              <div class="organism-data-table-row-actions">
+                <button class="atom-button atom-button--ghost atom-button--sm hidden js-editar" type="button"><span>Editar</span></button>
+                <button class="atom-button atom-button--ghost atom-button--sm hidden js-cambiar" type="button"><span></span></button>
+              </div>
+            </td>
+          </tr>
+        </template>
+      </main>
+
+      <!-- organism-footer -->
+      <footer class="organism-footer">
+        <div class="organism-footer-inner">
+          <p class="organism-footer-brand">PARKO</p>
+          <p>© <span id="pie-anio"></span> PARKO · Sistema de Gestión de Parqueadero · Parking Lot ABC</p>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Diálogo de confirmación (constitución §V: <dialog>) -->
+    <dialog class="organism-modal organism-modal--sm" id="dialogo-confirmar" aria-labelledby="confirmar-titulo">
+      <header class="organism-modal-head">
+        <div><h2 id="confirmar-titulo"></h2></div>
+        <button class="atom-icon-button" type="button" data-cerrar aria-label="Cerrar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-x"></use></svg></button>
+      </header>
+      <div class="organism-modal-body"><p id="confirmar-mensaje"></p></div>
+      <footer class="organism-modal-foot">
+        <button class="atom-button atom-button--ghost" type="button" data-cerrar><span>Cancelar</span></button>
+        <button class="atom-button atom-button--dark" id="confirmar-aceptar" type="button"><span>Confirmar</span></button>
+      </footer>
+    </dialog>
+
+    <dialog class="organism-modal" id="dialogo-descuento" aria-labelledby="dialogo-descuento-titulo">
+      <header class="organism-modal-head">
+        <div><h2 id="dialogo-descuento-titulo">Nuevo descuento</h2><p>// Fechas en hora de Bogotá; el último día cuenta completo</p></div>
+        <button class="atom-icon-button" type="button" data-cerrar aria-label="Cerrar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-x"></use></svg></button>
+      </header>
+      <div class="organism-modal-body">
+        <form class="organism-form--grid" id="form-descuento" novalidate>
+          <div class="molecule-alert molecule-alert--error molecule-field--full hidden" id="descuento-alerta" aria-live="assertive">
+            <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-alert"></use></svg><p></p>
+          </div>
+          <div class="molecule-field">
+            <label for="descuento-nombre"><span id="descuento-nombre-etiqueta">Nombre</span><span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="descuento-nombre" type="text" required maxlength="60" autocomplete="off" placeholder="Motos fin de semana" aria-describedby="descuento-nombre-error" />
+            
+            <p class="molecule-field-error" id="descuento-nombre-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="descuento-tipo">Tipo<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <select class="atom-select" id="descuento-tipo" required aria-describedby="descuento-tipo-error">
+              <option value="porcentaje">Porcentaje</option>
+              <option value="valor_fijo">Valor fijo</option>
+            </select>
+            <p class="molecule-field-error" id="descuento-tipo-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="descuento-valor"><span id="descuento-valor-etiqueta">Porcentaje (%)</span><span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="descuento-valor" type="number" required min="1" step="any" inputmode="decimal" aria-describedby="descuento-valor-hint descuento-valor-error" />
+            <p class="molecule-field-hint" id="descuento-valor-hint">De 1 a 100.</p>
+            <p class="molecule-field-error" id="descuento-valor-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="descuento-cliente">Tipo de cliente<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <select class="atom-select" id="descuento-cliente" required aria-describedby="descuento-cliente-error">
+              <option value="todos">Todos</option>
+              <option value="ocasional">Ocasional (sin propietario)</option>
+              <option value="registrado">Registrado (con propietario)</option>
+            </select>
+            <p class="molecule-field-error" id="descuento-cliente-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="descuento-vehiculo">Tipo de vehículo<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <select class="atom-select" id="descuento-vehiculo" required aria-describedby="descuento-vehiculo-error">
+              <option value="todos">Carros y motos</option>
+              <option value="carro">Carros</option>
+              <option value="moto">Motos</option>
+            </select>
+            <p class="molecule-field-error" id="descuento-vehiculo-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="descuento-minimo"><span id="descuento-minimo-etiqueta">Minutos mínimos de estadía</span></label>
+            <input class="atom-input" id="descuento-minimo" type="number" min="1" max="10080" step="1" inputmode="numeric" aria-describedby="descuento-minimo-hint descuento-minimo-error" />
+            <p class="molecule-field-hint" id="descuento-minimo-hint">Opcional; de 1 a 10.080.</p>
+            <p class="molecule-field-error" id="descuento-minimo-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="descuento-desde"><span id="descuento-desde-etiqueta">Vigente desde</span><span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="descuento-desde" type="date" required  aria-describedby="descuento-desde-hint descuento-desde-error" />
+            <p class="molecule-field-hint" id="descuento-desde-hint">Desde las 00:00.</p>
+            <p class="molecule-field-error" id="descuento-desde-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="descuento-hasta"><span id="descuento-hasta-etiqueta">Vigente hasta</span><span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="descuento-hasta" type="date" required  aria-describedby="descuento-hasta-hint descuento-hasta-error" />
+            <p class="molecule-field-hint" id="descuento-hasta-hint">Hasta las 23:59 de ese día.</p>
+            <p class="molecule-field-error" id="descuento-hasta-error" aria-live="polite"></p>
+          </div>
+        </form>
+      </div>
+      <footer class="organism-modal-foot">
+        <button class="atom-button atom-button--ghost" type="button" data-cerrar><span>Cancelar</span></button>
+        <button class="atom-button" type="submit" form="form-descuento" id="descuento-guardar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-check"></use></svg><span>Guardar</span></button>
+      </footer>
+    </dialog>
+
+    <div class="molecule-toast-region" id="avisos" aria-live="polite"></div>
+
+    <template id="tpl-aviso">
+      <div class="molecule-toast" role="status">
+        <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-info"></use></svg>
+        <p></p>
+        <button class="molecule-toast-close" type="button" aria-label="Cerrar aviso"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-x"></use></svg></button>
+      </div>
+    </template>
+  </body>
+</html>

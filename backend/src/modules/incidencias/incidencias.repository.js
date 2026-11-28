@@ -1,199 +1,117 @@
+// Único lugar con SQL de incidencias y su seguimiento (spec 013), y de la alerta «incidencia» para el
+// Administrador (RF-INC-04; la bandeja es de la spec 014). Acepta una conexión opcional para la transacción.
 const { pool } = require('../../config/db');
-const { escaparLike, nombreCompleto: nombre } = require('../../utils/sql');
+const { escapeLike } = require('../../utils/sql');
 
+const COLUMNAS = `i.id_incidencia, i.codigo, i.tipo, i.estado, i.fecha_hora_evento, i.descripcion, i.evidencia_url, i.solucion,
+  i.fecha_cierre, i.id_vehiculo, v.placa, v.tipo AS vehiculo_tipo, i.id_celda, c.codigo AS celda_codigo,
+  i.id_operador, u.nombre_completo AS operador_nombre`;
 
-// ---------------------------------------------------------------- tipos
-async function listarTipos({ soloActivos }) {
-  const [filas] = await pool.query(
-    `SELECT t.id, t.nombre, t.descripcion, t.activo,
-            (SELECT COUNT(*) FROM incidencias i WHERE i.tipo_incidencia_id = t.id) AS usos
-       FROM tipos_incidencia t
-      ${soloActivos ? 'WHERE t.activo = 1' : ''}
-      ORDER BY t.nombre`
-  );
-  return filas;
+const DESDE = `FROM incidencia i
+  JOIN vehiculo v ON v.id_vehiculo = i.id_vehiculo
+  JOIN usuario u ON u.id_usuario = i.id_operador
+  LEFT JOIN celda c ON c.id_celda = i.id_celda`;
+
+const aIncidencia = (f) =>
+  f && {
+    idIncidencia: f.id_incidencia,
+    codigo: f.codigo,
+    tipo: f.tipo,
+    estado: f.estado,
+    fechaHoraEvento: f.fecha_hora_evento,
+    descripcion: f.descripcion,
+    tieneEvidencia: Boolean(f.evidencia_url),
+    solucion: f.solucion,
+    fechaCierre: f.fecha_cierre,
+    vehiculo: { idVehiculo: f.id_vehiculo, placa: f.placa, tipo: f.vehiculo_tipo },
+    celda: f.id_celda ? { idCelda: f.id_celda, codigo: f.celda_codigo } : null,
+    operador: { idUsuario: f.id_operador, nombre: f.operador_nombre },
+    // Dato interno: clave del archivo (no sale en la API).
+    _evidencia: f.evidencia_url,
+  };
+
+async function obtenerPorId(id, { conexion = pool, bloquear = false } = {}) {
+  if (bloquear) await conexion.query('SELECT id_incidencia FROM incidencia WHERE id_incidencia = ? FOR UPDATE', [id]);
+  const [[fila]] = await conexion.query(`SELECT ${COLUMNAS} ${DESDE} WHERE i.id_incidencia = ?`, [id]);
+  return aIncidencia(fila) ?? null;
 }
 
-async function buscarTipo(id, conexion = pool) {
-  const [filas] = await conexion.query(
-    'SELECT id, nombre, descripcion, activo, 0 AS usos FROM tipos_incidencia WHERE id = ?',
-    [id]
-  );
-  return filas[0] ?? null;
-}
-
-async function existeNombreTipo(nombreTipo, excluirId = 0) {
-  const [filas] = await pool.query(
-    'SELECT 1 FROM tipos_incidencia WHERE nombre = ? AND id <> ? LIMIT 1',
-    [nombreTipo, excluirId]
-  );
-  return filas.length > 0;
-}
-
-async function insertarTipo({ nombre: n, descripcion }) {
-  const [r] = await pool.query('INSERT INTO tipos_incidencia (nombre, descripcion) VALUES (?, ?)', [
-    n,
-    descripcion ?? null,
-  ]);
-  return r.insertId;
-}
-
-async function actualizarTipo(id, { nombre: n, descripcion }) {
-  await pool.query('UPDATE tipos_incidencia SET nombre = ?, descripcion = ? WHERE id = ?', [
-    n,
-    descripcion ?? null,
-    id,
-  ]);
-}
-
-async function actualizarActivoTipo(id, activo) {
-  await pool.query('UPDATE tipos_incidencia SET activo = ? WHERE id = ?', [activo ? 1 : 0, id]);
-}
-
-// ---------------------------------------------------------------- apoyo
-async function vehiculoPorPlaca(placa, conexion = pool) {
-  const [filas] = await conexion.query(
-    `SELECT v.id, v.placa, v.tipo, v.usuario_id, v.activo
-       FROM vehiculos v WHERE v.placa = ?`,
-    [placa]
-  );
-  return filas[0] ?? null;
-}
-
-async function celda(id, conexion = pool) {
-  const [filas] = await conexion.query('SELECT id, codigo, activa FROM celdas WHERE id = ?', [id]);
-  return filas[0] ?? null;
-}
-
-async function estadiaAbierta(vehiculoId, conexion = pool) {
-  const [filas] = await conexion.query(
-    "SELECT id, celda_id FROM estadias WHERE vehiculo_id = ? AND estado = 'en_curso' LIMIT 1",
-    [vehiculoId]
-  );
-  return filas[0] ?? null;
-}
-
-/**
- * Siguiente código del día: INC-AAAAMMDD-0001. Usa `consecutivos` (fila por día) con
- * bloqueo FOR UPDATE: dos registros simultáneos nunca obtienen el mismo número.
- * Si la fila del día no existe se inicia con el mayor sufijo ya usado ese día.
- */
-async function siguienteCodigo(conexion) {
-  // Fecha y hora del servidor en una sola lectura: el código y fecha_hora siempre coinciden.
-  const [[{ dia, ahora }]] = await conexion.query(
-    "SELECT DATE_FORMAT(NOW(), '%Y%m%d') AS dia, NOW() AS ahora"
-  );
-  const clave = `incidencia-${dia}`;
-  // Lectura sin bloqueo del mayor sufijo del día (INSERT … SELECT bloquearía incidencias
-  // y dos registros simultáneos chocarían en un deadlock); el orden lo da FOR UPDATE.
-  const [[{ maximo }]] = await conexion.query(
-    'SELECT COALESCE(MAX(CAST(SUBSTRING(codigo, 14) AS UNSIGNED)), 0) AS maximo FROM incidencias WHERE codigo LIKE ?',
-    [`INC-${dia}-%`]
-  );
-  await conexion.query(
-    'INSERT INTO consecutivos (nombre, ultimo) VALUES (?, ?) ON DUPLICATE KEY UPDATE nombre = nombre',
-    [clave, maximo]
-  );
-  const [[fila]] = await conexion.query(
-    'SELECT ultimo FROM consecutivos WHERE nombre = ? FOR UPDATE',
-    [clave]
-  );
-  const siguiente = fila.ultimo + 1;
-  await conexion.query('UPDATE consecutivos SET ultimo = ? WHERE nombre = ?', [siguiente, clave]);
-  return { codigo: `INC-${dia}-${String(siguiente).padStart(4, '0')}`, ahora };
-}
-
-async function insertar(d, conexion) {
+async function insertar(d, { conexion }) {
   const [r] = await conexion.query(
-    `INSERT INTO incidencias
-       (codigo, tipo_incidencia_id, vehiculo_id, celda_id, estadia_id, descripcion, fecha_hora, registrada_por)
+    `INSERT INTO incidencia (codigo, tipo, id_vehiculo, id_celda, fecha_hora_evento, descripcion, evidencia_url, id_operador)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      d.codigo,
-      d.tipo_incidencia_id,
-      d.vehiculo_id,
-      d.celda_id ?? null,
-      d.estadia_id ?? null,
-      d.descripcion,
-      d.fecha_hora,
-      d.registrada_por,
-    ]
+    [d.codigo, d.tipo, d.idVehiculo, d.idCelda, d.fechaHoraEvento, d.descripcion, d.evidencia, d.idOperador]
   );
   return r.insertId;
 }
 
-// ---------------------------------------------------------------- consultas
-const SELECT = `
-  SELECT i.id, i.codigo, i.descripcion, i.fecha_hora, i.estadia_id,
-         t.id AS tipo_id, t.nombre AS tipo_nombre,
-         v.id AS vehiculo_id, v.placa, v.tipo AS tipo_vehiculo, v.marca, v.modelo, v.color,
-         p.id AS propietario_id, ${nombre('p')} AS propietario_nombre,
-         c.id AS celda_id, c.codigo AS celda_codigo, pi.nombre AS piso_nombre,
-         r.id AS registrada_por_id, ${nombre('r')} AS registrada_por_nombre
-    FROM incidencias i
-    JOIN tipos_incidencia t ON t.id = i.tipo_incidencia_id
-    JOIN vehiculos v ON v.id = i.vehiculo_id
-    LEFT JOIN usuarios p ON p.id = v.usuario_id
-    LEFT JOIN celdas c ON c.id = i.celda_id
-    LEFT JOIN pisos pi ON pi.id = c.piso_id
-    JOIN usuarios r ON r.id = i.registrada_por`;
-
-function filtros({ tipo_id, placa, desde, hasta, propietario_id }) {
+/** RF-INC-05: búsqueda por código o placa y filtros por tipo, estado y fecha del evento. */
+async function listar({ q, tipo, estado, desde, hasta, limit, offset }) {
   const condiciones = [];
   const valores = [];
-  if (tipo_id) {
-    condiciones.push('i.tipo_incidencia_id = ?');
-    valores.push(tipo_id);
+  if (q) {
+    const patron = `%${escapeLike(q)}%`;
+    condiciones.push('(i.codigo LIKE ? OR v.placa LIKE ?)');
+    valores.push(patron, patron.toUpperCase().replace(/[\s.-]/g, ''));
   }
-  if (placa) {
-    condiciones.push('v.placa LIKE ?');
-    valores.push(`%${escaparLike(placa)}%`);
+  if (tipo) {
+    condiciones.push('i.tipo = ?');
+    valores.push(tipo);
+  }
+  if (estado) {
+    condiciones.push('i.estado = ?');
+    valores.push(estado);
   }
   if (desde) {
-    condiciones.push('i.fecha_hora >= ?');
-    valores.push(`${desde} 00:00:00`);
+    condiciones.push('i.fecha_hora_evento >= ?');
+    valores.push(desde);
   }
   if (hasta) {
-    condiciones.push('i.fecha_hora <= ?');
-    valores.push(`${hasta} 23:59:59`);
+    condiciones.push('i.fecha_hora_evento < ?');
+    valores.push(hasta);
   }
-  if (propietario_id) {
-    condiciones.push('v.usuario_id = ?');
-    valores.push(propietario_id);
-  }
-  return { where: condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '', valores };
+  const donde = condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '';
+  const [filas] = await pool.query(`SELECT ${COLUMNAS} ${DESDE} ${donde} ORDER BY i.fecha_hora_evento DESC, i.id_incidencia DESC LIMIT ? OFFSET ?`, [
+    ...valores,
+    limit,
+    offset,
+  ]);
+  const [[{ total }]] = await pool.query(`SELECT COUNT(*) AS total ${DESDE} ${donde}`, valores);
+  return { filas: filas.map(aIncidencia), total: Number(total) };
 }
 
-async function listar(consulta, { limit, offset }) {
-  const { where, valores } = filtros(consulta);
-  const [filas] = await pool.query(
-    `${SELECT} ${where} ORDER BY i.fecha_hora DESC, i.id DESC LIMIT ? OFFSET ?`,
-    [...valores, limit, offset]
+/** RF-INC-06: historial de seguimiento, del más antiguo al más reciente. */
+async function seguimientos(idIncidencia, { conexion = pool } = {}) {
+  const [filas] = await conexion.query(
+    `SELECT s.id_seguimiento, s.nota, s.fecha, s.id_usuario, u.nombre_completo
+       FROM seguimiento_incidencia s JOIN usuario u ON u.id_usuario = s.id_usuario
+      WHERE s.id_incidencia = ? ORDER BY s.fecha, s.id_seguimiento`,
+    [idIncidencia]
   );
-  const [[{ total }]] = await pool.query(
-    `SELECT COUNT(*) AS total FROM incidencias i JOIN vehiculos v ON v.id = i.vehiculo_id ${where}`,
-    valores
-  );
-  return { filas, total };
+  return filas.map((f) => ({ idSeguimiento: f.id_seguimiento, nota: f.nota, fecha: f.fecha, usuario: { idUsuario: f.id_usuario, nombre: f.nombre_completo } }));
 }
 
-async function buscarDetalle(id) {
-  const [filas] = await pool.query(`${SELECT} WHERE i.id = ?`, [id]);
-  return filas[0] ?? null;
+async function insertarSeguimiento({ idIncidencia, nota, idUsuario, fecha }, { conexion }) {
+  const [r] = await conexion.query('INSERT INTO seguimiento_incidencia (id_incidencia, nota, id_usuario, fecha) VALUES (?, ?, ?, ?)', [
+    idIncidencia,
+    nota,
+    idUsuario,
+    fecha,
+  ]);
+  return r.insertId;
 }
 
-module.exports = {
-  listarTipos,
-  buscarTipo,
-  existeNombreTipo,
-  insertarTipo,
-  actualizarTipo,
-  actualizarActivoTipo,
-  vehiculoPorPlaca,
-  celda,
-  estadiaAbierta,
-  siguienteCodigo,
-  insertar,
-  listar,
-  buscarDetalle,
-};
+async function cambiarEstado(id, estado, { conexion }) {
+  await conexion.query('UPDATE incidencia SET estado = ? WHERE id_incidencia = ?', [estado, id]);
+}
+
+async function cerrar(id, { solucion, fecha }, { conexion }) {
+  await conexion.query("UPDATE incidencia SET estado = 'cerrada', solucion = ?, fecha_cierre = ? WHERE id_incidencia = ?", [solucion, fecha, id]);
+}
+
+/** RF-INC-04 / RF-MON-04: alerta «incidencia» para el Administrador. */
+async function insertarAlerta({ mensaje, referencia, fecha }, { conexion }) {
+  await conexion.query("INSERT INTO alerta (tipo, mensaje, referencia, fecha) VALUES ('incidencia', ?, ?, ?)", [mensaje.slice(0, 200), referencia, fecha]);
+}
+
+module.exports = { obtenerPorId, insertar, listar, seguimientos, insertarSeguimiento, cambiarEstado, cerrar, insertarAlerta };

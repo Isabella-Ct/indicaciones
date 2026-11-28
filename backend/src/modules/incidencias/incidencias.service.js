@@ -1,174 +1,141 @@
-// Incidencias — REQ-INCD-1: código único autogenerado, vehículo afectado, fecha y hora del
-// servidor y tipo. Notifica a los administradores y al propietario del vehículo.
-const { enTransaccion } = require('../../config/db');
+// Incidencias (spec 013): RF-INC-01..08, RN-28. El registro, su código consecutivo y la alerta al Administrador van
+// en una transacción (research R-02); la evidencia se guarda antes y se borra si el registro falla (R-03). Las
+// incidencias no se borran: se cierran con una solución y ya no admiten cambios (R-05).
+const { withTransaction } = require('../../config/db');
+const repositorio = require('./incidencias.repository');
+const vehiculos = require('../vehiculos/vehiculos.repository');
+const celdasRepositorio = require('../celdas/celdas.repository');
+const movimientosRepositorio = require('../movimientos/movimientos.repository');
+const reloj = require('../../utils/reloj');
 const { AppError, errores } = require('../../utils/errores');
+const { registrarBitacora } = require('../../utils/bitacora');
+const { siguienteConsecutivo } = require('../../utils/consecutivos');
 const { aLimites, meta } = require('../../utils/paginacion');
-const notificaciones = require('../notificaciones/notificaciones.service');
-const repo = require('./incidencias.repository');
+const { aIsoBogota, anioActualBogota, sumarDias } = require('../../utils/fechas');
+const { guardarArchivo, borrarArchivo, rutaArchivo, tipoDeClave } = require('../../utils/archivos');
+const { placaValida, mensajeFormato } = require('../vehiculos/vehiculos.reglas');
+const { TIPOS, fechaEventoValida, puedeCambiar, estadoTrasNota } = require('./incidencias.reglas');
 
-const aPublicoTipo = (t) => ({
-  id: t.id,
-  nombre: t.nombre,
-  descripcion: t.descripcion,
-  activo: Boolean(t.activo),
-  usos: Number(t.usos ?? 0),
+const NO_ENCONTRADA = () => errores.noEncontrado('Incidencia no encontrada.', 'INCIDENCIA_NO_ENCONTRADA');
+const CERRADA = () => errores.conflicto('La incidencia está cerrada: ya no admite cambios.', 'INCIDENCIA_CERRADA');
+const campo = (nombre, mensaje) => errores.validacion([{ campo: nombre, mensaje }]);
+const SIN_REGISTRAR = 'Sin registrar';
+
+const bitacora = (conexion, actor, accion, idRegistro, nuevo, anterior = null) =>
+  registrarBitacora(conexion, { idUsuario: actor.idUsuario, accion, entidad: 'incidencia', idRegistro, anterior, nuevo, ip: actor.ip });
+
+/** Incidencia para la API: fechas en ISO de Bogotá, nombre del tipo y sin la clave del archivo. */
+function publica(i) {
+  if (!i) return i;
+  const { _evidencia: _e, ...resto } = i;
+  return { ...resto, tipoNombre: TIPOS[i.tipo], fechaHoraEvento: aIsoBogota(i.fechaHoraEvento), fechaCierre: aIsoBogota(i.fechaCierre) };
+}
+
+/** Detalle con el seguimiento (RF-INC-06). */
+async function detalle(id) {
+  const incidencia = await repositorio.obtenerPorId(id);
+  if (!incidencia) throw NO_ENCONTRADA();
+  const seguimientos = (await repositorio.seguimientos(id)).map((s) => ({ ...s, fecha: aIsoBogota(s.fecha) }));
+  return { ...publica(incidencia), seguimientos };
+}
+
+// ---------------------------------------------------------------- HU-56
+/** Vehículo por placa (bloqueado); si no está registrado, se crea ocasional con su tipo (RF-MOV-05). */
+async function vehiculoPara(conexion, { placa, tipoVehiculo }, actor, ahora) {
+  const existente = await vehiculos.obtenerPorPlaca(placa, { conexion, bloquear: true });
+  if (existente) return existente;
+  if (!tipoVehiculo) throw campo('tipoVehiculo', 'La placa no está registrada: indique si es carro o moto.');
+  if (!placaValida(placa, tipoVehiculo)) throw campo('placa', mensajeFormato(tipoVehiculo));
+  const nuevo = { placa, tipo: tipoVehiculo, color: SIN_REGISTRAR, marca: SIN_REGISTRAR, modelo: anioActualBogota(ahora) };
+  const idVehiculo = await vehiculos.insertar(nuevo, { conexion });
+  await registrarBitacora(conexion, { idUsuario: actor.idUsuario, accion: 'crear', entidad: 'vehiculo', idRegistro: idVehiculo, nuevo: { ...nuevo, ocasional: true }, ip: actor.ip });
+  return { idVehiculo, placa, tipo: tipoVehiculo };
+}
+
+/** RF-INC-01..04. `archivo`: { buffer, ext } de la evidencia (opcional). */
+async function registrar(datos, archivo, actor) {
+  const ahora = reloj.ahora();
+  if (!fechaEventoValida(datos.fechaHoraEvento, ahora)) throw campo('fechaHoraEvento', 'La fecha y hora del evento no puede ser futura.');
+  const evidencia = archivo ? await guardarArchivo('incidencias', archivo.buffer, archivo.ext) : null;
+  let id;
+  try {
+    id = await withTransaction(async (conexion) => {
+      const vehiculo = await vehiculoPara(conexion, datos, actor, ahora);
+      // Celda: la indicada o la que ocupa el vehículo si está dentro (o ninguna).
+      let idCelda;
+      if (datos.idCelda) {
+        const celda = await celdasRepositorio.obtenerPorId(datos.idCelda, { conexion });
+        if (!celda) throw campo('idCelda', 'La celda no existe.');
+        idCelda = celda.idCelda;
+      } else {
+        idCelda = (await movimientosRepositorio.abiertoDeVehiculo(vehiculo.idVehiculo, { conexion }))?.celda.idCelda ?? null;
+      }
+      // RF-INC-02: el número se toma dentro de la transacción (sin huecos si el registro falla).
+      const codigo = await siguienteConsecutivo(conexion, 'incidencia');
+      const idIncidencia = await repositorio.insertar(
+        { codigo, tipo: datos.tipo, idVehiculo: vehiculo.idVehiculo, idCelda, fechaHoraEvento: datos.fechaHoraEvento, descripcion: datos.descripcion, evidencia, idOperador: actor.idUsuario },
+        { conexion }
+      );
+      await repositorio.insertarAlerta({ mensaje: `Incidencia ${codigo}: ${TIPOS[datos.tipo]} de ${vehiculo.placa}`, referencia: `incidencia:${idIncidencia}`, fecha: ahora }, { conexion });
+      await bitacora(conexion, actor, 'registrar', idIncidencia, { codigo, tipo: datos.tipo, placa: vehiculo.placa, idCelda, fechaHoraEvento: aIsoBogota(datos.fechaHoraEvento), evidencia: Boolean(evidencia) });
+      return idIncidencia;
+    });
+  } catch (error) {
+    if (evidencia) await borrarArchivo(evidencia);
+    throw error;
+  }
+  return detalle(id);
+}
+
+// ---------------------------------------------------------------- HU-57
+/** Fechas 'AAAA-MM-DD' de Bogotá → [desde 00:00, hasta + 1 día 00:00). */
+const rango = ({ desde, hasta }) => ({
+  desde: desde ? new Date(`${desde}T00:00:00-05:00`) : undefined,
+  hasta: hasta ? new Date(`${sumarDias(hasta, 1)}T00:00:00-05:00`) : undefined,
 });
 
-function aPublico(i, { verRegistrador = true } = {}) {
-  return {
-    id: i.id,
-    codigo: i.codigo,
-    fecha_hora: i.fecha_hora,
-    descripcion: i.descripcion,
-    tipo: { id: i.tipo_id, nombre: i.tipo_nombre },
-    vehiculo: {
-      id: i.vehiculo_id,
-      placa: i.placa,
-      tipo: i.tipo_vehiculo,
-      marca: i.marca,
-      modelo: i.modelo,
-      color: i.color,
-      propietario: i.propietario_id
-        ? { id: i.propietario_id, nombre_completo: i.propietario_nombre }
-        : null,
-    },
-    celda: i.celda_id ? { id: i.celda_id, codigo: i.celda_codigo, piso: i.piso_nombre } : null,
-    estadia_id: i.estadia_id,
-    registrada_por: verRegistrador
-      ? { id: i.registrada_por_id, nombre_completo: i.registrada_por_nombre }
-      : undefined,
-  };
+/** RF-INC-05. */
+async function listar(filtros) {
+  const { filas, total } = await repositorio.listar({ ...filtros, ...rango(filtros), ...aLimites(filtros) });
+  return { data: filas.map(publica), meta: meta(filtros, total) };
 }
 
-// ---------------------------------------------------------------- tipos
-async function listarTipos({ soloActivos }) {
-  return (await repo.listarTipos({ soloActivos })).map(aPublicoTipo);
+const obtener = (id) => detalle(id);
+
+/** GET /incidencias/:id/evidencia [Propuesta]: ruta y tipo del archivo. */
+async function evidencia(id) {
+  const incidencia = await repositorio.obtenerPorId(id);
+  if (!incidencia) throw NO_ENCONTRADA();
+  const ruta = incidencia._evidencia ? rutaArchivo(incidencia._evidencia) : null;
+  if (!ruta) throw new AppError(404, 'SIN_EVIDENCIA', 'La incidencia no tiene evidencia.');
+  return { ruta, tipo: tipoDeClave(incidencia._evidencia) };
 }
 
-async function validarNombreTipo(nombre, excluirId) {
-  if (await repo.existeNombreTipo(nombre, excluirId)) {
-    throw new AppError(409, 'NOMBRE_DUPLICADO', `Ya existe el tipo "${nombre}".`, [
-      { campo: 'nombre', mensaje: 'Este nombre ya existe.' },
-    ]);
-  }
-}
-
-async function crearTipo(datos) {
-  await validarNombreTipo(datos.nombre);
-  return aPublicoTipo(await repo.buscarTipo(await repo.insertarTipo(datos)));
-}
-
-async function actualizarTipo(id, datos) {
-  if (!(await repo.buscarTipo(id))) throw errores.noEncontrado('El tipo de incidencia no existe.');
-  await validarNombreTipo(datos.nombre, id);
-  await repo.actualizarTipo(id, datos);
-  return aPublicoTipo(await repo.buscarTipo(id));
-}
-
-/** Borrado lógico: un tipo con historial nunca se elimina. */
-async function cambiarActivoTipo(id, activo) {
-  if (!(await repo.buscarTipo(id))) throw errores.noEncontrado('El tipo de incidencia no existe.');
-  await repo.actualizarActivoTipo(id, activo);
-  return aPublicoTipo(await repo.buscarTipo(id));
-}
-
-// ---------------------------------------------------------------- incidencias
-async function crear({ tipo_incidencia_id, placa, celda_id, descripcion }, solicitante) {
-  const id = await enTransaccion(async (conexion) => {
-    const tipo = await repo.buscarTipo(tipo_incidencia_id, conexion);
-    if (!tipo || !tipo.activo) {
-      throw errores.validacion([
-        { campo: 'tipo_incidencia_id', mensaje: 'El tipo no existe o está inactivo.' },
-      ]);
-    }
-    const vehiculo = await repo.vehiculoPorPlaca(placa, conexion);
-    if (!vehiculo) {
-      throw new AppError(404, 'VEHICULO_NO_REGISTRADO', `La placa ${placa} no está registrada.`, [
-        { campo: 'placa', mensaje: 'Esta placa no está registrada.' },
-      ]);
-    }
-    if (celda_id) {
-      const c = await repo.celda(celda_id, conexion);
-      if (!c || !c.activa)
-        throw errores.validacion([{ campo: 'celda_id', mensaje: 'La celda no existe.' }]);
-    }
-    // Si el vehículo está dentro, la incidencia queda ligada a su estadía (y a su celda
-    // cuando no se indicó otra).
-    const estadia = await repo.estadiaAbierta(vehiculo.id, conexion);
-    const { codigo, ahora } = await repo.siguienteCodigo(conexion);
-    const nuevaId = await repo.insertar(
-      {
-        codigo,
-        tipo_incidencia_id,
-        vehiculo_id: vehiculo.id,
-        celda_id: celda_id ?? estadia?.celda_id ?? null,
-        estadia_id: estadia?.id ?? null,
-        descripcion,
-        fecha_hora: ahora,
-        registrada_por: solicitante.id,
-      },
-      conexion
-    );
-
-    const lugar = celda_id || estadia ? ' en el parqueadero' : '';
-    await notificaciones.notificar(
-      {
-        rol: 'administrador',
-        titulo: `Nueva incidencia: ${tipo.nombre}`,
-        mensaje: `${codigo} · ${tipo.nombre} con el vehículo ${vehiculo.placa}${lugar}. Registró: ${solicitante.nombre_completo}.`,
-        tipo: 'incidencia',
-        enlace: `/app/incidencias.html?id=${nuevaId}`,
-        excluirUsuarioId: solicitante.id,
-      },
-      conexion
-    );
-    if (vehiculo.usuario_id) {
-      await notificaciones.notificar(
-        {
-          usuarios: [vehiculo.usuario_id],
-          titulo: 'Incidencia con tu vehículo',
-          mensaje: `Se registró una incidencia (${tipo.nombre}) con tu vehículo ${vehiculo.placa}. Código ${codigo}. Acércate a la caseta si necesitas más información.`,
-          tipo: 'incidencia',
-          enlace: '/app/mis-movimientos.html#incidencias',
-        },
-        conexion
-      );
-    }
-    return nuevaId;
+// ---------------------------------------------------------------- HU-58
+/** RF-INC-07: nota con el usuario y la hora del servidor; la primera pasa la incidencia a «en seguimiento». */
+async function agregarSeguimiento(id, { nota }, actor) {
+  await withTransaction(async (conexion) => {
+    const incidencia = await repositorio.obtenerPorId(id, { conexion, bloquear: true });
+    if (!incidencia) throw NO_ENCONTRADA();
+    if (!puedeCambiar(incidencia.estado)) throw CERRADA();
+    const idSeguimiento = await repositorio.insertarSeguimiento({ idIncidencia: id, nota, idUsuario: actor.idUsuario, fecha: reloj.ahora() }, { conexion });
+    const nuevo = estadoTrasNota(incidencia.estado);
+    if (nuevo !== incidencia.estado) await repositorio.cambiarEstado(id, nuevo, { conexion });
+    await bitacora(conexion, actor, 'seguimiento', id, { idSeguimiento, estado: nuevo }, { estado: incidencia.estado });
   });
-  return aPublico(await repo.buscarDetalle(id));
+  return detalle(id);
 }
 
-async function listar(consulta) {
-  const { filas, total } = await repo.listar(consulta, aLimites(consulta));
-  return { data: filas.map((i) => aPublico(i)), meta: meta(consulta, total) };
+/** RF-INC-08, RN-28: cierre con solución; después ya no admite cambios. */
+async function cerrar(id, { solucion }, actor) {
+  await withTransaction(async (conexion) => {
+    const incidencia = await repositorio.obtenerPorId(id, { conexion, bloquear: true });
+    if (!incidencia) throw NO_ENCONTRADA();
+    if (!puedeCambiar(incidencia.estado)) throw CERRADA();
+    await repositorio.cerrar(id, { solucion, fecha: reloj.ahora() }, { conexion });
+    await bitacora(conexion, actor, 'cerrar', id, { estado: 'cerrada', solucion }, { estado: incidencia.estado });
+  });
+  return detalle(id);
 }
 
-async function obtener(id) {
-  const i = await repo.buscarDetalle(id);
-  if (!i) throw errores.noEncontrado('La incidencia no existe.');
-  return aPublico(i);
-}
-
-/** Cliente: incidencias de sus vehículos (sin el nombre del empleado que registró). */
-async function deCliente(usuarioId, consulta) {
-  const { filas, total } = await repo.listar(
-    { ...consulta, propietario_id: usuarioId },
-    aLimites(consulta)
-  );
-  return {
-    data: filas.map((i) => aPublico(i, { verRegistrador: false })),
-    meta: meta(consulta, total),
-  };
-}
-
-module.exports = {
-  listarTipos,
-  crearTipo,
-  actualizarTipo,
-  cambiarActivoTipo,
-  crear,
-  listar,
-  obtener,
-  deCliente,
-};
+module.exports = { registrar, listar, obtener, evidencia, agregarSeguimiento, cerrar };

@@ -1,47 +1,23 @@
-const service = require('./incidencias.service');
+// Traduce HTTP ↔ servicio de incidencias (sin SQL ni reglas de negocio).
+const servicio = require('./incidencias.service');
+const { ok, creado } = require('../../utils/respuesta');
 
-async function listarTipos(req, res) {
-  // Quien no gestiona tipos (operador) solo ve los activos.
-  const gestiona = req.usuario.permisos.includes('incidencias.gestionar_tipos');
-  const soloActivos = !gestiona || req.validado.query.activos === '1';
-  res.json({ data: await service.listarTipos({ soloActivos }) });
-}
-
-async function crearTipo(req, res) {
-  res.status(201).json({ data: await service.crearTipo(req.body) });
-}
-
-async function actualizarTipo(req, res) {
-  res.json({ data: await service.actualizarTipo(req.validado.params.id, req.body) });
-}
-
-async function cambiarActivoTipo(req, res) {
-  res.json({ data: await service.cambiarActivoTipo(req.validado.params.id, req.body.activo) });
-}
-
-async function crear(req, res) {
-  res.status(201).json({ data: await service.crear(req.body, req.usuario) });
-}
-
-async function listar(req, res) {
-  res.json(await service.listar(req.validado.query));
-}
-
-async function obtener(req, res) {
-  res.json({ data: await service.obtener(req.validado.params.id) });
-}
-
-async function mias(req, res) {
-  res.json(await service.deCliente(req.usuario.id, req.validado.query));
-}
+const actor = (req) => ({ idUsuario: req.usuario.idUsuario, permisos: req.usuario.permisos, ip: req.ip });
+const id = (req) => req.validado.params.id;
 
 module.exports = {
-  listarTipos,
-  crearTipo,
-  actualizarTipo,
-  cambiarActivoTipo,
-  crear,
-  listar,
-  obtener,
-  mias,
+  registrar: async (req, res) => creado(res, await servicio.registrar(req.validado.body, req.evidencia, actor(req))),
+  listar: async (req, res) => {
+    const { data, meta } = await servicio.listar(req.validado.query);
+    return ok(res, data, meta);
+  },
+  obtener: async (req, res) => ok(res, await servicio.obtener(id(req))),
+  /** RF-INC-06 [Propuesta]: la imagen, privada (no usa el sobre JSON). */
+  evidencia: async (req, res) => {
+    const { ruta, tipo } = await servicio.evidencia(id(req));
+    res.set('Cache-Control', 'private, no-store');
+    return res.type(tipo).sendFile(ruta);
+  },
+  agregarSeguimiento: async (req, res) => creado(res, await servicio.agregarSeguimiento(id(req), req.validado.body, actor(req))),
+  cerrar: async (req, res) => ok(res, await servicio.cerrar(id(req), req.validado.body, actor(req))),
 };

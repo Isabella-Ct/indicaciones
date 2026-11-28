@@ -1,0 +1,137 @@
+openapi: 3.1.0
+info:
+  title: Parking Lot ABC — API v1 · 013 Incidencias
+  version: 1.0.0
+  description: |
+    Contrato de la spec 013 (SRS v2.0 Apéndice B.1 §4.13). Sobre común { ok, data, meta, error }; errores y paginación
+    como en specs/001-roles-permisos/contracts/openapi.yaml. `x-permiso`: permiso exigido (RNF-SEG-04).
+    Fechas en hora de Bogotá 'AAAA-MM-DDTHH:MM' (evento) y 'AAAA-MM-DD' (filtros).
+servers:
+  - url: http://localhost:3000/api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Incidencias
+
+paths:
+  /incidencias:
+    post:
+      tags: [Incidencias]
+      summary: Registrar una incidencia (HU-56 · RF-INC-01..04)
+      x-permiso: incidencias.crear
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IncidenciaEntrada' }
+            example: { tipo: rayon, placa: ABC123, fechaHoraEvento: '2026-11-27T09:40', descripcion: Rayón en la puerta del conductor al maniobrar }
+          multipart/form-data:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/IncidenciaEntrada'
+                - type: object
+                  properties: { evidencia: { type: string, format: binary, description: 'JPG o PNG ≤ 5 MB' } }
+      responses:
+        '201': { description: 'Abierta con código INC- y alerta al Administrador', content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaIncidencia' } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '422': { $ref: '#/components/responses/Validacion', description: 'sin tipo o placa · fecha futura · descripción corta · placa nueva sin tipoVehiculo · evidencia no válida o > 5 MB' }
+    get:
+      tags: [Incidencias]
+      summary: Consultar incidencias (HU-57 · RF-INC-05)
+      x-permiso: incidencias.ver
+      parameters:
+        - { name: q, in: query, description: código o placa, schema: { type: string } }
+        - { name: tipo, in: query, schema: { type: string, enum: [rayon, choque, atropellamiento, golpe_muro] } }
+        - { name: estado, in: query, schema: { type: string, enum: [abierta, en_seguimiento, cerrada] } }
+        - { name: desde, in: query, schema: { type: string, format: date } }
+        - { name: hasta, in: query, schema: { type: string, format: date } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200': { description: Incidencias, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/Incidencia' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+
+  /incidencias/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get:
+      tags: [Incidencias]
+      summary: Detalle con evidencia y seguimiento (HU-57 · RF-INC-06)
+      x-permiso: incidencias.ver
+      responses:
+        '200': { description: Detalle, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaIncidencia' } } } }
+        '404': { description: INCIDENCIA_NO_ENCONTRADA }
+
+  /incidencias/{id}/evidencia:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    get:
+      tags: [Incidencias]
+      summary: Imagen de la evidencia `[Propuesta]` (RF-INC-06, RNF-PRI-03)
+      x-permiso: incidencias.ver
+      responses:
+        '200': { description: image/jpeg o image/png, content: { image/jpeg: {}, image/png: {} } }
+        '404': { description: 'INCIDENCIA_NO_ENCONTRADA · SIN_EVIDENCIA' }
+
+  /incidencias/{id}/seguimientos:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    post:
+      tags: [Incidencias]
+      summary: Agregar una nota de seguimiento (HU-58 · RF-INC-07)
+      x-permiso: incidencias.editar
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [nota], properties: { nota: { type: string, minLength: 5, maxLength: 500 } } } } } }
+      responses:
+        '201': { description: 'Nota con fecha y usuario; la incidencia pasa a en_seguimiento', content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaIncidencia' } } } }
+        '404': { description: INCIDENCIA_NO_ENCONTRADA }
+        '409': { description: INCIDENCIA_CERRADA }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /incidencias/{id}/cierre:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch:
+      tags: [Incidencias]
+      summary: Cerrar con la solución (HU-58 · RF-INC-08)
+      x-permiso: incidencias.editar
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [solucion], properties: { solucion: { type: string, minLength: 10, maxLength: 500 } } } } } }
+      responses:
+        '200': { description: Cerrada; ya no admite cambios, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaIncidencia' } } } }
+        '404': { description: INCIDENCIA_NO_ENCONTRADA }
+        '409': { description: INCIDENCIA_CERRADA }
+        '422': { $ref: '#/components/responses/Validacion', description: sin solución }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    id: { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+  schemas:
+    Meta: { type: object, properties: { page: { type: integer }, limit: { type: integer }, total: { type: integer } } }
+    IncidenciaEntrada:
+      type: object
+      required: [tipo, placa, fechaHoraEvento, descripcion]
+      properties:
+        tipo: { type: string, enum: [rayon, choque, atropellamiento, golpe_muro] }
+        placa: { type: string }
+        tipoVehiculo: { type: string, enum: [carro, moto], description: obligatorio si la placa no está registrada }
+        idCelda: { type: integer }
+        fechaHoraEvento: { type: string, example: '2026-11-27T09:40' }
+        descripcion: { type: string, minLength: 10, maxLength: 500 }
+    Incidencia:
+      type: object
+      properties:
+        idIncidencia: { type: integer }
+        codigo: { type: string, example: INC-000001 }
+        tipo: { type: string }
+        tipoNombre: { type: string }
+        estado: { type: string, enum: [abierta, en_seguimiento, cerrada] }
+        fechaHoraEvento: { type: string }
+        vehiculo: { type: object }
+        celda: { type: [object, 'null'] }
+        operador: { type: object }
+        tieneEvidencia: { type: boolean }
+        descripcion: { type: string }
+        solucion: { type: [string, 'null'] }
+        fechaCierre: { type: [string, 'null'] }
+        seguimientos: { type: array, items: { type: object }, description: solo en el detalle }
+    RespuestaIncidencia: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Incidencia' } } }
+  responses:
+    SinPermiso: { description: Sin permiso (403 SIN_PERMISO) }
+    Validacion: { description: Datos inválidos (422) con detalle por campo }

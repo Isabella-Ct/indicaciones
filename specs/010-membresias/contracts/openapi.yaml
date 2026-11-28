@@ -1,0 +1,176 @@
+openapi: 3.1.0
+info:
+  title: Parking Lot ABC — API v1 · 010 Membresías
+  version: 1.0.0
+  description: |
+    Contrato de la spec 010 (SRS v2.0 Apéndice B.1 §4.10). Sobre común { ok, data, meta, error }; errores y paginación
+    como en specs/001-roles-permisos/contracts/openapi.yaml. `x-permiso`: permiso exigido (RNF-SEG-04).
+    El pago usa las reglas de la spec 009 (efectivo con cambio; referencia en los otros métodos).
+servers:
+  - url: http://localhost:3000/api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Planes
+  - name: Membresías
+
+paths:
+  /planes-membresia:
+    get:
+      tags: [Planes]
+      summary: Planes de membresía (HU-45, HU-48)
+      x-permiso: planes.ver
+      parameters:
+        - { name: estado, in: query, schema: { type: string, enum: [activo, inactivo] } }
+        - { name: tipoVehiculo, in: query, schema: { type: string, enum: [carro, moto] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200': { description: Planes, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/Plan' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+    post:
+      tags: [Planes]
+      summary: Registrar un plan (HU-45 · RF-MEM-01)
+      x-permiso: planes.crear
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PlanEntrada' }, example: { nombre: Mensual carro, tipoVehiculo: carro, valorMensual: 180000, diasVigencia: 30, beneficios: Entradas y salidas ilimitadas } } } }
+      responses:
+        '201': { description: Activo, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaPlan' } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '409': { description: PLAN_DUPLICADO }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /planes-membresia/{id}:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    put:
+      tags: [Planes]
+      summary: Actualizar un plan (HU-45 · RF-MEM-01)
+      x-permiso: planes.editar
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PlanEntrada' } } } }
+      responses:
+        '200': { description: Actualizado, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaPlan' } } } }
+        '404': { description: PLAN_NO_ENCONTRADO }
+        '409': { description: PLAN_DUPLICADO }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /planes-membresia/{id}/estado:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch:
+      tags: [Planes]
+      summary: Activar o inactivar un plan (HU-45 · RF-MEM-02)
+      x-permiso: planes.cambiar_estado
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [estado], properties: { estado: { type: string, enum: [activo, inactivo] } } } } } }
+      responses:
+        '200': { description: 'Estado cambiado; las membresías vigentes siguen', content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaPlan' } } } }
+        '404': { description: PLAN_NO_ENCONTRADO }
+
+  /membresias:
+    post:
+      tags: [Membresías]
+      summary: Suscribir un vehículo a un plan con su pago (HU-46 · RF-MEM-03..05)
+      x-permiso: 'membresias.crear (el Cliente, solo sus vehículos)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [idVehiculo, idPlan, pago], properties: { idVehiculo: { type: integer }, idPlan: { type: integer }, pago: { $ref: '#/components/schemas/PagoEntrada' } } }
+            example: { idVehiculo: 1, idPlan: 1, pago: { metodo: efectivo, valorRecibido: 200000 } }
+      responses:
+        '201': { description: '{ membresia, factura }', content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaSuscripcion' } } } }
+        '403': { description: 'SIN_PERMISO · vehículo de otro cliente' }
+        '409': { description: 'MEMBRESIA_ACTIVA «El vehículo ya tiene una membresía activa hasta 15/12/2026» · PLAN_INACTIVO' }
+        '422': { $ref: '#/components/responses/Validacion', description: 'tipo del plan distinto · vehículo sin propietario · pago inválido' }
+    get:
+      tags: [Membresías]
+      summary: Listado para el personal `[Propuesta]` (HU-47)
+      x-permiso: membresias.ver
+      parameters:
+        - { name: q, in: query, description: placa, nombre o documento del cliente, schema: { type: string } }
+        - { name: estado, in: query, schema: { type: string, enum: [activa, vencida, cancelada] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200': { description: Membresías, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/Membresia' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+
+  /membresias/{id}/renovacion:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    post:
+      tags: [Membresías]
+      summary: Renovar con pago (HU-47 · RF-MEM-06)
+      x-permiso: membresias.editar
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [pago], properties: { pago: { $ref: '#/components/schemas/PagoEntrada' } } } } } }
+      responses:
+        '201': { description: '{ membresia, periodo: { desde, hasta }, factura }' }
+        '404': { description: MEMBRESIA_NO_ENCONTRADA }
+        '409': { description: 'MEMBRESIA_CANCELADA · PLAN_INACTIVO · MEMBRESIA_ACTIVA (vencida y el vehículo ya tiene otra)' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /membresias/{id}/cancelacion:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch:
+      tags: [Membresías]
+      summary: Cancelar con motivo (HU-47 · RF-MEM-07)
+      x-permiso: membresias.editar
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [motivo], properties: { motivo: { type: string, minLength: 10, maxLength: 200 } } } } } }
+      responses:
+        '200': { description: Cancelada, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Membresia' } } } } } }
+        '404': { description: MEMBRESIA_NO_ENCONTRADA }
+        '409': { description: MEMBRESIA_NO_ACTIVA }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /usuarios/me/membresias:
+    get:
+      tags: [Membresías]
+      summary: Mi membresía (HU-48 · RF-MEM-09, RF-MEM-10)
+      x-permiso: perfil.ver
+      responses:
+        '200':
+          description: Sus membresías con facturas; planes disponibles si no tiene una activa
+          content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: object, properties: { membresias: { type: array, items: { $ref: '#/components/schemas/Membresia' } }, planesDisponibles: { type: array, items: { $ref: '#/components/schemas/Plan' } } } } } } } }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    id: { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+  schemas:
+    Meta: { type: object, properties: { page: { type: integer }, limit: { type: integer }, total: { type: integer } } }
+    PlanEntrada:
+      type: object
+      required: [nombre, tipoVehiculo, valorMensual, diasVigencia]
+      properties:
+        nombre: { type: string, minLength: 3, maxLength: 60 }
+        tipoVehiculo: { type: string, enum: [carro, moto] }
+        valorMensual: { type: number, exclusiveMinimum: 0 }
+        diasVigencia: { type: integer, minimum: 1, maximum: 366 }
+        beneficios: { type: [string, 'null'], maxLength: 300 }
+    Plan:
+      allOf:
+        - $ref: '#/components/schemas/PlanEntrada'
+        - type: object
+          properties: { idPlan: { type: integer }, estado: { type: string, enum: [activo, inactivo] }, membresiasActivas: { type: integer } }
+    RespuestaPlan: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Plan' } } }
+    PagoEntrada:
+      type: object
+      required: [metodo]
+      properties:
+        metodo: { type: string, enum: [efectivo, tarjeta, transferencia, qr] }
+        valorRecibido: { type: number }
+        referencia: { type: string, minLength: 4, maxLength: 40 }
+    Membresia:
+      type: object
+      properties:
+        idMembresia: { type: integer }
+        estado: { type: string, enum: [activa, vencida, cancelada] }
+        plan: { type: object }
+        cliente: { type: object }
+        vehiculo: { type: object }
+        fechaInicio: { type: string, format: date }
+        fechaFin: { type: string, format: date }
+        diasRestantes: { type: integer }
+        avisoRenovacion: { type: boolean }
+        motivoCancelacion: { type: [string, 'null'] }
+        facturas: { type: array, items: { type: object }, description: solo en /usuarios/me/membresias }
+    RespuestaSuscripcion: { type: object, properties: { ok: { const: true }, data: { type: object, properties: { membresia: { $ref: '#/components/schemas/Membresia' }, factura: { type: object } } } } }
+  responses:
+    SinPermiso: { description: Sin permiso (403 SIN_PERMISO) }
+    Validacion: { description: Datos inválidos (422) con detalle por campo }

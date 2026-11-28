@@ -1,36 +1,32 @@
-// Incidencias — REQ-INCD-1.
-import { get, post, put, patch } from './api.js';
-import { aQuery } from './usuarios.service.js';
+// Una función por endpoint de incidencias (spec 013; SRS B.1 §4.13 + evidencia [Propuesta]).
+// Con evidencia se envía FormData (el navegador pone el Content-Type); sin ella, JSON.
+import { solicitar, solicitarArchivo } from '../api/http.js';
 
-export async function listarTiposIncidencia({ activos = false } = {}) {
-  return (await get(`/tipos-incidencia${aQuery({ activos: activos ? '1' : '' })}`)).data;
+/** POST /incidencias — { tipo, placa, tipoVehiculo?, idCelda?, fechaHoraEvento, descripcion } + evidencia (File) opcional */
+export async function registrarIncidencia(datos, evidencia) {
+  let body = datos;
+  if (evidencia) {
+    body = new FormData();
+    for (const [clave, valor] of Object.entries(datos)) {
+      if (valor !== undefined && valor !== null && valor !== '') body.append(clave, String(valor));
+    }
+    body.append('evidencia', evidencia);
+  }
+  return (await solicitar('/incidencias', { method: 'POST', body })).data;
 }
 
-export async function crearTipoIncidencia(datos) {
-  return (await post('/tipos-incidencia', datos)).data;
-}
+/** GET /incidencias?q&tipo&estado&desde&hasta&page&limit → { data, meta } */
+export const listarIncidencias = ({ q, tipo, estado, desde, hasta, page = 1, limit = 20 } = {}) =>
+  solicitar('/incidencias', { query: { q, tipo, estado, desde, hasta, page, limit } });
 
-export async function actualizarTipoIncidencia(id, datos) {
-  return (await put(`/tipos-incidencia/${id}`, datos)).data;
-}
+/** GET /incidencias/:id (con el seguimiento) */
+export const obtenerIncidencia = async (id) => (await solicitar(`/incidencias/${id}`)).data;
 
-export async function cambiarActivoTipoIncidencia(id, activo) {
-  return (await patch(`/tipos-incidencia/${id}/activo`, { activo })).data;
-}
+/** GET /incidencias/:id/evidencia → Blob (o null) */
+export const descargarEvidencia = (id) => solicitarArchivo(`/incidencias/${id}/evidencia`);
 
-/** { data, meta } */
-export function listarIncidencias(filtros = {}) {
-  return get(`/incidencias${aQuery(filtros)}`);
-}
+/** POST /incidencias/:id/seguimientos */
+export const agregarSeguimiento = async (id, nota) => (await solicitar(`/incidencias/${id}/seguimientos`, { method: 'POST', body: { nota } })).data;
 
-export async function obtenerIncidencia(id) {
-  return (await get(`/incidencias/${id}`)).data;
-}
-
-export async function registrarIncidencia(datos) {
-  return (await post('/incidencias', datos)).data;
-}
-
-export function misIncidencias(filtros = {}) {
-  return get(`/usuarios/me/incidencias${aQuery(filtros)}`);
-}
+/** PATCH /incidencias/:id/cierre */
+export const cerrarIncidencia = async (id, solucion) => (await solicitar(`/incidencias/${id}/cierre`, { method: 'PATCH', body: { solucion } })).data;

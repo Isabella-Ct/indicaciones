@@ -1,44 +1,39 @@
-// Guardado de imágenes subidas (fotos). Los nombres son aleatorios: nunca se
-// usa el nombre que envía el cliente.
+// Archivos privados (RNF-PRI-03): fotos de usuario (spec 002, research R-03) y evidencias de incidencias (spec 013,
+// research R-03). Nombre aleatorio, fuera de la carpeta pública del frontend. En la BD se guarda solo la clave
+// relativa '<carpeta>/<uuid>.<ext>'.
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
 
 const CARPETA_UPLOADS = path.join(__dirname, '..', '..', 'uploads');
-const URL_UPLOADS = '/uploads';
+const CARPETAS = ['usuarios', 'incidencias'];
+const CLAVE_VALIDA = /^(usuarios|incidencias)\/[0-9a-f-]{36}\.(jpg|png)$/;
 
-/**
- * Detecta el tipo real por la firma de los primeros bytes (no por la extensión).
- * @returns {'jpg'|'png'|null}
- */
-function detectarTipoImagen(buffer) {
-  if (!buffer || buffer.length < 8) return null;
-  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'jpg';
-  const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-  if (png.every((byte, i) => buffer[i] === byte)) return 'png';
-  return null;
+/** Guarda el contenido en `carpeta` y devuelve su clave. */
+async function guardarArchivo(carpeta, buffer, ext) {
+  if (!CARPETAS.includes(carpeta)) throw new Error(`Carpeta de archivos no permitida: ${carpeta}`);
+  const clave = `${carpeta}/${crypto.randomUUID()}.${ext}`;
+  await fs.mkdir(path.join(CARPETA_UPLOADS, carpeta), { recursive: true });
+  await fs.writeFile(path.join(CARPETA_UPLOADS, clave), buffer);
+  return clave;
 }
 
-/**
- * Guarda la imagen en uploads/<carpeta>/ y devuelve su URL pública (/uploads/…).
- * @param {{ buffer: Buffer, extension: 'jpg'|'png' }} imagen
- * @param {string} carpeta ej. "usuarios"
- */
-async function guardarImagen({ buffer, extension }, carpeta) {
-  const destino = path.join(CARPETA_UPLOADS, carpeta);
-  await fs.mkdir(destino, { recursive: true });
-  const nombre = `${crypto.randomUUID()}.${extension}`;
-  await fs.writeFile(path.join(destino, nombre), buffer);
-  return `${URL_UPLOADS}/${carpeta}/${nombre}`;
+/** Foto de usuario (spec 002). */
+const guardarFoto = (buffer, ext) => guardarArchivo('usuarios', buffer, ext);
+
+/** Ruta absoluta de una clave guardada (rechaza claves con otra forma: evita recorrer carpetas). */
+function rutaFoto(clave) {
+  if (!CLAVE_VALIDA.test(String(clave))) return null;
+  return path.join(CARPETA_UPLOADS, clave);
 }
 
-/** Borra un archivo a partir de su URL (/uploads/…). No falla si no existe. */
-async function eliminarArchivo(url) {
-  if (!url || !url.startsWith(`${URL_UPLOADS}/`)) return;
-  const relativa = url.slice(URL_UPLOADS.length + 1);
-  const ruta = path.resolve(CARPETA_UPLOADS, relativa);
-  if (!ruta.startsWith(CARPETA_UPLOADS + path.sep)) return; // evita salir de uploads/
+/** Borra el archivo; no falla si no existe. */
+async function borrarFoto(clave) {
+  const ruta = rutaFoto(clave);
+  if (!ruta) return;
   await fs.rm(ruta, { force: true });
 }
 
-module.exports = { CARPETA_UPLOADS, detectarTipoImagen, guardarImagen, eliminarArchivo };
+const tipoDeClave = (clave) => (String(clave).endsWith('.png') ? 'image/png' : 'image/jpeg');
+
+module.exports = { guardarArchivo, guardarFoto, rutaFoto, rutaArchivo: rutaFoto, borrarFoto, borrarArchivo: borrarFoto, tipoDeClave, CARPETA_UPLOADS };

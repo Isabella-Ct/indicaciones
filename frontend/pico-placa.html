@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PARKO · Pico y placa</title>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    />
+    <link rel="stylesheet" href="/css/estilos.css" />
+    <script type="module" src="/js/views/pico-placa.view.js"></script>
+  </head>
+  <body>
+    <div class="template-app-layout hidden" id="app">
+      <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+      <!-- organism-header -->
+      <header class="organism-header">
+        <div class="organism-header-inner">
+          <a class="molecule-brand molecule-brand--link" href="/">
+            <span class="atom-brand-mark" aria-hidden="true">P</span>
+            <div>PARKO<small>Parking Lot ABC</small></div>
+          </a>
+          <div class="molecule-shift">
+            <div>Fecha<strong id="marco-fecha">—</strong></div>
+            <div>Hora<strong id="marco-hora">—</strong></div>
+          </div>
+          <div class="molecule-user-menu" id="menu-usuario">
+            <button
+              class="molecule-user-menu-button"
+              id="menu-usuario-boton"
+              type="button"
+              aria-expanded="false"
+              aria-controls="menu-usuario-lista"
+              aria-haspopup="true"
+            >
+              <span class="atom-avatar" aria-hidden="true"><span id="menu-usuario-iniciales"></span></span>
+              <span class="molecule-user-menu-name"
+                ><span id="menu-usuario-nombre"></span><small id="menu-usuario-rol"></small
+              ></span>
+              <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-chevron-down"></use></svg>
+            </button>
+            <ul class="molecule-user-menu-list hidden" id="menu-usuario-lista">
+              <li>
+                <a class="molecule-user-menu-item" href="/mi-perfil.html"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-user"></use></svg>Mi perfil</a>
+              </li>
+              <li>
+                <a class="molecule-user-menu-item" href="/cambiar-contrasena.html"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-key"></use></svg>Cambiar contraseña</a>
+              </li>
+              <li>
+                <button class="molecule-user-menu-item" id="menu-usuario-salir" type="button">
+                  <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-logout"></use></svg>Cerrar sesión
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </header>
+
+      <!-- organism-navbar (navbar.js oculta los ítems sin permiso) -->
+      <nav class="organism-navbar" id="navbar" aria-label="Principal">
+        <div class="organism-navbar-inner">
+          <div class="organism-navbar-bar">
+            <span class="organism-navbar-current">Pico y placa</span>
+            <button
+              class="atom-icon-button"
+              id="navbar-alternar"
+              type="button"
+              aria-label="Abrir menú de navegación"
+              title="Menú"
+              aria-expanded="false"
+              aria-controls="navbar-lista"
+            >
+              <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-menu"></use></svg>
+            </button>
+          </div>
+          <ul class="organism-navbar-list" id="navbar-lista">
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="movimientos" href="/movimientos.html">Movimientos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="facturas" href="/facturas.html">Facturación</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="caja" href="/caja.html">Caja</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="celdas" href="/celdas.html">Celdas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="disponibilidad" href="/disponibilidad.html">Disponibilidad</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="vehiculos" href="/vehiculos.html">Vehículos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mis-vehiculos" href="/mis-vehiculos.html">Mis vehículos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mis-facturas" href="/mis-facturas.html">Mis facturas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="membresias" href="/membresias.html">Membresías</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mi-membresia" href="/mi-membresia.html">Mi membresía</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="reservas" href="/reservas.html">Reservas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mis-reservas" href="/mis-reservas.html">Mis reservas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="incidencias" href="/incidencias.html">Incidencias</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="usuarios" href="/usuarios.html">Usuarios</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="parqueaderos" href="/parqueaderos.html">Parqueaderos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item is-active" data-id="pico-placa" href="/pico-placa.html" aria-current="page">Pico y placa</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="tarifas" href="/tarifas.html">Tarifas</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="planes" href="/planes.html">Planes</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="descuentos" href="/descuentos.html">Descuentos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="roles" href="/roles.html">Roles</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="permisos" href="/permisos.html">Permisos</a>
+            </li>
+            <li class="hidden">
+              <a class="organism-navbar-item" data-id="mi-perfil" href="/mi-perfil.html">Mi perfil</a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <div class="atom-hazard-strip" aria-hidden="true"></div>
+
+      <div class="template-app-layout-page hidden" id="sin-permiso">
+        <div class="molecule-empty-state">
+          <strong>No tiene permiso para ver esta pantalla</strong>
+          <p>Use el menú para ir a las secciones de su perfil.</p>
+        </div>
+      </div>
+
+      <main class="template-app-layout-page hidden" id="contenido" tabindex="-1">
+        <div class="molecule-page-head">
+          <div>
+            <h1>Pico y placa</h1>
+            <p>// Configuración › dígitos restringidos por día, tipo de vehículo y franja (hora de Bogotá)</p>
+          </div>
+          <div class="molecule-page-head-actions">
+            <button class="atom-button hidden" type="button" id="accion-nueva"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-calendar"></use></svg><span>Nueva restricción</span></button>
+          </div>
+        </div>
+
+        <section class="molecule-alert molecule-alert--info molecule-pico-placa hidden" id="pico-placa-hoy" aria-labelledby="pico-placa-titulo" aria-live="polite">
+          <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-calendar"></use></svg>
+          <div class="molecule-pico-placa-body">
+            <p class="atom-label-caps" id="pico-placa-titulo">Pico y placa hoy · <span class="js-dia"></span></p>
+            <p class="hidden js-sin">Sin restricción hoy</p>
+            <dl class="molecule-pico-placa-list js-lista">
+              <div class="js-carro"><dt>Carros</dt><dd><span class="atom-plate js-digitos"></span><span class="js-franja"></span></dd></div>
+              <div class="js-moto"><dt>Motos</dt><dd><span class="atom-plate js-digitos"></span><span class="js-franja"></span></dd></div>
+            </dl>
+          </div>
+        </section>
+
+        <section class="molecule-panel" aria-labelledby="semana-titulo">
+          <div class="molecule-panel-head">
+            <h2 id="semana-titulo">Tabla semanal</h2>
+            <div class="molecule-field">
+              <label for="filtro-estado">Mostrar</label>
+              <select class="atom-select" id="filtro-estado">
+                <option value="activo">Activas</option>
+                <option value="">Activas e inactivas</option>
+              </select>
+            </div>
+          </div>
+          <div class="molecule-panel-body">
+            <p class="molecule-field-hint" id="semana-cargando" aria-live="polite">Cargando…</p>
+            <div class="organism-data-table-scroll" tabindex="0" role="region" aria-label="Tabla semanal de pico y placa">
+              <table class="organism-log-table organism-data-table-table organism-data-table-table--w760" id="tabla-semanal">
+                <caption class="visually-hidden">Restricciones de pico y placa por día y tipo de vehículo</caption>
+                <thead>
+                  <tr><th scope="col">Día</th><th scope="col">Carros</th><th scope="col">Motos</th></tr>
+                </thead>
+                <tbody>
+                  <tr data-id="1">
+                    <th scope="row">Lunes</th>
+                    <td><div class="organism-week-table-cell js-carro"></div></td>
+                    <td><div class="organism-week-table-cell js-moto"></div></td>
+                  </tr>
+                  <tr data-id="2">
+                    <th scope="row">Martes</th>
+                    <td><div class="organism-week-table-cell js-carro"></div></td>
+                    <td><div class="organism-week-table-cell js-moto"></div></td>
+                  </tr>
+                  <tr data-id="3">
+                    <th scope="row">Miércoles</th>
+                    <td><div class="organism-week-table-cell js-carro"></div></td>
+                    <td><div class="organism-week-table-cell js-moto"></div></td>
+                  </tr>
+                  <tr data-id="4">
+                    <th scope="row">Jueves</th>
+                    <td><div class="organism-week-table-cell js-carro"></div></td>
+                    <td><div class="organism-week-table-cell js-moto"></div></td>
+                  </tr>
+                  <tr data-id="5">
+                    <th scope="row">Viernes</th>
+                    <td><div class="organism-week-table-cell js-carro"></div></td>
+                    <td><div class="organism-week-table-cell js-moto"></div></td>
+                  </tr>
+                  <tr data-id="6">
+                    <th scope="row">Sábado</th>
+                    <td><div class="organism-week-table-cell js-carro"></div></td>
+                    <td><div class="organism-week-table-cell js-moto"></div></td>
+                  </tr>
+                  <tr data-id="7">
+                    <th scope="row">Domingo</th>
+                    <td><div class="organism-week-table-cell js-carro"></div></td>
+                    <td><div class="organism-week-table-cell js-moto"></div></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <template id="tpl-restriccion">
+          <div class="organism-week-table-item">
+            <div><span class="atom-plate js-digitos"></span> <span class="atom-status-chip js-estado"></span></div>
+            <p class="js-franja"></p>
+            <p class="organism-week-table-meta js-vigencia"></p>
+            <div class="organism-data-table-row-actions">
+              <button class="atom-button atom-button--ghost atom-button--sm hidden js-editar" type="button"><span>Editar</span></button>
+              <button class="atom-button atom-button--ghost atom-button--sm hidden js-eliminar" type="button"><span>Eliminar</span></button>
+            </div>
+          </div>
+        </template>
+        <template id="tpl-sin-restriccion"><p class="organism-week-table-empty">Sin restricción</p></template>
+      </main>
+
+      <!-- organism-footer -->
+      <footer class="organism-footer">
+        <div class="organism-footer-inner">
+          <p class="organism-footer-brand">PARKO</p>
+          <p>© <span id="pie-anio"></span> PARKO · Sistema de Gestión de Parqueadero · Parking Lot ABC</p>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Diálogo de confirmación (constitución §V: <dialog>) -->
+    <dialog class="organism-modal organism-modal--sm" id="dialogo-confirmar" aria-labelledby="confirmar-titulo">
+      <header class="organism-modal-head">
+        <div><h2 id="confirmar-titulo"></h2></div>
+        <button class="atom-icon-button" type="button" data-cerrar aria-label="Cerrar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-x"></use></svg></button>
+      </header>
+      <div class="organism-modal-body"><p id="confirmar-mensaje"></p></div>
+      <footer class="organism-modal-foot">
+        <button class="atom-button atom-button--ghost" type="button" data-cerrar><span>Cancelar</span></button>
+        <button class="atom-button atom-button--dark" id="confirmar-aceptar" type="button"><span>Confirmar</span></button>
+      </footer>
+    </dialog>
+
+    <dialog class="organism-modal" id="dialogo-restriccion" aria-labelledby="dialogo-restriccion-titulo">
+      <header class="organism-modal-head">
+        <div><h2 id="dialogo-restriccion-titulo">Nueva restricción</h2><p>// El cambio aplica a las entradas desde ahora</p></div>
+        <button class="atom-icon-button" type="button" data-cerrar aria-label="Cerrar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-x"></use></svg></button>
+      </header>
+      <div class="organism-modal-body">
+        <form class="organism-form--grid" id="form-restriccion" novalidate>
+          <div class="molecule-alert molecule-alert--error molecule-field--full hidden" id="restriccion-alerta" aria-live="assertive">
+            <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-alert"></use></svg><p></p>
+          </div>
+          <div class="molecule-field--full hidden" id="restriccion-existente-campo">
+            <button class="atom-button atom-button--sm" type="button" id="restriccion-editar-existente"><span>Editar la existente</span></button>
+          </div>
+          <div class="molecule-field">
+            <label for="restriccion-dia">Día<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <select class="atom-select" id="restriccion-dia" required aria-describedby="restriccion-dia-error">
+              <option value="1">Lunes</option>
+              <option value="2">Martes</option>
+              <option value="3">Miércoles</option>
+              <option value="4">Jueves</option>
+              <option value="5">Viernes</option>
+              <option value="6">Sábado</option>
+              <option value="7">Domingo</option>
+            </select>
+            <p class="molecule-field-error" id="restriccion-dia-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="restriccion-tipo">Tipo de vehículo<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <select class="atom-select" id="restriccion-tipo" required aria-describedby="restriccion-tipo-error">
+              <option value="carro">Carros</option>
+              <option value="moto">Motos</option>
+            </select>
+            <p class="molecule-field-error" id="restriccion-tipo-error" aria-live="polite"></p>
+          </div>
+          <fieldset class="molecule-field molecule-field--full" id="restriccion-digitos" aria-describedby="restriccion-digitos-hint restriccion-digitos-error">
+            <legend>Dígitos restringidos<span class="molecule-field-required" aria-hidden="true"> *</span></legend>
+            <div class="molecule-digit-picker">
+              <label class="molecule-check"><input type="checkbox" class="js-digito" value="0" />0</label>
+              <label class="molecule-check"><input type="checkbox" class="js-digito" value="1" />1</label>
+              <label class="molecule-check"><input type="checkbox" class="js-digito" value="2" />2</label>
+              <label class="molecule-check"><input type="checkbox" class="js-digito" value="3" />3</label>
+              <label class="molecule-check"><input type="checkbox" class="js-digito" value="4" />4</label>
+              <label class="molecule-check"><input type="checkbox" class="js-digito" value="5" />5</label>
+              <label class="molecule-check"><input type="checkbox" class="js-digito" value="6" />6</label>
+              <label class="molecule-check"><input type="checkbox" class="js-digito" value="7" />7</label>
+              <label class="molecule-check"><input type="checkbox" class="js-digito" value="8" />8</label>
+              <label class="molecule-check"><input type="checkbox" class="js-digito" value="9" />9</label>
+            </div>
+            <p class="molecule-field-hint" id="restriccion-digitos-hint">De 1 a 5 dígitos.</p>
+            <p class="molecule-field-error" id="restriccion-digitos-error" aria-live="polite"></p>
+          </fieldset>
+          <div class="molecule-field">
+            <label for="restriccion-posicion">Dígito evaluado<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <select class="atom-select" id="restriccion-posicion" required aria-describedby="restriccion-posicion-error">
+              <option value="ultimo">Último dígito de la placa</option>
+              <option value="primero">Primer dígito de la placa</option>
+            </select>
+            <p class="molecule-field-error" id="restriccion-posicion-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field hidden" id="restriccion-estado-campo">
+            <label for="restriccion-estado">Estado</label>
+            <select class="atom-select" id="restriccion-estado" aria-describedby="restriccion-estado-error">
+              <option value="activo">Activa</option>
+              <option value="inactivo">Inactiva</option>
+            </select>
+            <p class="molecule-field-error" id="restriccion-estado-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="restriccion-inicio">Hora de inicio<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="restriccion-inicio" type="time" required aria-describedby="restriccion-inicio-error" />
+            <p class="molecule-field-error" id="restriccion-inicio-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="restriccion-fin">Hora de fin<span class="molecule-field-required" aria-hidden="true"> *</span></label>
+            <input class="atom-input" id="restriccion-fin" type="time" required aria-describedby="restriccion-fin-error" />
+            <p class="molecule-field-error" id="restriccion-fin-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="restriccion-desde">Vigente desde</label>
+            <input class="atom-input" id="restriccion-desde" type="date" aria-describedby="restriccion-desde-hint restriccion-desde-error" />
+            <p class="molecule-field-hint" id="restriccion-desde-hint">Si se deja vacío: hoy.</p>
+            <p class="molecule-field-error" id="restriccion-desde-error" aria-live="polite"></p>
+          </div>
+          <div class="molecule-field">
+            <label for="restriccion-hasta">Vigente hasta</label>
+            <input class="atom-input" id="restriccion-hasta" type="date" aria-describedby="restriccion-hasta-hint restriccion-hasta-error" />
+            <p class="molecule-field-hint" id="restriccion-hasta-hint">Vacío: sin fecha de fin.</p>
+            <p class="molecule-field-error" id="restriccion-hasta-error" aria-live="polite"></p>
+          </div>
+        </form>
+      </div>
+      <footer class="organism-modal-foot">
+        <button class="atom-button atom-button--ghost" type="button" data-cerrar><span>Cancelar</span></button>
+        <button class="atom-button" type="submit" form="form-restriccion" id="restriccion-guardar"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-check"></use></svg><span>Guardar</span></button>
+      </footer>
+    </dialog>
+
+    <div class="molecule-toast-region" id="avisos" aria-live="polite"></div>
+
+    <template id="tpl-aviso">
+      <div class="molecule-toast" role="status">
+        <svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-info"></use></svg>
+        <p></p>
+        <button class="molecule-toast-close" type="button" aria-label="Cerrar aviso"><svg class="atom-icon" aria-hidden="true" focusable="false"><use href="/assets/icons.svg#i-x"></use></svg></button>
+      </div>
+    </template>
+  </body>
+</html>

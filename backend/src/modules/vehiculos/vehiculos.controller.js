@@ -1,49 +1,19 @@
-const vehiculosService = require('./vehiculos.service');
+// Traduce HTTP ↔ servicio de vehículos (sin SQL ni reglas de negocio).
+const servicio = require('./vehiculos.service');
+const { ok, creado } = require('../../utils/respuesta');
 
-async function listar(req, res) {
-  res.json(await vehiculosService.listar(req.validado.query));
-}
-
-async function obtener(req, res) {
-  res.json({ data: await vehiculosService.obtener(req.validado.params.id) });
-}
-
-async function obtenerPorPlaca(req, res) {
-  res.json({ data: await vehiculosService.obtenerPorPlaca(req.validado.params.placa) });
-}
-
-async function historial(req, res) {
-  res.json({ data: await vehiculosService.historial(req.validado.params.id) });
-}
-
-async function crear(req, res) {
-  res.status(201).json({ data: await vehiculosService.crear(req.body, req.usuario) });
-}
-
-async function actualizar(req, res) {
-  res.json({ data: await vehiculosService.actualizar(req.validado.params.id, req.body) });
-}
-
-async function eliminar(req, res) {
-  res.json({ data: await vehiculosService.eliminar(req.validado.params.id) });
-}
-
-async function cambiarPropietario(req, res) {
-  const vehiculo = await vehiculosService.cambiarPropietario(
-    req.validado.params.id,
-    req.body,
-    req.usuario
-  );
-  res.json({ data: vehiculo });
-}
+const actor = (req) => ({ idUsuario: req.usuario.idUsuario, permisos: req.usuario.permisos, ip: req.ip });
+const id = (req) => req.validado.params.id;
 
 module.exports = {
-  listar,
-  obtener,
-  obtenerPorPlaca,
-  historial,
-  crear,
-  actualizar,
-  eliminar,
-  cambiarPropietario,
+  crear: async (req, res) => creado(res, await servicio.crear(req.validado.body, actor(req))),
+  listar: async (req, res) => {
+    const { data, meta } = await servicio.listar(req.validado.query);
+    return ok(res, data, meta);
+  },
+  obtener: async (req, res) => ok(res, await servicio.obtener(id(req))),
+  actualizar: async (req, res) => ok(res, await servicio.actualizar(id(req), req.validado.body, actor(req))),
+  asignarPropietario: async (req, res) =>
+    ok(res, await servicio.asignarPropietario(id(req), req.validado.body, actor(req))),
+  misVehiculos: async (req, res) => ok(res, await servicio.misVehiculos(actor(req))),
 };

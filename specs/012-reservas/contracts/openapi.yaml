@@ -1,0 +1,113 @@
+openapi: 3.1.0
+info:
+  title: Parking Lot ABC — API v1 · 012 Reservas
+  version: 1.0.0
+  description: |
+    Contrato de la spec 012 (SRS v2.0 Apéndice B.1 §4.12). Sobre común { ok, data, meta, error }; errores y paginación
+    como en specs/001-roles-permisos/contracts/openapi.yaml. `x-permiso`: permiso exigido (RNF-SEG-04).
+    Fechas en hora de Bogotá 'AAAA-MM-DDTHH:MM'. La entrada con reserva (HU-55) es un efecto de POST /movimientos.
+servers:
+  - url: http://localhost:3000/api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: Reservas
+
+paths:
+  /reservas:
+    post:
+      tags: [Reservas]
+      summary: Reservar una celda (HU-52 · RF-RES-01..03)
+      x-permiso: 'reservas.crear (el Cliente, solo sus vehículos)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idVehiculo, fechaHoraInicio]
+              properties:
+                idVehiculo: { type: integer }
+                fechaHoraInicio: { type: string, example: '2026-11-28T08:00' }
+                idCelda: { type: integer, description: opcional; si no se indica, la libre de menor código }
+                idParqueadero: { type: integer, description: 'opcional; por defecto, el activo de menor id' }
+      responses:
+        '201': { description: Confirmada con código y notificada, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaReserva' } } } }
+        '403': { description: 'SIN_PERMISO · vehículo de otro cliente' }
+        '409': { description: 'CELDA_NO_DISPONIBLE «La celda no está disponible en ese horario» (con `sugerida`) · RESERVA_VEHICULO_CRUZADA · SIN_CELDAS' }
+        '422': { $ref: '#/components/responses/Validacion', description: 'fecha pasada o a más de 7 días · vehículo sin propietario · celda de otro tipo' }
+    get:
+      tags: [Reservas]
+      summary: Reservas de una fecha ordenadas por hora (HU-54 · RF-RES-06)
+      x-permiso: reservas.ver
+      parameters:
+        - { name: fecha, in: query, description: 'AAAA-MM-DD; hoy por defecto', schema: { type: string, format: date } }
+        - { name: estado, in: query, schema: { type: string, enum: [confirmada, cumplida, cancelada, vencida] } }
+        - { name: q, in: query, description: placa, código o cliente, schema: { type: string } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200': { description: Reservas, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/Reserva' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+
+  /reservas/{id}/cancelacion:
+    parameters: [{ $ref: '#/components/parameters/id' }]
+    patch:
+      tags: [Reservas]
+      summary: Cancelar una reserva que aún no inicia (HU-53 · RF-RES-04, RF-RES-05)
+      x-permiso: 'reservas.editar (el Cliente, solo las suyas)'
+      responses:
+        '200': { description: Cancelada y notificada, content: { application/json: { schema: { $ref: '#/components/schemas/RespuestaReserva' } } } }
+        '403': { description: SIN_PERMISO · reserva de otro cliente }
+        '404': { description: RESERVA_NO_ENCONTRADA }
+        '409': { description: 'RESERVA_NO_CANCELABLE (cumplida, vencida o cancelada) · RESERVA_INICIADA' }
+
+  /usuarios/me/reservas:
+    get:
+      tags: [Reservas]
+      summary: Mis reservas (HU-53)
+      x-permiso: perfil.ver
+      parameters:
+        - { name: estado, in: query, schema: { type: string, enum: [confirmada, cumplida, cancelada, vencida] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+      responses:
+        '200': { description: Las del Cliente, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { $ref: '#/components/schemas/Reserva' } }, meta: { $ref: '#/components/schemas/Meta' } } } } } }
+
+  /celdas/disponibles:
+    get:
+      tags: [Reservas]
+      summary: Celdas libres en la franja de una hora (HU-52)
+      x-permiso: celdas.ver
+      parameters:
+        - { name: fecha, in: query, required: true, schema: { type: string, example: '2026-11-28T08:00' } }
+        - { name: tipo, in: query, required: true, schema: { type: string, enum: [carro, moto] } }
+        - { name: idParqueadero, in: query, schema: { type: integer } }
+      responses:
+        '200': { description: Celdas, content: { application/json: { schema: { type: object, properties: { ok: { const: true }, data: { type: array, items: { type: object, properties: { idCelda: { type: integer }, codigo: { type: string }, piso: { type: integer }, area: { type: string } } } } } } } } }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    id: { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+  schemas:
+    Meta: { type: object, properties: { page: { type: integer }, limit: { type: integer }, total: { type: integer } } }
+    Reserva:
+      type: object
+      properties:
+        idReserva: { type: integer }
+        codigo: { type: string, example: R-000001 }
+        estado: { type: string, enum: [confirmada, cumplida, cancelada, vencida] }
+        fechaHoraInicio: { type: string }
+        minutosEspera: { type: integer }
+        finEspera: { type: string }
+        cliente: { type: object }
+        vehiculo: { type: object }
+        celda: { type: object }
+        idMovimiento: { type: [integer, 'null'] }
+    RespuestaReserva: { type: object, properties: { ok: { const: true }, data: { $ref: '#/components/schemas/Reserva' } } }
+  responses:
+    SinPermiso: { description: Sin permiso (403 SIN_PERMISO) }
+    Validacion: { description: Datos inválidos (422) con detalle por campo }

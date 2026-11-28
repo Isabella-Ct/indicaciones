@@ -1,52 +1,23 @@
-// Membresías — REQ-MEM-1 (gestiona el admin; el operador consulta)
+// /api/v1/membresias — SRS Apéndice B.1 §4.10 (spec 010-membresias, HU-46, HU-47). authenticate se aplica al
+// montar el router en app.js. GET /usuarios/me/membresias vive en usuarios.routes.js.
 const { Router } = require('express');
-const { auth } = require('../../middlewares/auth');
-const { requirePermiso } = require('../../middlewares/require-permiso');
-const { validate } = require('../../middlewares/validate');
-const esquemas = require('./membresias.schemas');
 const controller = require('./membresias.controller');
+const esquemas = require('./membresias.validator');
+const { authorize } = require('../../middlewares/authorize');
+const { validate } = require('../../middlewares/validate');
 
 const router = Router();
-router.use(auth());
 
-// GET /api/v1/membresias — filtros: estado, usuario_id, placa, q (documento/nombre del titular)
-router.get(
-  '/',
-  requirePermiso('membresias.ver'),
-  validate({ query: esquemas.listar }),
-  controller.listar
-);
+// POST /api/v1/membresias — HU-46 · RF-MEM-03..05 (el Cliente, solo sus vehículos)
+router.post('/', authorize('membresias.crear'), validate({ body: esquemas.suscripcion }), controller.suscribir);
 
-// GET /api/v1/membresias/cotizar?vehiculo_id=&tipo=&fecha_inicio= — fecha fin y valor calculados
-router.get(
-  '/cotizar',
-  requirePermiso('membresias.ver'),
-  validate({ query: esquemas.cotizar }),
-  controller.cotizar
-);
+// GET /api/v1/membresias?q&estado&page&limit — HU-47 [Propuesta]
+router.get('/', authorize('membresias.ver'), validate({ query: esquemas.listar }), controller.listar);
 
-// GET /api/v1/membresias/:id
-router.get(
-  '/:id',
-  requirePermiso('membresias.ver'),
-  validate({ params: esquemas.params }),
-  controller.obtener
-);
+// POST /api/v1/membresias/:id/renovacion — HU-47 · RF-MEM-06
+router.post('/:id/renovacion', authorize('membresias.editar'), validate({ params: esquemas.params, body: esquemas.renovacion }), controller.renovar);
 
-// POST /api/v1/membresias — crea la membresía y su factura (admin)
-router.post(
-  '/',
-  requirePermiso('membresias.gestionar'),
-  validate({ body: esquemas.crear }),
-  controller.crear
-);
-
-// PATCH /api/v1/membresias/:id/cancelar — libera la celda fija (admin)
-router.patch(
-  '/:id/cancelar',
-  requirePermiso('membresias.gestionar'),
-  validate({ params: esquemas.params }),
-  controller.cancelar
-);
+// PATCH /api/v1/membresias/:id/cancelacion — HU-47 · RF-MEM-07
+router.patch('/:id/cancelacion', authorize('membresias.editar'), validate({ params: esquemas.params, body: esquemas.cancelacion }), controller.cancelar);
 
 module.exports = router;

@@ -1,27 +1,17 @@
-const membresiasService = require('./membresias.service');
+// Traduce HTTP ↔ servicio de membresías (sin SQL ni reglas de negocio).
+const servicio = require('./membresias.service');
+const { ok, creado } = require('../../utils/respuesta');
 
-async function listar(req, res) {
-  res.json(await membresiasService.listar(req.validado.query));
-}
+const actor = (req) => ({ idUsuario: req.usuario.idUsuario, rol: req.usuario.rol, permisos: req.usuario.permisos, ip: req.ip });
+const id = (req) => req.validado.params.id;
 
-async function obtener(req, res) {
-  res.json({ data: await membresiasService.obtener(req.validado.params.id) });
-}
-
-async function cotizar(req, res) {
-  res.json({ data: await membresiasService.cotizar(req.validado.query) });
-}
-
-async function crear(req, res) {
-  res.status(201).json({ data: await membresiasService.crear(req.body, req.usuario) });
-}
-
-async function cancelar(req, res) {
-  res.json({ data: await membresiasService.cancelar(req.validado.params.id) });
-}
-
-async function misMembresias(req, res) {
-  res.json({ data: await membresiasService.deUsuario(req.usuario.id) });
-}
-
-module.exports = { listar, obtener, cotizar, crear, cancelar, misMembresias };
+module.exports = {
+  suscribir: async (req, res) => creado(res, await servicio.suscribir(req.validado.body, actor(req))),
+  listar: async (req, res) => {
+    const { data, meta } = await servicio.listar(req.validado.query);
+    return ok(res, data, meta);
+  },
+  renovar: async (req, res) => creado(res, await servicio.renovar(id(req), req.validado.body, actor(req))),
+  cancelar: async (req, res) => ok(res, await servicio.cancelar(id(req), req.validado.body, actor(req))),
+  mias: async (req, res) => ok(res, await servicio.mias(actor(req))),
+};
