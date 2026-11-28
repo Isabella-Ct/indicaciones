@@ -36,10 +36,10 @@
 
 ## Fase 7: Interfaz (Atomic Design)
 
-- [ ] T011 [P] Átomo `ponerChipReserva`; servicio `js/services/reservas.service.js`
-- [ ] T012 `herramientas/paginas-012.js` + regenerar: menú «Reservas» (`reservas.ver`) y «Mis reservas» (`perfil.ver`, oculto con `reservas.ver`)
-- [ ] T013 [US1] [US2] `mis-reservas.html` + `views/mis-reservas.view.js` (reservar, sin vehículos, cancelar)
-- [ ] T014 [US3] `reservas.html` + `views/reservas.view.js`; [US4] aviso de reserva en `views/movimientos.view.js`
+- [X] T011 [P] Átomo `ponerChipReserva`; servicio `js/services/reservas.service.js`
+- [X] T012 `herramientas/paginas-012.js` + regenerar: menú «Reservas» (`reservas.ver`) y «Mis reservas» (`perfil.ver`, oculto con `reservas.ver`)
+- [X] T013 [US1] [US2] `mis-reservas.html` + `views/mis-reservas.view.js` (reservar, sin vehículos, cancelar)
+- [X] T014 [US3] `reservas.html` + `views/reservas.view.js`; [US4] aviso de reserva en `views/movimientos.view.js`
 
 ## Fase 8: Pulido
 

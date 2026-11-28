@@ -39,6 +39,19 @@ export function ponerChipFactura(chip, estado) {
   ponerChip(chip, estado === 'anulada' ? 'Anulada' : 'Emitida', estado === 'anulada' ? 'out' : 'free');
 }
 
+/** Estado de una reserva (spec 012): confirmada | cumplida | cancelada | vencida. */
+const ESTADO_RESERVA = {
+  confirmada: ['Confirmada', 'reserved'],
+  cumplida: ['Cumplida', 'free'],
+  cancelada: ['Cancelada', 'out'],
+  vencida: ['Vencida', 'neutral'],
+};
+
+export function ponerChipReserva(chip, estado) {
+  const [texto, variante] = ESTADO_RESERVA[estado] ?? [estado, 'neutral'];
+  ponerChip(chip, texto, variante);
+}
+
 /** Situación de un descuento (spec 011): vigente | programado | vencido | inactivo. */
 const SITUACION_DESCUENTO = {
   vigente: ['Vigente', 'free'],

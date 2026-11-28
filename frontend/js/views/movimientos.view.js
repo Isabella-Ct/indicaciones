@@ -148,7 +148,9 @@ formEntrada.addEventListener('submit', async (e) => {
   try {
     const movimiento = await registrarEntrada(datos);
     mostrarTicket(movimiento);
-    mostrarAviso(`Entrada registrada: ${movimiento.vehiculo.placa} en la celda ${movimiento.celda.codigo}`, 'success');
+    // Spec 012 (HU-55): si el vehículo tenía reserva, la entrada usó su celda y la reserva quedó cumplida.
+    const conReserva = movimiento.reserva ? ` · reserva ${movimiento.reserva.codigo} cumplida` : '';
+    mostrarAviso(`Entrada registrada: ${movimiento.vehiculo.placa} en la celda ${movimiento.celda.codigo}${conReserva}`, 'success');
     formEntrada.reset();
     estado.placaBuscada = '';
     estado.vehiculo = undefined;
