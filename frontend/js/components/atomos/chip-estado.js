@@ -39,6 +39,18 @@ export function ponerChipFactura(chip, estado) {
   ponerChip(chip, estado === 'anulada' ? 'Anulada' : 'Emitida', estado === 'anulada' ? 'out' : 'free');
 }
 
+/** Estado de una incidencia (spec 013): abierta | en_seguimiento | cerrada. */
+const ESTADO_INCIDENCIA = {
+  abierta: ['Abierta', 'occupied'],
+  en_seguimiento: ['En seguimiento', 'reserved'],
+  cerrada: ['Cerrada', 'free'],
+};
+
+export function ponerChipIncidencia(chip, estado) {
+  const [texto, variante] = ESTADO_INCIDENCIA[estado] ?? [estado, 'neutral'];
+  ponerChip(chip, texto, variante);
+}
+
 /** Estado de una reserva (spec 012): confirmada | cumplida | cancelada | vencida. */
 const ESTADO_RESERVA = {
   confirmada: ['Confirmada', 'reserved'],

@@ -29,6 +29,8 @@ export const MENU = [
   // spec 012: el personal ve las reservas del día; el Cliente reserva y ve las suyas.
   { id: 'reservas', texto: 'Reservas', href: '/reservas.html', permiso: 'reservas.ver' },
   { id: 'mis-reservas', texto: 'Mis reservas', href: '/mis-reservas.html', permiso: 'perfil.ver', ocultarCon: 'reservas.ver' },
+  // spec 013: el personal registra y consulta incidencias; el Administrador les da seguimiento.
+  { id: 'incidencias', texto: 'Incidencias', href: '/incidencias.html', permiso: 'incidencias.ver' },
   { id: 'usuarios', texto: 'Usuarios', href: '/usuarios.html', permiso: 'usuarios.ver' },
   { id: 'parqueaderos', texto: 'Parqueaderos', href: '/parqueaderos.html', permiso: 'parqueaderos.ver', grupo: 'Configuración' },
   // spec 006: solo quien configura ve la tabla semanal en el menú (el aviso de hoy está en otras pantallas).

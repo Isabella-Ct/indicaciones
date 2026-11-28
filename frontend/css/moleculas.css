@@ -1171,3 +1171,12 @@
   flex-wrap: wrap;
   gap: 8px 14px;
 }
+
+/* Molécula · evidence-image (spec 013): foto de evidencia de una incidencia, sin pasar del panel. */
+.molecule-evidence-image {
+  display: block;
+  max-width: 100%;
+  max-height: 420px;
+  border: 2px solid var(--asphalt);
+  background: var(--panel);
+}

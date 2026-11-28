@@ -31,10 +31,10 @@
 
 ## Fase 6: Interfaz (Atomic Design)
 
-- [ ] T009 [P] Átomo `ponerChipIncidencia`; servicio `js/services/incidencias.service.js`
-- [ ] T010 `herramientas/paginas-013.js` + regenerar: menú «Incidencias» (`incidencias.ver`)
-- [ ] T011 [US1] [US2] `incidencias.html` + `views/incidencias.view.js` (listado, filtros, nueva incidencia con evidencia)
-- [ ] T012 [US2] [US3] `incidencia.html` + `views/incidencia.view.js` (detalle, evidencia, seguimiento y cierre)
+- [X] T009 [P] Átomo `ponerChipIncidencia`; servicio `js/services/incidencias.service.js`
+- [X] T010 `herramientas/paginas-013.js` + regenerar: menú «Incidencias» (`incidencias.ver`)
+- [X] T011 [US1] [US2] `incidencias.html` + `views/incidencias.view.js` (listado, filtros, nueva incidencia con evidencia)
+- [X] T012 [US2] [US3] `incidencia.html` + `views/incidencia.view.js` (detalle, evidencia, seguimiento y cierre)
 
 ## Fase 7: Pulido
 
