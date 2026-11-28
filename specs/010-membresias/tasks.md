@@ -37,12 +37,12 @@
 
 ## Fase 7: Interfaz (Atomic Design)
 
-- [ ] T012 [P] Átomo `ponerChipMembresia`, molécula `moleculas/vigencia.js`, organismo `organismos/formulario-pago.js`
-- [ ] T013 [P] Servicio `js/services/membresias.service.js`
-- [ ] T014 `herramientas/paginas-010.js` + `partes-pago.js` + regenerar: menú «Membresías» (`membresias.ver`), «Planes» (`planes.crear`, Configuración), «Mi membresía» (`perfil.ver`, oculto con `membresias.ver`)
-- [ ] T015 [US1] `planes.html` + `views/planes.view.js`
-- [ ] T016 [US2] [US3] `membresias.html` + `views/membresias.view.js` (listado, nueva suscripción, renovar, cancelar)
-- [ ] T017 [US4] `mi-membresia.html` + `views/mi-membresia.view.js` (vigencia, aviso, facturas, planes y suscripción)
+- [X] T012 [P] Átomo `ponerChipMembresia`, molécula `moleculas/vigencia.js`, organismo `organismos/formulario-pago.js`
+- [X] T013 [P] Servicio `js/services/membresias.service.js`
+- [X] T014 `herramientas/paginas-010.js` + `partes-pago.js` + regenerar: menú «Membresías» (`membresias.ver`), «Planes» (`planes.crear`, Configuración), «Mi membresía» (`perfil.ver`, oculto con `membresias.ver`)
+- [X] T015 [US1] `planes.html` + `views/planes.view.js`
+- [X] T016 [US2] [US3] `membresias.html` + `views/membresias.view.js` (listado, nueva suscripción, renovar, cancelar)
+- [X] T017 [US4] `mi-membresia.html` + `views/mi-membresia.view.js` (vigencia, aviso, facturas, planes y suscripción)
 
 ## Fase 8: Pulido
 

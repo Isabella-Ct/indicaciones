@@ -23,12 +23,17 @@ export const MENU = [
   { id: 'vehiculos', texto: 'Vehículos', href: '/vehiculos.html', permiso: 'vehiculos.ver' },
   { id: 'mis-vehiculos', texto: 'Mis vehículos', href: '/mis-vehiculos.html', permiso: 'perfil.ver', ocultarCon: 'vehiculos.ver' },
   { id: 'mis-facturas', texto: 'Mis facturas', href: '/mis-facturas.html', permiso: 'perfil.ver', ocultarCon: 'facturas.ver' },
+  // spec 010: el personal gestiona las membresías; el Cliente ve la suya y se suscribe desde su panel.
+  { id: 'membresias', texto: 'Membresías', href: '/membresias.html', permiso: 'membresias.ver' },
+  { id: 'mi-membresia', texto: 'Mi membresía', href: '/mi-membresia.html', permiso: 'perfil.ver', ocultarCon: 'membresias.ver' },
   { id: 'usuarios', texto: 'Usuarios', href: '/usuarios.html', permiso: 'usuarios.ver' },
   { id: 'parqueaderos', texto: 'Parqueaderos', href: '/parqueaderos.html', permiso: 'parqueaderos.ver', grupo: 'Configuración' },
   // spec 006: solo quien configura ve la tabla semanal en el menú (el aviso de hoy está en otras pantallas).
   { id: 'pico-placa', texto: 'Pico y placa', href: '/pico-placa.html', permiso: 'restricciones.crear', grupo: 'Configuración' },
   // spec 008: la lista la ven Operador y Cliente (solo lectura); solo el Administrador la edita.
   { id: 'tarifas', texto: 'Tarifas', href: '/tarifas.html', permiso: 'tarifas.ver', grupo: 'Configuración' },
+  // spec 010: solo quien configura los planes los ve en el menú (el Cliente los ve en Mi membresía).
+  { id: 'planes', texto: 'Planes', href: '/planes.html', permiso: 'planes.crear', grupo: 'Configuración' },
   { id: 'roles', texto: 'Roles', href: '/roles.html', permiso: 'roles.ver', grupo: 'Configuración' },
   { id: 'permisos', texto: 'Permisos', href: '/permisos.html', permiso: 'roles.ver', grupo: 'Configuración' },
   { id: 'mi-perfil', texto: 'Mi perfil', href: '/mi-perfil.html', permiso: 'perfil.ver' },

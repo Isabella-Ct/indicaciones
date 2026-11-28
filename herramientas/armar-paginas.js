@@ -17,10 +17,13 @@ const MENU = [
   ['vehiculos', 'Vehículos', '/vehiculos.html'],
   ['mis-vehiculos', 'Mis vehículos', '/mis-vehiculos.html'],
   ['mis-facturas', 'Mis facturas', '/mis-facturas.html'],
+  ['membresias', 'Membresías', '/membresias.html'],
+  ['mi-membresia', 'Mi membresía', '/mi-membresia.html'],
   ['usuarios', 'Usuarios', '/usuarios.html'],
   ['parqueaderos', 'Parqueaderos', '/parqueaderos.html'],
   ['pico-placa', 'Pico y placa', '/pico-placa.html'],
   ['tarifas', 'Tarifas', '/tarifas.html'],
+  ['planes', 'Planes', '/planes.html'],
   ['roles', 'Roles', '/roles.html'],
   ['permisos', 'Permisos', '/permisos.html'],
   ['mi-perfil', 'Mi perfil', '/mi-perfil.html'],
@@ -433,4 +436,5 @@ require('./paginas-006.js')({ pagina, icono });
 require('./paginas-007.js')({ pagina, tablaVacia, icono });
 require('./paginas-008.js')({ pagina, tablaVacia, icono });
 require('./paginas-009.js')({ pagina, tablaVacia, icono });
+require('./paginas-010.js')({ pagina, tablaVacia, icono });
 console.log('Páginas escritas en', destino);

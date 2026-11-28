@@ -39,6 +39,18 @@ export function ponerChipFactura(chip, estado) {
   ponerChip(chip, estado === 'anulada' ? 'Anulada' : 'Emitida', estado === 'anulada' ? 'out' : 'free');
 }
 
+/** Estado de una membresía (spec 010): activa | vencida | cancelada. */
+const ESTADO_MEMBRESIA = {
+  activa: ['Activa', 'free'],
+  vencida: ['Vencida', 'reserved'],
+  cancelada: ['Cancelada', 'out'],
+};
+
+export function ponerChipMembresia(chip, estado) {
+  const [texto, variante] = ESTADO_MEMBRESIA[estado] ?? [estado, 'neutral'];
+  ponerChip(chip, texto, variante);
+}
+
 /** Chip de estado activo/inactivo (usuarios, roles, tarifas…). */
 export function ponerChipActivo(chip, estado) {
   ponerChip(chip, estado === 'activo' ? 'Activo' : 'Inactivo', estado === 'activo' ? 'free' : 'out');
