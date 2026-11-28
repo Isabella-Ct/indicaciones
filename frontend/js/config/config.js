@@ -34,6 +34,8 @@ export const MENU = [
   { id: 'tarifas', texto: 'Tarifas', href: '/tarifas.html', permiso: 'tarifas.ver', grupo: 'Configuración' },
   // spec 010: solo quien configura los planes los ve en el menú (el Cliente los ve en Mi membresía).
   { id: 'planes', texto: 'Planes', href: '/planes.html', permiso: 'planes.crear', grupo: 'Configuración' },
+  // spec 011: el Operador los consulta en modo de solo lectura; solo el Administrador los configura.
+  { id: 'descuentos', texto: 'Descuentos', href: '/descuentos.html', permiso: 'descuentos.ver', grupo: 'Configuración' },
   { id: 'roles', texto: 'Roles', href: '/roles.html', permiso: 'roles.ver', grupo: 'Configuración' },
   { id: 'permisos', texto: 'Permisos', href: '/permisos.html', permiso: 'roles.ver', grupo: 'Configuración' },
   { id: 'mi-perfil', texto: 'Mi perfil', href: '/mi-perfil.html', permiso: 'perfil.ver' },

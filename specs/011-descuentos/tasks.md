@@ -32,10 +32,10 @@
 
 ## Fase 6: Interfaz (Atomic Design)
 
-- [ ] T010 [P] Átomo `ponerChipDescuento`; fila del descuento en `moleculas/cobro.js` y `organismos/comprobante.js` (+ marcado en `paginas-007.js` y `paginas-009.js`)
-- [ ] T011 [P] Servicio `js/services/descuentos.service.js`
-- [ ] T012 `herramientas/paginas-011.js` + regenerar: menú «Descuentos» (`descuentos.ver`, Configuración)
-- [ ] T013 [US1] [US3] `descuentos.html` + `views/descuentos.view.js` (listado, nuevo, editar, activar/inactivar con confirmación)
+- [X] T010 [P] Átomo `ponerChipDescuento`; fila del descuento en `moleculas/cobro.js` y `organismos/comprobante.js` (+ marcado en `paginas-007.js` y `paginas-009.js`)
+- [X] T011 [P] Servicio `js/services/descuentos.service.js`
+- [X] T012 `herramientas/paginas-011.js` + regenerar: menú «Descuentos» (`descuentos.ver`, Configuración)
+- [X] T013 [US1] [US3] `descuentos.html` + `views/descuentos.view.js` (listado, nuevo, editar, activar/inactivar con confirmación)
 
 ## Fase 7: Pulido
 

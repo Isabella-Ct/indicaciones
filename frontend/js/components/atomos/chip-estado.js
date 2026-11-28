@@ -39,6 +39,19 @@ export function ponerChipFactura(chip, estado) {
   ponerChip(chip, estado === 'anulada' ? 'Anulada' : 'Emitida', estado === 'anulada' ? 'out' : 'free');
 }
 
+/** Situación de un descuento (spec 011): vigente | programado | vencido | inactivo. */
+const SITUACION_DESCUENTO = {
+  vigente: ['Vigente', 'free'],
+  programado: ['Programado', 'reserved'],
+  vencido: ['Vencido', 'neutral'],
+  inactivo: ['Inactivo', 'out'],
+};
+
+export function ponerChipDescuento(chip, situacion) {
+  const [texto, variante] = SITUACION_DESCUENTO[situacion] ?? [situacion, 'neutral'];
+  ponerChip(chip, texto, variante);
+}
+
 /** Estado de una membresía (spec 010): activa | vencida | cancelada. */
 const ESTADO_MEMBRESIA = {
   activa: ['Activa', 'free'],

@@ -1,6 +1,7 @@
 /**
  * Organismo · comprobante (variante factura del organism-ticket de la maqueta): factura de 80 mm con número,
- * parqueadero, cliente o tercero, placa, entrada, salida, tiempo, tarifa, cálculo, total y pago (RF-FAC-09).
+ * parqueadero, cliente o tercero, placa, entrada, salida, tiempo, tarifa, cálculo, descuento (spec 011), total y
+ * pago (RF-FAC-09).
  * El marcado está en la página; aquí solo se ponen los textos.
  */
 import { ponerPlaca } from '../atomos/placa.js';
@@ -26,7 +27,9 @@ export function ponerComprobante(raiz, f) {
   poner('tiempo', f.movimiento ? formatearDuracion(f.movimiento.minutos) : '—');
   poner('tarifa', f.liquidacion?.tarifa?.nombre);
   poner('calculo', f.liquidacion?.explicacion);
-  poner('descuento', formatearCOP(f.liquidacion?.valorDescuento ?? 0));
+  // Spec 011 (RF-DES-04): nombre y valor del descuento aplicado.
+  const descuento = f.liquidacion?.descuento;
+  poner('descuento', descuento ? `${descuento.nombre} · − ${formatearCOP(f.liquidacion.valorDescuento)}` : formatearCOP(0));
   poner('total', formatearCOP(f.total));
   poner('metodo', METODO[f.pago?.metodo] ?? f.pago?.metodo);
   poner('pago-detalle', f.pago?.metodo === 'efectivo' ? `Recibido ${formatearCOP(f.pago.valorRecibido)} · cambio ${formatearCOP(f.pago.cambio)}` : f.pago?.referencia ? `Referencia ${f.pago.referencia}` : '—');

@@ -163,6 +163,7 @@ module.exports = ({ pagina, tablaVacia, icono }) => {
                 <dl class="molecule-data-list">
                   <div><dt>Tiempo</dt><dd class="js-tiempo"></dd></div>
                   <div><dt>Tarifa</dt><dd class="js-tarifa"></dd></div>
+                  <div class="hidden js-descuento-fila"><dt>Descuento</dt><dd class="js-descuento"></dd></div>
                 </dl>
               </div>
               <form class="organism-form--grid hidden" id="form-cobro" novalidate>
