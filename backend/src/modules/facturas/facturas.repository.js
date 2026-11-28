@@ -14,7 +14,8 @@ const COLUMNAS = `f.id_factura, f.numero, f.estado, f.fecha_emision, f.total, f.
   pg.id_pago, pg.metodo, pg.valor, pg.valor_recibido, pg.cambio, pg.referencia, pg.fecha AS pago_fecha, pg.id_cierre,
   pg.id_operador, uo.nombre_completo AS operador,
   m.id_movimiento, m.fecha_hora_entrada, m.fecha_hora_salida, m.minutos_estadia,
-  v.placa, v.tipo AS tipo_vehiculo, c.codigo AS celda, p.nombre AS parqueadero, p.direccion AS parqueadero_direccion,
+  COALESCE(v.placa, vm.placa) AS placa, v.tipo AS tipo_vehiculo, c.codigo AS celda,
+  mb.id_membresia AS membresia_id, pm.nombre AS membresia_plan, vm.placa AS membresia_placa, mb.fecha_fin AS membresia_fin, p.nombre AS parqueadero, p.direccion AS parqueadero_direccion,
   EXISTS (SELECT 1 FROM bitacora b WHERE b.entidad = 'factura' AND b.id_registro = f.id_factura AND b.accion = 'enviar_factura') AS enviada`;
 
 const DESDE = `FROM factura f
@@ -26,7 +27,10 @@ const DESDE = `FROM factura f
   LEFT JOIN movimiento m ON m.id_movimiento = l.id_movimiento
   LEFT JOIN vehiculo v ON v.id_vehiculo = m.id_vehiculo
   LEFT JOIN celda c ON c.id_celda = m.id_celda
-  LEFT JOIN parqueadero p ON p.id_parqueadero = c.id_parqueadero`;
+  LEFT JOIN parqueadero p ON p.id_parqueadero = c.id_parqueadero
+  LEFT JOIN membresia mb ON mb.id_membresia = f.id_membresia
+  LEFT JOIN plan_membresia pm ON pm.id_plan = mb.id_plan
+  LEFT JOIN vehiculo vm ON vm.id_vehiculo = mb.id_vehiculo`;
 
 const aFactura = (f) =>
   f && {
@@ -50,6 +54,9 @@ const aFactura = (f) =>
           salida: aIsoBogota(f.fecha_hora_salida),
           minutos: f.minutos_estadia,
         }
+      : null,
+    membresia: f.membresia_id
+      ? { idMembresia: f.membresia_id, plan: f.membresia_plan, placa: f.membresia_placa, fechaFin: f.membresia_fin ? aIsoBogota(f.membresia_fin).slice(0, 10) : null }
       : null,
     pago: f.id_pago
       ? {
@@ -84,7 +91,7 @@ async function listar({ q, desde, hasta, metodo, estado, idCliente, limit, offse
   const valores = [];
   if (q) {
     const like = `%${escapeLike(q)}%`;
-    condiciones.push('(f.numero LIKE ? OR v.placa LIKE ? OR u.nombre_completo LIKE ? OR u.numero_documento LIKE ? OR f.tercero_nombre LIKE ? OR f.tercero_documento LIKE ?)');
+    condiciones.push('(f.numero LIKE ? OR COALESCE(v.placa, vm.placa) LIKE ? OR u.nombre_completo LIKE ? OR u.numero_documento LIKE ? OR f.tercero_nombre LIKE ? OR f.tercero_documento LIKE ?)');
     valores.push(like, `%${escapeLike(q.toUpperCase().replace(/[\s.-]/g, ''))}%`, like, like, like, like);
   }
   if (desde) {
@@ -120,11 +127,11 @@ async function listar({ q, desde, hasta, metodo, estado, idCliente, limit, offse
   return { filas: filas.map(aFactura), total: Number(totales.total), sumaTotal: Number(totales.suma) };
 }
 
-async function insertarFactura({ numero: num, idLiquidacion, idCliente, tercero, total, fecha }, { conexion }) {
+async function insertarFactura({ numero: num, idLiquidacion, idMembresia, idCliente, tercero, total, fecha }, { conexion }) {
   const [r] = await conexion.query(
-    `INSERT INTO factura (numero, id_liquidacion, id_cliente, tercero_documento, tercero_nombre, total, fecha_emision)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [num, idLiquidacion, idCliente ?? null, tercero?.documento ?? null, tercero?.nombre ?? null, total, fecha]
+    `INSERT INTO factura (numero, id_liquidacion, id_membresia, id_cliente, tercero_documento, tercero_nombre, total, fecha_emision)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [num, idLiquidacion ?? null, idMembresia ?? null, idCliente ?? null, tercero?.documento ?? null, tercero?.nombre ?? null, total, fecha]
   );
   return r.insertId;
 }

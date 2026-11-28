@@ -103,6 +103,15 @@ const TARIFAS = [
   ['Carro ocasional 2025', 'carro', 'ocasional', 3500, 15, 900, 26000, 10, '2025-01-01 00:00:00', '2026-01-01 00:00:00', 'inactivo'],
 ];
 
+// Planes de membresía (spec 010, research R-08): [nombre, tipo_vehiculo, valor, días, beneficios, estado]
+const PLANES = [
+  ['Mensual carro', 'carro', 180000, 30, 'Entradas y salidas ilimitadas durante 30 días.', 'activo'],
+  ['Mensual moto', 'moto', 70000, 30, 'Entradas y salidas ilimitadas durante 30 días.', 'activo'],
+  ['Trimestral carro', 'carro', 480000, 90, 'Tres meses al precio de 2,7 mensualidades.', 'activo'],
+  ['Anual moto', 'moto', 700000, 365, 'Un año completo con el mejor precio por día.', 'activo'],
+  ['Mensual carro nocturno', 'carro', 90000, 30, 'Solo de 7:00 p. m. a 7:00 a. m. (plan descontinuado).', 'inactivo'],
+];
+
 // [id_parqueadero, nombre, tipo, estado]
 const PUERTAS = [
   [1, 'Carrera 43', 'mixta', 'activo'],
@@ -247,13 +256,18 @@ async function generarSeed() {
   lineas.push(valores(TARIFAS));
   lineas.push('');
 
+  lineas.push('-- Planes de membresía (spec 010, RF-MEM-01)');
+  lineas.push('INSERT INTO plan_membresia (nombre, tipo_vehiculo, valor_mensual, dias_vigencia, beneficios, estado) VALUES');
+  lineas.push(valores(PLANES));
+  lineas.push('');
+
   lineas.push('-- Consecutivos sin huecos (RN-22)');
   lineas.push('INSERT INTO consecutivo (clave, prefijo, siguiente, longitud) VALUES');
   lineas.push(CONSECUTIVOS.map(([c, p]) => `  (${q(c)}, ${q(p)}, 1, 6)`).join(',\n') + ';');
   lineas.push('');
 
   fs.writeFileSync(DESTINO, lineas.filter((l) => l !== null).join('\n'));
-  return { permisos: permisos.length, usuarios: USUARIOS.length, roles: ROLES.length, parqueaderos: PARQUEADEROS.length, puertas: PUERTAS.length, celdas: construirCeldas().length, vehiculos: VEHICULOS.length, restricciones: PICO_PLACA.length * 2, tarifas: TARIFAS.length };
+  return { permisos: permisos.length, usuarios: USUARIOS.length, roles: ROLES.length, parqueaderos: PARQUEADEROS.length, puertas: PUERTAS.length, celdas: construirCeldas().length, vehiculos: VEHICULOS.length, restricciones: PICO_PLACA.length * 2, tarifas: TARIFAS.length, planes: PLANES.length };
 }
 
 if (require.main === module) {

@@ -4,6 +4,12 @@ Historial de `schema.sql` y de las migraciones en `migrations/`. Cada entrada in
 
 ---
 
+## 2.2.0 (sin cambios en el esquema; semilla ampliada) — 2026-11-27 · spec `010-membresias`
+
+La spec 010 usa `plan_membresia`, `membresia` y `factura.id_membresia` tal como están: `UNIQUE uq_plan_nombre` (RF-MEM-01), la columna generada `vehiculo_activa` con `UNIQUE` (una membresía activa por vehículo, RN-23) y el `CHECK` de la factura (liquidación o membresía) ya cumplen RF-MEM-03..05. La renovación alarga la misma fila (`fecha_fin`; si estaba vencida también `fecha_inicio` y `estado`) y emite una factura nueva con el mismo `id_membresia`. Solo cambia `seed.sql`: 5 planes — «Mensual carro» ($ 180.000, 30 días), «Mensual moto» ($ 70.000, 30), «Trimestral carro» ($ 480.000, 90), «Anual moto» ($ 700.000, 365) y «Mensual carro nocturno» ($ 90.000, 30, inactivo); sin membresías (research R-08).
+
+---
+
 ## 2.2.0 (sin cambios) — 2026-11-27 · spec `009-facturacion-pagos`
 
 La spec 009 usa `liquidacion`, `factura`, `pago`, `cierre_caja` y `alerta` tal como están: sus `UNIQUE` (una liquidación por movimiento, una factura por liquidación, un pago por factura) y `CHECK` (efectivo con recibido ≥ valor, referencia salvo efectivo, totales ≥ 0) ya cumplen RF-FAC-06..09. El pago y su factura numerada (consecutivo `factura`, `FV-` + 6 dígitos) se crean en la misma transacción. `factura.cufe` sigue sin uso (TBD-02): la API la muestra como «pendiente de envío electrónico». La semilla no cambia.

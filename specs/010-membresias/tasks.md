@@ -8,32 +8,32 @@
 
 ## Fase 1: Preparación
 
-- [ ] T001 `backend/database/generar-seed.js` + `seed.sql`: 5 planes (research R-08); `npm run db:reset`; nota en `CAMBIOS.md` (sin cambios de esquema)
-- [ ] T002 `facturas.service.cobrar(conexion, …)` reutilizable (validación del pago y factura + pago) usado por `pagar`; factura con `membresia` en `facturas.repository.js` y en `factura.pdf.js` (research R-03, R-07)
+- [X] T001 `backend/database/generar-seed.js` + `seed.sql`: 5 planes (research R-08); `npm run db:reset`; nota en `CAMBIOS.md` (sin cambios de esquema)
+- [X] T002 `facturas.service.cobrar(conexion, …)` reutilizable (validación del pago y factura + pago) usado por `pagar`; factura con `membresia` en `facturas.repository.js` y en `factura.pdf.js` (research R-03, R-07)
 
 ## Fase 2: Fundacional
 
-- [ ] T003 [P] `backend/src/modules/membresias/membresias.reglas.js` (`finDe`, `periodoRenovacion`, `diasRestantes`, `avisoRenovacion`) + `backend/tests/unit/membresias.reglas.test.js`
+- [X] T003 [P] `backend/src/modules/membresias/membresias.reglas.js` (`finDe`, `periodoRenovacion`, `diasRestantes`, `avisoRenovacion`) + `backend/tests/unit/membresias.reglas.test.js`
 
 ## Fase 3: US1 — Planes (P1) — HU-45
 
-- [ ] T004 [US1] `backend/tests/integration/planes.test.js` HU-45 E1–E4
-- [ ] T005 [US1] `backend/src/modules/planes/` validator (data-model.md PlanMembresia.nombre, PlanMembresia.tipo_vehiculo, PlanMembresia.valor_mensual, PlanMembresia.dias_vigencia, PlanMembresia.beneficios, PlanMembresia.estado), repository, service, controller y rutas; registro en `rutasProtegidas()`
+- [X] T004 [US1] `backend/tests/integration/planes.test.js` HU-45 E1–E4
+- [X] T005 [US1] `backend/src/modules/planes/` validator (data-model.md PlanMembresia.nombre, PlanMembresia.tipo_vehiculo, PlanMembresia.valor_mensual, PlanMembresia.dias_vigencia, PlanMembresia.beneficios, PlanMembresia.estado), repository, service, controller y rutas; registro en `rutasProtegidas()`
 
 ## Fase 4: US2 — Suscribir (P1) — HU-46
 
-- [ ] T006 [US2] `backend/tests/integration/membresias.test.js` bloque HU-46 E1–E5
-- [ ] T007 [US2] `backend/src/modules/membresias/` validator, repository, service `suscribir` (R-03; data-model.md Membresia.fecha_inicio, Membresia.fecha_fin, Membresia.estado) y `listar`; `POST /membresias` y `GET /membresias`
+- [X] T006 [US2] `backend/tests/integration/membresias.test.js` bloque HU-46 E1–E5
+- [X] T007 [US2] `backend/src/modules/membresias/` validator, repository, service `suscribir` (R-03; data-model.md Membresia.fecha_inicio, Membresia.fecha_fin, Membresia.estado) y `listar`; `POST /membresias` y `GET /membresias`
 
 ## Fase 5: US3 — Renovar y cancelar (P2) — HU-47
 
-- [ ] T008 [US3] Bloque HU-47 E1–E4 en `membresias.test.js` (incluye `vencer` y la liquidación en tarifa normal después de cancelar)
-- [ ] T009 [US3] Service `renovar`, `cancelar` (R-04; data-model.md Membresia.motivo_cancelacion) y `vencer` (R-05); `src/tareas/programador.js` y arranque en `server.js`; rutas
+- [X] T008 [US3] Bloque HU-47 E1–E4 en `membresias.test.js` (incluye `vencer` y la liquidación en tarifa normal después de cancelar)
+- [X] T009 [US3] Service `renovar`, `cancelar` (R-04; data-model.md Membresia.motivo_cancelacion) y `vencer` (R-05); `src/tareas/programador.js` y arranque en `server.js`; rutas
 
 ## Fase 6: US4 — Mi membresía (P3) — HU-48
 
-- [ ] T010 [US4] Bloque HU-48 E1–E3 en `membresias.test.js`
-- [ ] T011 [US4] Service `mias` (R-06); `GET /usuarios/me/membresias` antes de `/:id` en `usuarios.routes.js`
+- [X] T010 [US4] Bloque HU-48 E1–E3 en `membresias.test.js`
+- [X] T011 [US4] Service `mias` (R-06); `GET /usuarios/me/membresias` antes de `/:id` en `usuarios.routes.js`
 
 ## Fase 7: Interfaz (Atomic Design)
 

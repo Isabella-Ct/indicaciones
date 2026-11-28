@@ -37,7 +37,37 @@ async function detalle(idFactura, { conexion } = {}) {
 }
 
 // ---------------------------------------------------------------- HU-40
-/** RF-FAC-05..09 (R-04): pago + factura numerada en una transacción. */
+/**
+ * Cobro reutilizable (spec 009 R-04; lo usan el pago del servicio y las membresías de la spec 010): valida el
+ * pago (RF-FAC-06, RF-FAC-07), toma el consecutivo y crea la factura y el pago dentro de la transacción de quien
+ * llama. Exactamente uno de idLiquidacion o idMembresia. `prefijoCampo` ('pago.') nombra el campo del error
+ * cuando el pago viene anidado en el cuerpo. Devuelve el id de la factura.
+ */
+async function cobrar(conexion, { idLiquidacion = null, idMembresia = null, total, idCliente, tercero, pago, actor, accion = 'registrar_pago', prefijoCampo = '' }) {
+  const { metodo, valorRecibido, referencia } = pago;
+  let cambio = null;
+  let recibido = total;
+  if (metodo === 'efectivo') {
+    recibido = valorRecibido ?? total;
+    // RF-FAC-06: muestra el faltante y no registra el pago.
+    if (recibido < total) {
+      throw errores.validacion([{ campo: `${prefijoCampo}valorRecibido`, mensaje: `El valor recibido no alcanza: faltan ${pesos(total - recibido)}.` }]);
+    }
+    cambio = Math.round((recibido - total) * 100) / 100;
+  }
+  const fecha = reloj.ahora();
+  // RN-22: el número se toma dentro de la transacción (sin huecos si el cobro falla).
+  const numero = await siguienteConsecutivo(conexion, 'factura');
+  const id = await repositorio.insertarFactura({ numero, idLiquidacion, idMembresia, idCliente, tercero, total, fecha }, { conexion });
+  const idPago = await repositorio.insertarPago(
+    { idFactura: id, metodo, valor: total, valorRecibido: recibido, cambio, referencia: metodo === 'efectivo' ? null : referencia, idOperador: actor.idUsuario, fecha },
+    { conexion }
+  );
+  await bitacora(conexion, actor, accion, 'factura', id, { numero, idPago, metodo, total, cambio, idMembresia });
+  return id;
+}
+
+/** RF-FAC-05..09 (R-04): pago del servicio + factura numerada en una transacción. */
 async function pagar({ idMovimiento, metodo, valorRecibido, referencia, tercero }, actor) {
   let idFactura;
   try {
@@ -47,29 +77,15 @@ async function pagar({ idMovimiento, metodo, valorRecibido, referencia, tercero 
         throw errores.conflicto('Registre primero la salida del vehículo: el movimiento sigue abierto.', 'MOVIMIENTO_NO_CERRADO');
       }
       if (liquidacion.pagada) throw YA_PAGADO();
-      const total = liquidacion.total;
-      let cambio = null;
-      let recibido = total;
-      if (metodo === 'efectivo') {
-        recibido = valorRecibido ?? total;
-        // RF-FAC-06: muestra el faltante y no registra el pago.
-        if (recibido < total) throw errores.validacion([{ campo: 'valorRecibido', mensaje: `El valor recibido no alcanza: faltan ${pesos(total - recibido)}.` }]);
-        cambio = Math.round((recibido - total) * 100) / 100;
-      }
       const movimiento = await liquidacionesRepositorio.movimientoParaLiquidar(idMovimiento, { conexion });
-      const fecha = reloj.ahora();
-      // RN-22: el número se toma dentro de la transacción (sin huecos si el pago falla).
-      const numero = await siguienteConsecutivo(conexion, 'factura');
-      const id = await repositorio.insertarFactura(
-        { numero, idLiquidacion: liquidacion.idLiquidacion, idCliente: movimiento.idPropietario, tercero, total, fecha },
-        { conexion }
-      );
-      const idPago = await repositorio.insertarPago(
-        { idFactura: id, metodo, valor: total, valorRecibido: recibido, cambio, referencia: metodo === 'efectivo' ? null : referencia, idOperador: actor.idUsuario, fecha },
-        { conexion }
-      );
-      await bitacora(conexion, actor, 'registrar_pago', 'factura', id, { numero, idPago, metodo, total, cambio });
-      return id;
+      return cobrar(conexion, {
+        idLiquidacion: liquidacion.idLiquidacion,
+        total: liquidacion.total,
+        idCliente: movimiento.idPropietario,
+        tercero,
+        pago: { metodo, valorRecibido, referencia },
+        actor,
+      });
     });
   } catch (error) {
     await liquidaciones.alertarSiFaltaTarifa(error);
@@ -164,4 +180,4 @@ async function listar(filtros, { idCliente } = {}) {
 /** RF-FAC-16: solo las del cliente de la sesión. */
 const misFacturas = (filtros, actor) => listar(filtros, { idCliente: actor.idUsuario });
 
-module.exports = { pagar, obtener, emitir, pdf, anular, listar, misFacturas };
+module.exports = { pagar, cobrar, obtener, emitir, pdf, anular, listar, misFacturas, publica };

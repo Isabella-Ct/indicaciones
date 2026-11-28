@@ -23,6 +23,9 @@ router.get(
   require('../facturas/facturas.controller').misFacturas
 );
 
+// GET /api/v1/usuarios/me/membresias — HU-48 · RF-MEM-09, RF-MEM-10 (spec 010)
+router.get('/me/membresias', authorize('perfil.ver'), require('../membresias/membresias.controller').mias);
+
 // PUT /api/v1/usuarios/me — HU-11 · RF-USR-15, RF-USR-16, RF-USR-17
 router.put(
   '/me',

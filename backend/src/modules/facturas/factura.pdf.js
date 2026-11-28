@@ -53,6 +53,13 @@ function generarPdf(factura, liquidacion) {
       linea('Salida', formatearFechaHora(factura.movimiento.salida));
       linea('Tiempo', formatearDuracion(factura.movimiento.minutos ?? 0));
     }
+    if (factura.membresia) {
+      // Spec 010: factura del plan de membresía.
+      linea('Concepto', 'Membresía');
+      linea('Plan', factura.membresia.plan);
+      linea('Placa', factura.membresia.placa);
+      linea('Vigente hasta', factura.membresia.fechaFin ? factura.membresia.fechaFin.split('-').reverse().join('/') : '—');
+    }
     if (liquidacion?.tarifa) linea('Tarifa', liquidacion.tarifa.nombre);
     if (liquidacion) {
       doc.font('Helvetica').fontSize(7).text(liquidacion.explicacion, { width: ancho });

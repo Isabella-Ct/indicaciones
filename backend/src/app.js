@@ -43,6 +43,9 @@ function rutasProtegidas() {
     { ruta: '/pagos', router: require('./modules/facturas/facturas.routes').pagosRouter },
     { ruta: '/facturas', router: require('./modules/facturas/facturas.routes').facturasRouter },
     { ruta: '/caja', router: require('./modules/caja/caja.routes') },
+    // spec 010-membresias
+    { ruta: '/planes-membresia', router: require('./modules/planes/planes.routes') },
+    { ruta: '/membresias', router: require('./modules/membresias/membresias.routes') },
   ];
 }
 

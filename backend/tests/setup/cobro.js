@@ -1,6 +1,6 @@
 // Ayudas de prueba para liquidaciones, pagos, facturas y caja (spec 009 en adelante): registrar una estadía
-// completa con el reloj fijado, crear una membresía por SQL (la spec 010 aún no existe) y crear un operador
-// propio para aislar su turno de caja.
+// completa con el reloj fijado, crear una membresía por SQL (atajo de las pruebas de la spec 009) y crear un
+// operador o un cliente propios para aislar sus datos.
 const bcrypt = require('bcrypt');
 const { pool } = require('../../src/config/db');
 const { app, request, auth } = require('./helpers');
@@ -39,27 +39,33 @@ async function crearMembresia({ idVehiculo, idCliente, tipo = 'carro', desde = '
   return m.insertId;
 }
 
-let operadores = 0;
+let usuarios = 0;
 /**
- * Operador nuevo (sin contraseña temporal) y su token: su turno de caja empieza vacío. Usa un rol propio con
- * los mismos permisos del Operador, para no cambiar los conteos del rol Operador que revisa la spec 001.
+ * Usuario nuevo (sin contraseña temporal) con un rol propio que copia los permisos del rol base (2 = Operador,
+ * 3 = Cliente), para no cambiar los conteos de los roles base que revisa la spec 001. Devuelve { token, idUsuario }.
  */
-async function crearOperador() {
-  operadores += 1;
-  const documento = `7${String(Date.now()).slice(-7)}${operadores}`;
-  const [rol] = await pool.query("INSERT INTO rol (nombre, descripcion, es_base, estado) VALUES (?, 'Rol de prueba de caja', FALSE, 'activo')", [
-    `Cajero ${documento}`,
+async function crearUsuarioConRol(idRolBase, etiqueta) {
+  usuarios += 1;
+  const documento = `7${String(Date.now()).slice(-7)}${usuarios}`;
+  const [rol] = await pool.query("INSERT INTO rol (nombre, descripcion, es_base, estado) VALUES (?, 'Rol de prueba', FALSE, 'activo')", [
+    `${etiqueta} ${documento}`,
   ]);
-  await pool.query('INSERT INTO rol_permiso (id_rol, id_permiso) SELECT ?, id_permiso FROM rol_permiso WHERE id_rol = 2', [rol.insertId]);
-  const hash = await bcrypt.hash('Operador2026*', 4);
-  await pool.query(
+  await pool.query('INSERT INTO rol_permiso (id_rol, id_permiso) SELECT ?, id_permiso FROM rol_permiso WHERE id_rol = ?', [rol.insertId, idRolBase]);
+  const hash = await bcrypt.hash('Prueba2026*', 4);
+  const [u] = await pool.query(
     `INSERT INTO usuario (tipo_documento, numero_documento, nombre_completo, correo, celular, id_rol, contrasena_hash, debe_cambiar_contrasena, estado, acepta_tratamiento_datos, fecha_autorizacion)
      VALUES ('CC', ?, ?, ?, '3001234567', ?, ?, FALSE, 'activo', TRUE, NOW())`,
-    [documento, `Operador de caja ${operadores}`, `caja${documento}@parqueaderoabc.co`, rol.insertId, hash]
+    [documento, `${etiqueta} de prueba ${usuarios}`, `prueba${documento}@parqueaderoabc.co`, rol.insertId, hash]
   );
-  const res = await request(app).post('/api/v1/auth/login').send({ tipoDocumento: 'CC', numeroDocumento: documento, contrasena: 'Operador2026*' });
-  if (res.status !== 200) throw new Error(`Login del operador de caja: ${JSON.stringify(res.body)}`);
-  return res.body.data.token;
+  const res = await request(app).post('/api/v1/auth/login').send({ tipoDocumento: 'CC', numeroDocumento: documento, contrasena: 'Prueba2026*' });
+  if (res.status !== 200) throw new Error(`Login de ${etiqueta}: ${JSON.stringify(res.body)}`);
+  return { token: res.body.data.token, idUsuario: u.insertId };
 }
 
-module.exports = { estadia, crearMembresia, crearOperador };
+/** Operador nuevo y su token: su turno de caja empieza vacío. */
+const crearOperador = async () => (await crearUsuarioConRol(2, 'Cajero')).token;
+
+/** Cliente nuevo, sin vehículos ni membresías: { token, idUsuario }. */
+const crearCliente = () => crearUsuarioConRol(3, 'Cliente');
+
+module.exports = { estadia, crearMembresia, crearOperador, crearCliente };

@@ -21,24 +21,37 @@ const tercero = z
   })
   .strict(NO_PERMITIDOS);
 
+/** Campos del pago (RF-FAC-06, RF-FAC-07), reutilizados por las membresías (spec 010). */
+const camposPago = {
+  metodo,
+  valorRecibido: z.number({ invalid_type_error: 'El valor recibido debe ser un número.' }).min(0, 'El valor recibido no puede ser negativo.').optional(),
+  referencia: z.string({ invalid_type_error: 'La referencia debe ser texto.' }).trim().optional(),
+};
+
+/** Referencia en tarjeta, transferencia y QR; valor recibido en efectivo. */
+function reglasPago(d, ctx, prefijo = []) {
+  if (d.metodo !== 'efectivo' && (!d.referencia || d.referencia.length < 4 || d.referencia.length > 40)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: [...prefijo, 'referencia'], message: 'Ingrese el número de referencia o autorización (4 a 40 caracteres).' });
+  }
+  if (d.metodo === 'efectivo' && d.valorRecibido === undefined) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: [...prefijo, 'valorRecibido'], message: 'Ingrese el valor recibido en efectivo.' });
+  }
+}
+
+const pagoAnidado = z
+  .object(camposPago, { required_error: 'Ingrese los datos del pago.' })
+  .strict(NO_PERMITIDOS)
+  .superRefine((d, ctx) => reglasPago(d, ctx));
+
 const pago = z
   .object({
     idMovimiento: id('el movimiento'),
-    metodo,
-    valorRecibido: z.number({ invalid_type_error: 'El valor recibido debe ser un número.' }).min(0, 'El valor recibido no puede ser negativo.').optional(),
-    referencia: z.string({ invalid_type_error: 'La referencia debe ser texto.' }).trim().optional(),
+    ...camposPago,
     tercero: tercero.optional(),
   })
   .strict(NO_PERMITIDOS)
-  .superRefine((d, ctx) => {
-    // RF-FAC-07: referencia o autorización para tarjeta, transferencia y QR.
-    if (d.metodo !== 'efectivo' && (!d.referencia || d.referencia.length < 4 || d.referencia.length > 40)) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['referencia'], message: 'Ingrese el número de referencia o autorización (4 a 40 caracteres).' });
-    }
-    if (d.metodo === 'efectivo' && d.valorRecibido === undefined) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['valorRecibido'], message: 'Ingrese el valor recibido en efectivo.' });
-    }
-  });
+  // RF-FAC-07: referencia o autorización para tarjeta, transferencia y QR.
+  .superRefine((d, ctx) => reglasPago(d, ctx));
 
 const emision = z.object({ idFactura: id('la factura'), tercero: tercero.optional() }).strict(NO_PERMITIDOS);
 
@@ -69,4 +82,4 @@ const listar = z
 
 const params = z.object({ id: id('El id') });
 
-module.exports = { pago, emision, anulacion, listar, params };
+module.exports = { pago, pagoAnidado, emision, anulacion, listar, params };

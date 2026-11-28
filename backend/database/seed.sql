@@ -226,13 +226,13 @@ INSERT INTO rol_permiso (id_rol, id_permiso) VALUES
 
 -- Usuarios de prueba (contraseñas en README; bcrypt costo 10)
 INSERT INTO usuario (id_usuario, tipo_documento, numero_documento, nombre_completo, correo, celular, id_rol, contrasena_hash, debe_cambiar_contrasena, estado, acepta_tratamiento_datos, fecha_autorizacion) VALUES
-  (1, 'CC', '1000000001', 'Laura Gómez Restrepo', 'admin@parqueaderoabc.co', '3001000001', 1, '$2b$10$JvNa9t1XUXe/nbw55ty0ZunDvqbCII9FNPtc26pKA08Y7tLrNT3zW', FALSE, 'activo', TRUE, NOW()),
-  (2, 'CC', '1000000002', 'Juan Pérez Álvarez', 'operador@parqueaderoabc.co', '3001000002', 2, '$2b$10$4IpxmdKfAApXJhdvi4EnZOD2x2a5pzu5x2fOFyh6Uf6R2/Gwjydiu', FALSE, 'activo', TRUE, NOW()),
-  (3, 'CC', '1000000003', 'Sebastián Duque Mejía', 'supervisor@parqueaderoabc.co', '3001000003', 4, '$2b$10$snwkk6xHp7J/M6TJ9X1xLeAnFQya9GmDaRomGIlSxYgRtZRh89ztu', FALSE, 'activo', TRUE, NOW()),
-  (4, 'CC', '1000000004', 'Andrea Salcedo Ríos', 'andrea.salcedo@correo.co', '3101000004', 3, '$2b$10$Rwgn9wseuhhl2UEFa.JF/OYB1tmfMh8J80fxd/4P0KSIuAWdZvOHu', FALSE, 'activo', TRUE, NOW()),
-  (5, 'CE', '1000000005', 'Carlos Medina Toro', 'carlos.medina@correo.co', '3101000005', 3, '$2b$10$Xs4I0f0iLUwGG4ZasWUo/ezf9wRDKg1p5Ogh11yk0Aakrqio5cCx.', FALSE, 'activo', TRUE, NOW()),
-  (6, 'CC', '1000000006', 'Valentina Ospina Gil', 'valentina.ospina@correo.co', '3101000006', 3, '$2b$10$DU8jKrqlPfT37/ok8ggd7.72kyycGqeBdah8E2QWjZMMuweQcwAHK', TRUE, 'activo', TRUE, NOW()),
-  (7, 'CC', '1000000009', 'Mateo Cardona Ruiz', 'mateo.cardona@correo.co', '3101000009', 3, '$2b$10$kEB8y6mMoolsvTuQTy7mheiXPRf05qvft2NXEQozY6gn6TLdt0kG.', FALSE, 'inactivo', TRUE, NOW());
+  (1, 'CC', '1000000001', 'Laura Gómez Restrepo', 'admin@parqueaderoabc.co', '3001000001', 1, '$2b$10$rBzWZOxgVqkGmMKz3mDx5e6I7VYHodNXv8Y5DBusidTxbOtym1DnC', FALSE, 'activo', TRUE, NOW()),
+  (2, 'CC', '1000000002', 'Juan Pérez Álvarez', 'operador@parqueaderoabc.co', '3001000002', 2, '$2b$10$vcIx3fnCjfx7nihMSTF7fuM2S3Wxh4MwPaYGEna0UKqUABXpSEV02', FALSE, 'activo', TRUE, NOW()),
+  (3, 'CC', '1000000003', 'Sebastián Duque Mejía', 'supervisor@parqueaderoabc.co', '3001000003', 4, '$2b$10$pIF.efidIR7t2RpgyzkS6emlwUfB5pXXcUiFldAAsgHtTij4QlCzq', FALSE, 'activo', TRUE, NOW()),
+  (4, 'CC', '1000000004', 'Andrea Salcedo Ríos', 'andrea.salcedo@correo.co', '3101000004', 3, '$2b$10$cB0.miK9GyyKp.AcPDX7BeRbocuEoYMCt51ocCoMNIKFvwA00NdTm', FALSE, 'activo', TRUE, NOW()),
+  (5, 'CE', '1000000005', 'Carlos Medina Toro', 'carlos.medina@correo.co', '3101000005', 3, '$2b$10$mXCK/NXZR/Mh2hPCm/ZavuKzPuScVylu0WXB0ZvEpAT6SLRNvHTE6', FALSE, 'activo', TRUE, NOW()),
+  (6, 'CC', '1000000006', 'Valentina Ospina Gil', 'valentina.ospina@correo.co', '3101000006', 3, '$2b$10$POZcmLxAdxGdwCi4oYl0gOaGwNM.M8XmauVAWs35sxucQzCkAgupG', TRUE, 'activo', TRUE, NOW()),
+  (7, 'CC', '1000000009', 'Mateo Cardona Ruiz', 'mateo.cardona@correo.co', '3101000009', 3, '$2b$10$7XTPS.hp655x6Rip8sle0OSVYcN04v3EfQpLo9.FQTwDscYDtXS3m', FALSE, 'inactivo', TRUE, NOW());
 
 -- Parqueaderos, puertas y celdas (spec 004, RF-CLD-01, RF-CLD-07, RF-CLD-09)
 INSERT INTO parqueadero (id_parqueadero, nombre, direccion, pisos, horario, estado) VALUES
@@ -320,6 +320,14 @@ INSERT INTO tarifa (nombre, tipo_vehiculo, tipo_cliente, valor_primera_hora, min
   ('Moto ocasional', 'moto', 'ocasional', 2000, 15, 500, 12000, 10, '2026-01-01 00:00:00', NULL, 'activo'),
   ('Moto registrado', 'moto', 'registrado', 1800, 15, 450, 10000, 10, '2026-01-01 00:00:00', NULL, 'activo'),
   ('Carro ocasional 2025', 'carro', 'ocasional', 3500, 15, 900, 26000, 10, '2025-01-01 00:00:00', '2026-01-01 00:00:00', 'inactivo');
+
+-- Planes de membresía (spec 010, RF-MEM-01)
+INSERT INTO plan_membresia (nombre, tipo_vehiculo, valor_mensual, dias_vigencia, beneficios, estado) VALUES
+  ('Mensual carro', 'carro', 180000, 30, 'Entradas y salidas ilimitadas durante 30 días.', 'activo'),
+  ('Mensual moto', 'moto', 70000, 30, 'Entradas y salidas ilimitadas durante 30 días.', 'activo'),
+  ('Trimestral carro', 'carro', 480000, 90, 'Tres meses al precio de 2,7 mensualidades.', 'activo'),
+  ('Anual moto', 'moto', 700000, 365, 'Un año completo con el mejor precio por día.', 'activo'),
+  ('Mensual carro nocturno', 'carro', 90000, 30, 'Solo de 7:00 p. m. a 7:00 a. m. (plan descontinuado).', 'inactivo');
 
 -- Consecutivos sin huecos (RN-22)
 INSERT INTO consecutivo (clave, prefijo, siguiente, longitud) VALUES
