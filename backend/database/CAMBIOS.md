@@ -4,6 +4,12 @@ Historial de `schema.sql` y de las migraciones en `migrations/`. Cada entrada in
 
 ---
 
+## 2.2.0 (sin cambios en el esquema; semilla ampliada) — 2026-11-27 · spec `011-descuentos`
+
+La spec 011 usa `descuento` y `liquidacion.id_descuento` / `liquidacion.valor_descuento` tal como están: `UNIQUE uq_descuento_nombre` (RF-DES-01), `CHECK` del valor (porcentaje 1–100 o fijo > 0, RF-DES-02) y de la vigencia, e índice `idx_descuento_vigencia` para buscar los vigentes al liquidar. La liquidación guarda el descuento aplicado y su valor una sola vez, así que editar o inactivar un descuento no cambia las ya guardadas (RF-DES-05). Solo cambia `seed.sql`: 3 descuentos — «Motos fin de semana» (20 %, motos, diciembre de 2026), «Navidad clientes registrados» (10 %, registrados, 15–31 de diciembre de 2026) y «Promoción de apertura» ($ 1.000, enero de 2026, inactivo); ninguno vigente en noviembre de 2026 (research R-08).
+
+---
+
 ## 2.2.0 (sin cambios en el esquema; semilla ampliada) — 2026-11-27 · spec `010-membresias`
 
 La spec 010 usa `plan_membresia`, `membresia` y `factura.id_membresia` tal como están: `UNIQUE uq_plan_nombre` (RF-MEM-01), la columna generada `vehiculo_activa` con `UNIQUE` (una membresía activa por vehículo, RN-23) y el `CHECK` de la factura (liquidación o membresía) ya cumplen RF-MEM-03..05. La renovación alarga la misma fila (`fecha_fin`; si estaba vencida también `fecha_inicio` y `estado`) y emite una factura nueva con el mismo `id_membresia`. Solo cambia `seed.sql`: 5 planes — «Mensual carro» ($ 180.000, 30 días), «Mensual moto» ($ 70.000, 30), «Trimestral carro» ($ 480.000, 90), «Anual moto» ($ 700.000, 365) y «Mensual carro nocturno» ($ 90.000, 30, inactivo); sin membresías (research R-08).

@@ -8,27 +8,27 @@
 
 ## Fase 1: Preparación
 
-- [ ] T001 `backend/database/generar-seed.js` + `seed.sql`: 3 descuentos (research R-08); `npm run db:reset`; nota en `CAMBIOS.md` (sin cambios de esquema)
+- [X] T001 `backend/database/generar-seed.js` + `seed.sql`: 3 descuentos (research R-08); `npm run db:reset`; nota en `CAMBIOS.md` (sin cambios de esquema)
 
 ## Fase 2: Fundacional
 
-- [ ] T002 [P] `backend/src/modules/descuentos/descuentos.reglas.js` (`corresponde`, `valorDe`, `elegir`, `situacion`) + `backend/tests/unit/descuentos.reglas.test.js`
-- [ ] T003 [P] `aplicarDescuento` en `backend/src/modules/liquidaciones/liquidaciones.reglas.js` + casos en `backend/tests/unit/liquidaciones.reglas.test.js`
+- [X] T002 [P] `backend/src/modules/descuentos/descuentos.reglas.js` (`corresponde`, `valorDe`, `elegir`, `situacion`) + `backend/tests/unit/descuentos.reglas.test.js`
+- [X] T003 [P] `aplicarDescuento` en `backend/src/modules/liquidaciones/liquidaciones.reglas.js` + casos en `backend/tests/unit/liquidaciones.reglas.test.js`
 
 ## Fase 3: US1 — Configurar (P1) — HU-49
 
-- [ ] T004 [US1] `backend/tests/integration/descuentos.test.js` bloque HU-49 E1–E4
-- [ ] T005 [US1] `backend/src/modules/descuentos/` validator (data-model.md Descuento.nombre, Descuento.tipo, Descuento.valor, Descuento.aplica_tipo_cliente, Descuento.aplica_tipo_vehiculo, Descuento.minutos_minimos, Descuento.vigente_desde, Descuento.vigente_hasta, Descuento.estado), repository, service, controller y rutas (GET, POST, PUT); registro en `rutasProtegidas()`
+- [X] T004 [US1] `backend/tests/integration/descuentos.test.js` bloque HU-49 E1–E4
+- [X] T005 [US1] `backend/src/modules/descuentos/` validator (data-model.md Descuento.nombre, Descuento.tipo, Descuento.valor, Descuento.aplica_tipo_cliente, Descuento.aplica_tipo_vehiculo, Descuento.minutos_minimos, Descuento.vigente_desde, Descuento.vigente_hasta, Descuento.estado), repository, service, controller y rutas (GET, POST, PUT); registro en `rutasProtegidas()`
 
 ## Fase 4: US2 — Aplicar en la liquidación (P1) — HU-50
 
-- [ ] T006 [US2] Bloque HU-50 E1–E4 en `descuentos.test.js` (incluye la factura y el PDF)
-- [ ] T007 [US2] `descuentosRepositorio.candidatos` y `liquidaciones.service.calcularPara` con el descuento (R-02; data-model.md Liquidacion.id_descuento, Liquidacion.valor_descuento); `liquidaciones.repository.insertar` guarda `id_descuento`; la guardada se muestra con su descuento; `factura.pdf.js` con el nombre
+- [X] T006 [US2] Bloque HU-50 E1–E4 en `descuentos.test.js` (incluye la factura y el PDF)
+- [X] T007 [US2] `descuentosRepositorio.candidatos` y `liquidaciones.service.calcularPara` con el descuento (R-02; data-model.md Liquidacion.id_descuento, Liquidacion.valor_descuento); `liquidaciones.repository.insertar` guarda `id_descuento`; la guardada se muestra con su descuento; `factura.pdf.js` con el nombre
 
 ## Fase 5: US3 — Activar o inactivar (P2) — HU-51
 
-- [ ] T008 [US3] Bloque HU-51 E1–E2 en `descuentos.test.js`
-- [ ] T009 [US3] Service `cambiarEstado` (R-05) y `PATCH /descuentos/:id/estado`
+- [X] T008 [US3] Bloque HU-51 E1–E2 en `descuentos.test.js`
+- [X] T009 [US3] Service `cambiarEstado` (R-05) y `PATCH /descuentos/:id/estado`
 
 ## Fase 6: Interfaz (Atomic Design)
 

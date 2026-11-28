@@ -60,4 +60,24 @@ function calcular({ minutos, tarifa, cubiertoPorMembresia = false }) {
   };
 }
 
-module.exports = { calcular, valorTramo, fraccionesDe, pesos, MINUTOS_DIA };
+/**
+ * Spec 011 (RF-DES-03, RF-DES-04, RN-21, RN-25): aplica el descuento elegido sobre el cálculo. Sin descuento,
+ * con membresía o sin valor bruto, devuelve el cálculo tal cual. El total nunca es negativo.
+ * @param {object} calculo resultado de `calcular`
+ * @param {{ nombre: string, tipo: string, valor: number } | null} descuento
+ * @param {number} valor lo que descuenta (descuentos.reglas.valorDe o el valor guardado)
+ */
+function aplicarDescuento(calculo, descuento, valor) {
+  if (!descuento || calculo.cubiertoPorMembresia || calculo.valorBruto <= 0 || !(valor > 0)) return calculo;
+  const descontado = Math.min(valor, calculo.valorBruto);
+  const total = calculo.valorBruto - descontado;
+  const etiqueta = descuento.tipo === 'porcentaje' ? `${descuento.valor} %` : 'valor fijo';
+  return {
+    ...calculo,
+    valorDescuento: descontado,
+    total,
+    explicacion: `${calculo.explicacion} − «${descuento.nombre}» ${etiqueta} (${pesos(descontado)}) = ${pesos(total)}`,
+  };
+}
+
+module.exports = { calcular, aplicarDescuento, valorTramo, fraccionesDe, pesos, MINUTOS_DIA };

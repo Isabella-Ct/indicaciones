@@ -65,7 +65,9 @@ function generarPdf(factura, liquidacion) {
       doc.font('Helvetica').fontSize(7).text(liquidacion.explicacion, { width: ancho });
       doc.moveDown(0.3);
       linea('Valor del servicio', pesos(liquidacion.valorBruto));
-      linea('Descuento', pesos(liquidacion.valorDescuento));
+      // Spec 011 (RF-DES-04): nombre y valor del descuento aplicado.
+      if (liquidacion.descuento) linea(`Descuento: ${liquidacion.descuento.nombre}`, `− ${pesos(liquidacion.valorDescuento)}`);
+      else linea('Descuento', pesos(0));
     }
     separador();
     doc.font('Helvetica-Bold').fontSize(12).text(`TOTAL ${pesos(factura.total)}`, { align: 'right' });

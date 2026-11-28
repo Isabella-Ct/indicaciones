@@ -112,6 +112,14 @@ const PLANES = [
   ['Mensual carro nocturno', 'carro', 90000, 30, 'Solo de 7:00 p. m. a 7:00 a. m. (plan descontinuado).', 'inactivo'],
 ];
 
+// Descuentos (spec 011, research R-08): [nombre, tipo, valor, tipo de cliente, tipo de vehículo, minutos mínimos,
+// vigente desde, vigente hasta, estado]. Ninguno es vigente en noviembre de 2026 (fechas de las pruebas).
+const DESCUENTOS = [
+  ['Motos fin de semana', 'porcentaje', 20, 'todos', 'moto', null, '2026-12-01 00:00:00', '2026-12-31 23:59:59', 'activo'],
+  ['Navidad clientes registrados', 'porcentaje', 10, 'registrado', 'todos', null, '2026-12-15 00:00:00', '2026-12-31 23:59:59', 'activo'],
+  ['Promoción de apertura', 'valor_fijo', 1000, 'todos', 'todos', null, '2026-01-01 00:00:00', '2026-01-31 23:59:59', 'inactivo'],
+];
+
 // [id_parqueadero, nombre, tipo, estado]
 const PUERTAS = [
   [1, 'Carrera 43', 'mixta', 'activo'],
@@ -261,13 +269,18 @@ async function generarSeed() {
   lineas.push(valores(PLANES));
   lineas.push('');
 
+  lineas.push('-- Descuentos y promociones (spec 011, RF-DES-01)');
+  lineas.push('INSERT INTO descuento (nombre, tipo, valor, aplica_tipo_cliente, aplica_tipo_vehiculo, minutos_minimos, vigente_desde, vigente_hasta, estado) VALUES');
+  lineas.push(valores(DESCUENTOS));
+  lineas.push('');
+
   lineas.push('-- Consecutivos sin huecos (RN-22)');
   lineas.push('INSERT INTO consecutivo (clave, prefijo, siguiente, longitud) VALUES');
   lineas.push(CONSECUTIVOS.map(([c, p]) => `  (${q(c)}, ${q(p)}, 1, 6)`).join(',\n') + ';');
   lineas.push('');
 
   fs.writeFileSync(DESTINO, lineas.filter((l) => l !== null).join('\n'));
-  return { permisos: permisos.length, usuarios: USUARIOS.length, roles: ROLES.length, parqueaderos: PARQUEADEROS.length, puertas: PUERTAS.length, celdas: construirCeldas().length, vehiculos: VEHICULOS.length, restricciones: PICO_PLACA.length * 2, tarifas: TARIFAS.length, planes: PLANES.length };
+  return { permisos: permisos.length, usuarios: USUARIOS.length, roles: ROLES.length, parqueaderos: PARQUEADEROS.length, puertas: PUERTAS.length, celdas: construirCeldas().length, vehiculos: VEHICULOS.length, restricciones: PICO_PLACA.length * 2, tarifas: TARIFAS.length, planes: PLANES.length, descuentos: DESCUENTOS.length };
 }
 
 if (require.main === module) {

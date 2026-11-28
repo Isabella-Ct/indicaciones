@@ -53,11 +53,11 @@ async function porMovimiento(idMovimiento, { conexion = pool, bloquear = false }
     : null;
 }
 
-async function insertar({ idMovimiento, idTarifa, minutos, valorBruto, valorDescuento, cubiertoPorMembresia, total }, { conexion }) {
+async function insertar({ idMovimiento, idTarifa, idDescuento = null, minutos, valorBruto, valorDescuento, cubiertoPorMembresia, total }, { conexion }) {
   const [r] = await conexion.query(
-    `INSERT INTO liquidacion (id_movimiento, id_tarifa, minutos_cobrados, valor_bruto, valor_descuento, cubierto_por_membresia, valor_total)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [idMovimiento, idTarifa, minutos, valorBruto, valorDescuento, cubiertoPorMembresia, total]
+    `INSERT INTO liquidacion (id_movimiento, id_tarifa, id_descuento, minutos_cobrados, valor_bruto, valor_descuento, cubierto_por_membresia, valor_total)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [idMovimiento, idTarifa, idDescuento, minutos, valorBruto, valorDescuento, cubiertoPorMembresia, total]
   );
   return r.insertId;
 }

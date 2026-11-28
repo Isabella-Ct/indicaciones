@@ -46,6 +46,8 @@ function rutasProtegidas() {
     // spec 010-membresias
     { ruta: '/planes-membresia', router: require('./modules/planes/planes.routes') },
     { ruta: '/membresias', router: require('./modules/membresias/membresias.routes') },
+    // spec 011-descuentos
+    { ruta: '/descuentos', router: require('./modules/descuentos/descuentos.routes') },
   ];
 }
 

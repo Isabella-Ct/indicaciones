@@ -1,15 +1,18 @@
-// Liquidación de un movimiento (spec 009, research R-03): RF-FAC-01..04, RN-19, RN-20, RN-21.
+// Liquidación de un movimiento (spec 009, research R-03): RF-FAC-01..04, RN-19, RN-20, RN-21; con el descuento
+// de la spec 011 (RF-DES-03, RF-DES-04, RN-25), vigente a la hora de salida.
 // Cerrado → se guarda una vez; abierto → vista previa con el reloj; anulado → 409. Sin tarifa → 409 y alerta.
 const { withTransaction } = require('../../config/db');
 const repositorio = require('./liquidaciones.repository');
 const tarifasRepositorio = require('../tarifas/tarifas.repository');
 const tarifas = require('../tarifas/tarifas.service');
+const descuentos = require('../descuentos/descuentos.service');
+const descuentosRepositorio = require('../descuentos/descuentos.repository');
 const reloj = require('../../utils/reloj');
 const { AppError, errores } = require('../../utils/errores');
 const { registrarBitacora } = require('../../utils/bitacora');
 const { tipoClienteDe } = require('../tarifas/tarifas.reglas');
 const { minutosEstadia } = require('../movimientos/movimientos.reglas');
-const { calcular } = require('./liquidaciones.reglas');
+const { calcular, aplicarDescuento } = require('./liquidaciones.reglas');
 
 const NO_ENCONTRADO = () => errores.noEncontrado('Movimiento no encontrado.', 'MOVIMIENTO_NO_ENCONTRADO');
 
@@ -25,7 +28,7 @@ const resumenTarifa = (t) =>
     minutosGracia: t.minutosGracia,
   };
 
-function respuesta(movimiento, tarifa, calculo, guardada) {
+function respuesta(movimiento, tarifa, calculo, guardada, descuento = null) {
   return {
     idMovimiento: movimiento.idMovimiento,
     persistida: Boolean(guardada),
@@ -39,6 +42,8 @@ function respuesta(movimiento, tarifa, calculo, guardada) {
     topeAplicado: calculo.topeAplicado,
     valorBruto: guardada ? guardada.valorBruto : calculo.valorBruto,
     valorDescuento: guardada ? guardada.valorDescuento : calculo.valorDescuento,
+    // Spec 011 (RF-DES-04): el descuento aplicado (o null).
+    descuento: descuentos.resumen(descuento),
     cubiertoPorMembresia: guardada ? guardada.cubiertoPorMembresia : calculo.cubiertoPorMembresia,
     total: guardada ? guardada.total : calculo.total,
     explicacion: calculo.explicacion,
@@ -48,8 +53,11 @@ function respuesta(movimiento, tarifa, calculo, guardada) {
   };
 }
 
-/** Calcula con la tarifa vigente a la hora de entrada y la membresía que la cubre (lanza SIN_TARIFA). */
-async function calcularPara(movimiento, minutos, conexion) {
+/**
+ * Calcula con la tarifa vigente a la hora de entrada, la membresía que la cubre y el descuento vigente en
+ * `fechaDescuento` (la salida; en la vista previa, ahora). Lanza SIN_TARIFA.
+ */
+async function calcularPara(movimiento, minutos, conexion, fechaDescuento) {
   const tipoCliente = tipoClienteDe({ idPropietario: movimiento.idPropietario });
   const tarifa = await tarifas.vigenteEn({ tipoVehiculo: movimiento.tipoVehiculo, tipoCliente, fechaHora: movimiento.entrada }, { conexion });
   if (!tarifa) {
@@ -58,7 +66,15 @@ async function calcularPara(movimiento, minutos, conexion) {
     throw error;
   }
   const idMembresia = await repositorio.membresiaQueCubre(movimiento.idVehiculo, movimiento.entrada, { conexion });
-  return { tarifa, idMembresia, calculo: calcular({ minutos, tarifa, cubiertoPorMembresia: Boolean(idMembresia) }) };
+  const bruto = calcular({ minutos, tarifa, cubiertoPorMembresia: Boolean(idMembresia) });
+  // RN-21: con membresía no hay descuento; RN-25: como máximo uno, el de mayor valor.
+  const eleccion = bruto.cubiertoPorMembresia
+    ? null
+    : await descuentos.elegirPara(
+        { tipoVehiculo: movimiento.tipoVehiculo, tipoCliente, minutos, fecha: fechaDescuento, bruto: bruto.valorBruto },
+        { conexion }
+      );
+  return { tarifa, idMembresia, descuento: eleccion?.descuento ?? null, calculo: aplicarDescuento(bruto, eleccion?.descuento, eleccion?.valor) };
 }
 
 /**
@@ -72,23 +88,27 @@ async function liquidarEn(conexion, idMovimiento, actor) {
 
   if (movimiento.estado === 'abierto') {
     // Vista previa «en vivo» (no se guarda).
-    const { tarifa, calculo } = await calcularPara(movimiento, minutosEstadia(movimiento.entrada, reloj.ahora()), conexion);
-    return respuesta(movimiento, tarifa, calculo, null);
+    const ahora = reloj.ahora();
+    const { tarifa, calculo, descuento } = await calcularPara(movimiento, minutosEstadia(movimiento.entrada, ahora), conexion, ahora);
+    return respuesta(movimiento, tarifa, calculo, null, descuento);
   }
 
   const guardada = await repositorio.porMovimiento(idMovimiento, { conexion, bloquear: true });
   if (guardada) {
     const tarifa = guardada.idTarifa ? await tarifasRepositorio.obtenerPorId(guardada.idTarifa, { conexion }) : null;
+    // RF-DES-05: la guardada se muestra con su descuento y su valor guardados, aunque el descuento cambie después.
+    const descuento = guardada.idDescuento ? await descuentosRepositorio.obtenerPorId(guardada.idDescuento, { conexion }) : null;
     const calculo = tarifa
-      ? calcular({ minutos: guardada.minutos, tarifa, cubiertoPorMembresia: guardada.cubiertoPorMembresia })
+      ? aplicarDescuento(calcular({ minutos: guardada.minutos, tarifa, cubiertoPorMembresia: guardada.cubiertoPorMembresia }), descuento, guardada.valorDescuento)
       : { minutos: guardada.minutos, fracciones: 0, dias: 0, topeAplicado: false, explicacion: 'Cubierto por membresía' };
-    return respuesta(movimiento, tarifa, calculo, guardada);
+    return respuesta(movimiento, tarifa, calculo, guardada, descuento);
   }
 
-  const { tarifa, calculo } = await calcularPara(movimiento, movimiento.minutosEstadia, conexion);
+  const { tarifa, calculo, descuento } = await calcularPara(movimiento, movimiento.minutosEstadia, conexion, movimiento.salida);
   const nueva = {
     idMovimiento,
     idTarifa: tarifa.idTarifa,
+    idDescuento: descuento?.idDescuento ?? null,
     minutos: calculo.minutos,
     valorBruto: calculo.valorBruto,
     valorDescuento: calculo.valorDescuento,
@@ -105,7 +125,7 @@ async function liquidarEn(conexion, idMovimiento, actor) {
     nuevo: { ...nueva, explicacion: calculo.explicacion },
     ip: actor?.ip ?? null,
   });
-  return respuesta(movimiento, tarifa, calculo, { ...nueva, idLiquidacion, idFactura: null });
+  return respuesta(movimiento, tarifa, calculo, { ...nueva, idLiquidacion, idFactura: null }, descuento);
 }
 
 /** Escribe la alerta «sin tarifa» que trae el error (fuera de la transacción que falló). */

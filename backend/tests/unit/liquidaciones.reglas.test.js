@@ -1,5 +1,5 @@
 // Pruebas unitarias del cálculo de la liquidación (spec 009: RN-20, RN-21; casos límite de la constitución).
-const { calcular, valorTramo, pesos } = require('../../src/modules/liquidaciones/liquidaciones.reglas');
+const { calcular, aplicarDescuento, valorTramo, pesos } = require('../../src/modules/liquidaciones/liquidaciones.reglas');
 
 // Carro ocasional de la semilla: primera hora $ 4.000, fracción de 15 min a $ 1.000, tope $ 30.000, gracia 10 min.
 const carro = { valorPrimeraHora: 4000, minutosFraccion: 15, valorFraccion: 1000, topeDiario: 30000, minutosGracia: 10 };
@@ -63,4 +63,32 @@ test('fracción de 1 minuto (cobro por minuto) y una sola fracción', () => {
   const porMinuto = { valorPrimeraHora: 3000, minutosFraccion: 1, valorFraccion: 50, topeDiario: null, minutosGracia: 0 };
   expect(calcular({ minutos: 61, tarifa: porMinuto })).toMatchObject({ total: 3050, explicacion: '$ 3.000 + 1 fracción × $ 50 = $ 3.050' });
   expect(calcular({ minutos: 45, tarifa: porMinuto }).explicacion).toBe('$ 3.000 (primera hora) = $ 3.000');
+});
+
+// Moto ocasional de la semilla: $ 2.000 la primera hora, fracción de 15 min a $ 500, tope $ 12.000, gracia 10 min.
+const moto = { valorPrimeraHora: 2000, minutosFraccion: 15, valorFraccion: 500, topeDiario: 12000, minutosGracia: 10 };
+
+describe('descuento aplicado (spec 011)', () => {
+  test('HU-50 E1: $ 9.000 con el 20 % → $ 7.200 y el detalle en la explicación', () => {
+    const calculo = calcular({ minutos: 270, tarifa: moto });
+    expect(calculo.valorBruto).toBe(9000);
+    expect(aplicarDescuento(calculo, { nombre: 'Motos fin de semana', tipo: 'porcentaje', valor: 20 }, 1800)).toMatchObject({
+      valorDescuento: 1800,
+      total: 7200,
+      explicacion: '$ 2.000 + 14 fracciones × $ 500 = $ 9.000 − «Motos fin de semana» 20 % ($ 1.800) = $ 7.200',
+    });
+  });
+  test('valor fijo que supera el bruto: total $ 0, nunca negativo', () => {
+    const calculo = calcular({ minutos: 30, tarifa: moto });
+    expect(aplicarDescuento(calculo, { nombre: 'Fijo', tipo: 'valor_fijo', valor: 5000 }, 5000)).toMatchObject({ valorDescuento: 2000, total: 0 });
+  });
+  test('HU-50 E3: membresía, gracia o sin descuento → sin cambios', () => {
+    const d = { nombre: 'X', tipo: 'porcentaje', valor: 20 };
+    const membresia = calcular({ minutos: 270, tarifa: moto, cubiertoPorMembresia: true });
+    expect(aplicarDescuento(membresia, d, 1800)).toBe(membresia);
+    const gracia = calcular({ minutos: 5, tarifa: moto });
+    expect(aplicarDescuento(gracia, d, 1800)).toBe(gracia);
+    const normal = calcular({ minutos: 270, tarifa: moto });
+    expect(aplicarDescuento(normal, null, 0)).toBe(normal);
+  });
 });
