@@ -69,7 +69,19 @@ function diaSemanaDe(fecha) {
   return ((new Date(Date.UTC(a, m - 1, d)).getUTCDay() + 6) % 7) + 1;
 }
 
+/** Fecha → ISO 8601 en hora de Bogotá con offset: 2026-11-26T10:15:00-05:00 (constitución §IV). */
+function aIsoBogota(fecha) {
+  if (fecha === null || fecha === undefined) return null;
+  const { fecha: dia, hora } = enBogota(fecha);
+  return `${dia}T${hora}-05:00`;
+}
+
+/** Año actual en Bogotá (p. ej. para el rango del modelo de un vehículo). */
+const anioActualBogota = (fecha = new Date()) => Number(enBogota(fecha).fecha.slice(0, 4));
+
 module.exports = {
+  aIsoBogota,
+  anioActualBogota,
   ZONA,
   enBogota,
   nombreDia,

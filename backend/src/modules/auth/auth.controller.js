@@ -1,32 +1,32 @@
-const env = require('../../config/env');
-const { COOKIE_SESION } = require('../../config/constantes');
+// Traduce HTTP ↔ servicio de acceso (sin reglas ni SQL).
 const authService = require('./auth.service');
+const { ok, creado, sinContenido } = require('../../utils/respuesta');
 
-const opcionesCookie = () => ({
-  httpOnly: true,
-  sameSite: 'strict',
-  secure: env.NODE_ENV === 'production',
-  path: '/',
-});
+const actor = (req) => ({ ...req.usuario, ip: req.ip });
 
 async function login(req, res) {
-  const { token, expiraEn, usuario } = await authService.login(req.body);
-  res.cookie(COOKIE_SESION, token, { ...opcionesCookie(), expires: expiraEn });
-  res.json({ data: usuario });
-}
-
-function logout(_req, res) {
-  res.clearCookie(COOKIE_SESION, opcionesCookie());
-  res.json({ data: { mensaje: 'Sesión cerrada.' } });
-}
-
-function me(req, res) {
-  res.json({ data: req.usuario });
+  return ok(res, await authService.iniciarSesion(req.validado.body, { ip: req.ip }));
 }
 
 async function cambiarContrasena(req, res) {
-  const usuario = await authService.cambiarContrasena(req.usuario.id, req.body);
-  res.json({ data: usuario });
+  return ok(res, await authService.cambiarContrasena(req.validado.body, actor(req)));
 }
 
-module.exports = { login, logout, me, cambiarContrasena };
+async function registro(req, res) {
+  return creado(res, await authService.registrarme(req.validado.body, { ip: req.ip }));
+}
+
+async function recuperar(req, res) {
+  return ok(res, await authService.recuperar(req.validado.body));
+}
+
+async function restablecer(req, res) {
+  return ok(res, await authService.restablecer(req.validado.body, { ip: req.ip }));
+}
+
+async function logout(req, res) {
+  await authService.cerrarSesion(actor(req));
+  return sinContenido(res);
+}
+
+module.exports = { login, cambiarContrasena, registro, recuperar, restablecer, logout };

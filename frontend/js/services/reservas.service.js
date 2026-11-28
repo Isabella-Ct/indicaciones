@@ -1,26 +1,17 @@
-// Reservas (REQ-RES-1): el cliente reserva para sus vehículos; el personal gestiona todas.
-import { get, post, patch } from './api.js';
-import { aQuery } from './usuarios.service.js';
+// Una función por endpoint de reservas (spec 012; SRS B.1 §4.12).
+import { solicitar } from '../api/http.js';
 
-export async function crearReserva({ vehiculo_id, celda_id, requiere_accesible = false }) {
-  return (await post('/reservas', { vehiculo_id, celda_id, requiere_accesible })).data;
-}
+/** POST /reservas — { idVehiculo, fechaHoraInicio: 'AAAA-MM-DDTHH:MM', idCelda? } */
+export const reservar = async (datos) => (await solicitar('/reservas', { method: 'POST', body: datos })).data;
 
-export async function cancelarReserva(id) {
-  return (await patch(`/reservas/${id}/cancelar`)).data;
-}
+/** GET /reservas?fecha&estado&q&page&limit (reservas.ver) → { data, meta: { …, fecha } } */
+export const listarReservas = ({ fecha, estado, q, page = 1, limit = 20 } = {}) => solicitar('/reservas', { query: { fecha, estado, q, page, limit } });
 
-/** Personal: { data, meta } */
-export function listarReservas(filtros = {}) {
-  return get(`/reservas${aQuery(filtros)}`);
-}
+/** GET /usuarios/me/reservas?estado&page&limit → { data, meta } */
+export const misReservas = ({ estado, page = 1, limit = 20 } = {}) => solicitar('/usuarios/me/reservas', { query: { estado, page, limit } });
 
-/** Cliente: { data, meta } (sin titular). */
-export function misReservas(filtros = {}) {
-  return get(`/usuarios/me/reservas${aQuery(filtros)}`);
-}
+/** PATCH /reservas/:id/cancelacion */
+export const cancelarReserva = async (id) => (await solicitar(`/reservas/${id}/cancelacion`, { method: 'PATCH' })).data;
 
-/** Cliente: historial de entradas y salidas de sus vehículos. */
-export function misEstadias(filtros = {}) {
-  return get(`/usuarios/me/estadias${aQuery(filtros)}`);
-}
+/** GET /celdas/disponibles?fecha&tipo&idParqueadero → celdas libres en la franja de esa hora */
+export const celdasDisponibles = async ({ fecha, tipo, idParqueadero }) => (await solicitar('/celdas/disponibles', { query: { fecha, tipo, idParqueadero } })).data;

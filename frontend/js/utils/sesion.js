@@ -1,54 +1,43 @@
-/**
- * Helpers de sesión y rol (sin llamadas a la API: eso lo hacen los services).
- */
-const ETIQUETAS_ROL = {
-  administrador: 'Administrador',
-  operador: 'Operador',
-  usuario: 'Cliente',
-};
+// Sesión del navegador en sessionStorage (se borra al cerrar la pestaña; frontend-integration §6).
+const CLAVE = 'parqueadero.sesion';
 
-export const TIPOS_DOCUMENTO = [
-  { value: 'CC', label: 'Cédula de ciudadanía (CC)' },
-  { value: 'CE', label: 'Cédula de extranjería (CE)' },
-  { value: 'TI', label: 'Tarjeta de identidad (TI)' },
-  { value: 'PAS', label: 'Pasaporte (PAS)' },
-  { value: 'NIT', label: 'NIT' },
-];
-
-export const RUTA_INICIO = '/app/inicio.html';
-export const RUTA_LOGIN = '/login.html';
-export const RUTA_CAMBIAR_CONTRASENA = '/app/cambiar-contrasena.html';
-
-export function etiquetaRol(rol) {
-  return ETIQUETAS_ROL[rol] ?? rol;
+/** @returns {{ token: string, expiraEn: string, usuario: object, permisos: string[] } | null} */
+export function leerSesion() {
+  try {
+    const sesion = JSON.parse(sessionStorage.getItem(CLAVE) || 'null');
+    if (!sesion?.token) return null;
+    if (sesion.expiraEn && new Date(sesion.expiraEn) <= new Date()) {
+      borrarSesion();
+      return null;
+    }
+    return sesion;
+  } catch {
+    return null;
+  }
 }
 
-export function tienePermiso(sesion, codigo) {
-  return Boolean(sesion?.permisos?.includes(codigo));
+export function guardarSesion(sesion) {
+  sessionStorage.setItem(CLAVE, JSON.stringify(sesion));
 }
 
-export function esPersonal(sesion) {
-  return sesion?.rol === 'administrador' || sesion?.rol === 'operador';
+export function borrarSesion() {
+  sessionStorage.removeItem(CLAVE);
 }
 
-/** "Laura Marcela" + "Gómez Ríos" → "L. Gómez" */
-export function nombreCorto(sesion) {
-  if (!sesion) return '';
-  const inicial = sesion.nombres?.charAt(0) ?? '';
-  const apellido = sesion.apellidos?.split(' ')[0] ?? '';
-  return `${inicial}. ${apellido}`.trim();
+export function tokenActual() {
+  return leerSesion()?.token ?? null;
 }
 
-export function primerNombre(sesion) {
-  return sesion?.nombres?.split(' ')[0] ?? '';
+export function tienePermiso(codigo) {
+  return Boolean(leerSesion()?.permisos?.includes(codigo));
 }
 
-/**
- * Valida el parámetro ?siguiente= para evitar redirecciones abiertas:
- * solo rutas internas que empiezan por "/" (no "//").
- */
-export function rutaSiguienteSegura(valor) {
-  if (typeof valor !== 'string' || !valor.startsWith('/') || valor.startsWith('//')) return null;
-  if (valor.startsWith(RUTA_LOGIN)) return null;
-  return valor;
+/** "Laura Gómez Restrepo" → "LG" */
+export function iniciales(nombre) {
+  return String(nombre || '')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p.charAt(0).toUpperCase())
+    .join('');
 }

@@ -1,76 +1,37 @@
-// Vehículos — REQ-CAR-1, REQ-CAR-2, REQ-CAR-3, REQ-USR-6
+// /api/v1/vehiculos — SRS Apéndice B.1 §4.5 (spec 005-vehiculos). authenticate se aplica al montar
+// el router (app.js). GET /usuarios/me/vehiculos está en usuarios.routes.js y usa este controlador.
 const { Router } = require('express');
-const { auth } = require('../../middlewares/auth');
-const { requirePermiso } = require('../../middlewares/require-permiso');
-const { validate } = require('../../middlewares/validate');
-const esquemas = require('./vehiculos.schemas');
 const controller = require('./vehiculos.controller');
+const esquemas = require('./vehiculos.validator');
+const { authorize } = require('../../middlewares/authorize');
+const { validate } = require('../../middlewares/validate');
 
 const router = Router();
-router.use(auth());
 
-// GET /api/v1/vehiculos — filtros: placa, tipo, propietario=con|sin, usuario_id, q (documento/nombre)
-router.get(
-  '/',
-  requirePermiso('vehiculos.ver'),
-  validate({ query: esquemas.listar }),
-  controller.listar
-);
+// POST /api/v1/vehiculos — HU-25 · RF-VEH-01..03
+router.post('/', authorize('vehiculos.crear'), validate({ body: esquemas.vehiculoEntrada }), controller.crear);
 
-// GET /api/v1/vehiculos/placa/:placa — búsqueda exacta (entradas/salidas, Fase 3)
-router.get(
-  '/placa/:placa',
-  requirePermiso('vehiculos.ver'),
-  validate({ params: esquemas.paramsPlaca }),
-  controller.obtenerPorPlaca
-);
+// GET /api/v1/vehiculos?page&limit&q&tipo&propietario&dentro — HU-28 · RF-VEH-10
+router.get('/', authorize('vehiculos.ver'), validate({ query: esquemas.listar }), controller.listar);
 
-// GET /api/v1/vehiculos/:id
-router.get(
-  '/:id',
-  requirePermiso('vehiculos.ver'),
-  validate({ params: esquemas.params }),
-  controller.obtener
-);
+// GET /api/v1/vehiculos/:id — HU-28 · RF-VEH-11
+router.get('/:id', authorize('vehiculos.ver'), validate({ params: esquemas.params }), controller.obtener);
 
-// GET /api/v1/vehiculos/:id/historial — cambios de propietario
-router.get(
-  '/:id/historial',
-  requirePermiso('vehiculos.ver'),
-  validate({ params: esquemas.params }),
-  controller.historial
-);
-
-// POST /api/v1/vehiculos — REQ-CAR-1 (+ REQ-USR-6 con usuario_id)
-router.post(
-  '/',
-  requirePermiso('vehiculos.crear'),
-  validate({ body: esquemas.crear }),
-  controller.crear
-);
-
-// PUT /api/v1/vehiculos/:id — REQ-CAR-2 (solo administrador)
+// PUT /api/v1/vehiculos/:id — HU-27 · RF-VEH-07..09
 router.put(
   '/:id',
-  requirePermiso('vehiculos.editar'),
-  validate({ params: esquemas.params, body: esquemas.editar }),
+  authorize('vehiculos.editar'),
+  validate({ params: esquemas.params, body: esquemas.vehiculoEntrada }),
   controller.actualizar
 );
 
-// DELETE /api/v1/vehiculos/:id — borrado lógico (activo = 0), REQ-CAR-2 (solo administrador)
-router.delete(
-  '/:id',
-  requirePermiso('vehiculos.editar'),
-  validate({ params: esquemas.params }),
-  controller.eliminar
-);
-
-// PATCH /api/v1/vehiculos/:id/propietario — REQ-USR-6 (asignar) / REQ-CAR-3 (cambiar, solo admin)
+// PATCH /api/v1/vehiculos/:id/propietario — HU-26, HU-27 · RF-VEH-04..06, RF-VEH-08
+// (reasignar o quitar exige además vehiculos.editar: se verifica en el servicio)
 router.patch(
   '/:id/propietario',
-  requirePermiso('vehiculos.crear'),
-  validate({ params: esquemas.params, body: esquemas.cambiarPropietario }),
-  controller.cambiarPropietario
+  authorize('vehiculos.crear'),
+  validate({ params: esquemas.params, body: esquemas.propietario }),
+  controller.asignarPropietario
 );
 
 module.exports = router;

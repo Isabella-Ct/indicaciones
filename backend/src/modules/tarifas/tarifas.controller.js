@@ -1,44 +1,21 @@
-const tarifasService = require('./tarifas.service');
-const publicoService = require('../publico/publico.service');
+// Traduce HTTP ↔ servicio de tarifas (sin SQL ni reglas de negocio).
+const servicio = require('./tarifas.service');
+const { ok, creado } = require('../../utils/respuesta');
 
-async function listar(req, res) {
-  const { historial, tipo_vehiculo } = req.validado.query;
-  const verHistorial = historial === '1' && req.usuario.permisos.includes('tarifas.gestionar');
-  res.json({
-    data: {
-      vigentes: await tarifasService.vigentes(),
-      historial: verHistorial ? await tarifasService.historial(tipo_vehiculo) : undefined,
-    },
-  });
-}
+const actor = (req) => ({ idUsuario: req.usuario.idUsuario, permisos: req.usuario.permisos, ip: req.ip });
+const id = (req) => req.validado.params.id;
 
-async function crear(req, res) {
-  res.status(201).json({ data: await tarifasService.crear(req.body, req.usuario) });
-}
-
-async function simular(req, res) {
-  res.json({ data: await tarifasService.simular(req.body) });
-}
-
-/** Público: solo las tarifas vigentes. */
-async function vigentesPublicas(_req, res) {
-  const { carro, moto } = await tarifasService.vigentes();
-  const limpiar = (t) =>
-    t && {
-      tipo_vehiculo: t.tipo_vehiculo,
-      valor_fraccion: t.valor_fraccion,
-      minutos_fraccion: t.minutos_fraccion,
-      minutos_gracia: t.minutos_gracia,
-      valor_dia_maximo: t.valor_dia_maximo,
-      descripcion: t.descripcion,
-    };
-  res.json({
-    data: {
-      carro: limpiar(carro),
-      moto: limpiar(moto),
-      mensualidades: await publicoService.mensualidades(),
-    },
-  });
-}
-
-module.exports = { listar, crear, simular, vigentesPublicas };
+module.exports = {
+  /** RF-TAR-07: público, sin datos internos. */
+  vigentes: async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    return ok(res, await servicio.vigentes(req.validado.query));
+  },
+  listar: async (req, res) => {
+    const { data, meta } = await servicio.listar(req.validado.query);
+    return ok(res, data, meta);
+  },
+  crear: async (req, res) => creado(res, await servicio.crear(req.validado.body, actor(req))),
+  actualizar: async (req, res) => ok(res, await servicio.actualizar(id(req), req.validado.body, actor(req))),
+  cambiarEstado: async (req, res) => ok(res, await servicio.cambiarEstado(id(req), req.validado.body, actor(req))),
+};

@@ -1,23 +1,19 @@
-const service = require('./reservas.service');
+// Traduce HTTP ↔ servicio de reservas (sin SQL ni reglas de negocio).
+const servicio = require('./reservas.service');
+const { ok, creado } = require('../../utils/respuesta');
 
-async function crear(req, res) {
-  res.status(201).json({ data: await service.crear(req.body, req.usuario) });
-}
+const actor = (req) => ({ idUsuario: req.usuario.idUsuario, rol: req.usuario.rol, permisos: req.usuario.permisos, ip: req.ip });
 
-async function cancelar(req, res) {
-  res.json({ data: await service.cancelar(req.validado.params.id, req.usuario) });
-}
-
-async function listar(req, res) {
-  res.json(await service.listar(req.validado.query));
-}
-
-async function obtener(req, res) {
-  res.json({ data: await service.obtener(req.validado.params.id, req.usuario) });
-}
-
-async function mias(req, res) {
-  res.json(await service.deUsuario(req.usuario.id, req.validado.query));
-}
-
-module.exports = { crear, cancelar, listar, obtener, mias };
+module.exports = {
+  reservar: async (req, res) => creado(res, await servicio.reservar(req.validado.body, actor(req))),
+  disponibles: async (req, res) => ok(res, await servicio.disponibles(req.validado.query)),
+  cancelar: async (req, res) => ok(res, await servicio.cancelar(req.validado.params.id, actor(req))),
+  listar: async (req, res) => {
+    const { data, meta } = await servicio.listar(req.validado.query);
+    return ok(res, data, meta);
+  },
+  mias: async (req, res) => {
+    const { data, meta } = await servicio.mias(req.validado.query, actor(req));
+    return ok(res, data, meta);
+  },
+};
