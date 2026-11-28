@@ -38,10 +38,10 @@
 
 ## Fase 7: Pulido
 
-- [ ] T013 Carpeta Postman `casos/013-incidencias.js` (+ `archivos/evidencia.png`); `npm run test:api` en verde dos veces seguidas
-- [ ] T014 [P] `README.md` (endpoints y pantallas)
-- [ ] T015 Cobertura de los services ≥ 80 %, lint, `herramientas/verificar-front.js`, revisión de que no queden textos en inglés y prueba manual en escritorio y a 375 px
-- [ ] T016 Verificar que cada escenario HU-56..HU-58 tenga su prueba y su caso Postman y marcar `[X]`
+- [X] T013 Carpeta Postman `casos/013-incidencias.js` (+ `archivos/evidencia.png`); `npm run test:api` en verde dos veces seguidas
+- [X] T014 [P] `README.md` (endpoints y pantallas)
+- [X] T015 Cobertura de los services ≥ 80 %, lint, `herramientas/verificar-front.js`, revisión de que no queden textos en inglés y prueba manual en escritorio y a 375 px
+- [X] T016 Verificar que cada escenario HU-56..HU-58 tenga su prueba y su caso Postman y marcar `[X]`
 
 ## Dependencias
 

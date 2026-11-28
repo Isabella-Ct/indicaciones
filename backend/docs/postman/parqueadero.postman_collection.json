@@ -14363,6 +14363,925 @@
           }
         }
       ]
+    },
+    {
+      "name": "013 Incidencias",
+      "description": "SRS B.1 §4.13 — HU-56..HU-58. Ejecutar con la BD sembrada; usa la hora real del servidor.",
+      "item": [
+        {
+          "name": "HU-56 POST /incidencias — 422 placa no registrada sin tipo de vehículo",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const letra = () => String.fromCharCode(65 + Math.floor(Math.random() * 26));",
+                  "pm.collectionVariables.set('placaInc', letra() + letra() + letra() + String(Math.floor(Math.random() * 900) + 100));",
+                  "const bogota = (horas) => new Date(Date.now() - 5 * 3600000 + horas * 3600000).toISOString().slice(0, 16);",
+                  "pm.collectionVariables.set('eventoInc', bogota(-1));",
+                  "pm.collectionVariables.set('eventoFuturo', bogota(1));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));",
+                  "pm.test('campo tipoVehiculo', () => pm.expect(cuerpo.error.details[0].campo).to.eql('tipoVehiculo'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"rayon\",\n  \"placa\": \"{{placaInc}}\",\n  \"fechaHoraEvento\": \"{{eventoInc}}\",\n  \"descripcion\": \"Rayón en la puerta del conductor al maniobrar\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-56 POST /incidencias — 201 abierta con código INC- (placa ocasional)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('abierta INC-', () => { pm.expect(cuerpo.data.estado).to.eql('abierta'); pm.expect(cuerpo.data.codigo).to.match(/^INC-\\d{6}$/); });",
+                  "pm.test('tipo Rayón', () => pm.expect(cuerpo.data.tipoNombre).to.eql('Rayón'));",
+                  "pm.collectionVariables.set('idIncidencia', cuerpo.data.idIncidencia);",
+                  "pm.collectionVariables.set('codigoIncidencia', cuerpo.data.codigo);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"rayon\",\n  \"placa\": \"{{placaInc}}\",\n  \"fechaHoraEvento\": \"{{eventoInc}}\",\n  \"descripcion\": \"Rayón en la puerta del conductor al maniobrar\",\n  \"tipoVehiculo\": \"carro\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-56 POST /incidencias — 201 con evidencia (multipart)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('con evidencia', () => pm.expect(cuerpo.data.tieneEvidencia).to.eql(true));",
+                  "pm.collectionVariables.set('idIncidenciaFoto', cuerpo.data.idIncidencia);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "tipo",
+                  "value": "choque",
+                  "type": "text"
+                },
+                {
+                  "key": "placa",
+                  "value": "{{placaInc}}",
+                  "type": "text"
+                },
+                {
+                  "key": "fechaHoraEvento",
+                  "value": "{{eventoInc}}",
+                  "type": "text"
+                },
+                {
+                  "key": "descripcion",
+                  "value": "Choque contra la columna al parquear",
+                  "type": "text"
+                },
+                {
+                  "key": "evidencia",
+                  "type": "file",
+                  "src": "docs/postman/archivos/evidencia.png"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-56 POST /incidencias — 422 sin tipo ni placa",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));",
+                  "pm.test('tipo y placa', () => pm.expect(cuerpo.error.details.map((d) => d.campo)).to.include.members(['tipo', 'placa']));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fechaHoraEvento\": \"{{eventoInc}}\",\n  \"descripcion\": \"Golpe en el parachoques trasero\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-56 POST /incidencias — 422 fecha y hora futura",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));",
+                  "pm.test('no futura', () => pm.expect(cuerpo.error.details[0].mensaje).to.eql('La fecha y hora del evento no puede ser futura.'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"rayon\",\n  \"placa\": \"{{placaInc}}\",\n  \"fechaHoraEvento\": \"{{eventoFuturo}}\",\n  \"descripcion\": \"Rayón en la puerta del conductor al maniobrar\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-56 POST /incidencias — 403 cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo\": \"rayon\",\n  \"placa\": \"{{placaInc}}\",\n  \"fechaHoraEvento\": \"{{eventoInc}}\",\n  \"descripcion\": \"Rayón en la puerta del conductor al maniobrar\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-57 GET /incidencias?q=placa — 200 con código, tipo, fecha, estado y operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('las dos de la placa', () => pm.expect(cuerpo.meta.total).to.eql(2));",
+                  "pm.test('campos', () => pm.expect(cuerpo.data[0]).to.include.keys('codigo', 'tipo', 'fechaHoraEvento', 'estado', 'operador'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias?q={{placaInc}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{placaInc}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /incidencias — 403 cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-57 GET /incidencias/:id — 200 detalle con seguimiento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('seguimiento vacío', () => pm.expect(cuerpo.data.seguimientos).to.eql([]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias/{{idIncidencia}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias",
+                "{{idIncidencia}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-57 GET /incidencias/999999 — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code INCIDENCIA_NO_ENCONTRADA', () => pm.expect(cuerpo.error.code).to.eql('INCIDENCIA_NO_ENCONTRADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias",
+                "999999"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-57 GET /incidencias/:id/evidencia — 200 imagen",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('image/png', () => pm.expect(pm.response.headers.get('Content-Type')).to.include('image/png'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias/{{idIncidenciaFoto}}/evidencia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias",
+                "{{idIncidenciaFoto}}",
+                "evidencia"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-57 GET /incidencias/:id/evidencia — 404 sin evidencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_EVIDENCIA', () => pm.expect(cuerpo.error.code).to.eql('SIN_EVIDENCIA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias/{{idIncidencia}}/evidencia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias",
+                "{{idIncidencia}}",
+                "evidencia"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-58 POST /incidencias/:id/seguimientos — 403 operador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias/{{idIncidencia}}/seguimientos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias",
+                "{{idIncidencia}}",
+                "seguimientos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nota\": \"Se llamó al cliente\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-58 POST /incidencias/:id/seguimientos — 201 en seguimiento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('en seguimiento', () => pm.expect(cuerpo.data.estado).to.eql('en_seguimiento'));",
+                  "pm.test('nota con usuario', () => pm.expect(cuerpo.data.seguimientos[0].usuario.idUsuario).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias/{{idIncidencia}}/seguimientos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias",
+                "{{idIncidencia}}",
+                "seguimientos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nota\": \"Se llamó al cliente y se revisaron las cámaras\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-58 PATCH /incidencias/:id/cierre — 422 sin solución",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));",
+                  "pm.test('campo solucion', () => pm.expect(cuerpo.error.details[0].campo).to.eql('solucion'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias/{{idIncidencia}}/cierre",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias",
+                "{{idIncidencia}}",
+                "cierre"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "HU-58 PATCH /incidencias/:id/cierre — 200 cerrada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('cerrada', () => pm.expect(cuerpo.data.estado).to.eql('cerrada'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias/{{idIncidencia}}/cierre",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias",
+                "{{idIncidencia}}",
+                "cierre"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"solucion\": \"El parqueadero pagó la reparación de la puerta\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-58 POST /incidencias/:id/seguimientos — 409 cerrada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code INCIDENCIA_CERRADA', () => pm.expect(cuerpo.error.code).to.eql('INCIDENCIA_CERRADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias/{{idIncidencia}}/seguimientos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias",
+                "{{idIncidencia}}",
+                "seguimientos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nota\": \"Nota después del cierre\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-58 PATCH /incidencias/:id/cierre — 409 ya cerrada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code INCIDENCIA_CERRADA', () => pm.expect(cuerpo.error.code).to.eql('INCIDENCIA_CERRADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias/{{idIncidencia}}/cierre",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias",
+                "{{idIncidencia}}",
+                "cierre"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"solucion\": \"Cerrar otra vez la incidencia\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PATCH /incidencias/:id/cierre — 200 cierra la de la evidencia",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenAdmin}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/incidencias/{{idIncidenciaFoto}}/cierre",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "incidencias",
+                "{{idIncidenciaFoto}}",
+                "cierre"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"solucion\": \"Prueba de la colección cerrada\"\n}"
+            }
+          }
+        }
+      ]
     }
   ]
 }

@@ -29,7 +29,8 @@ Se construye con **Spec-Driven Development (GitHub spec-kit)** y **Gitflow**, un
 | `010-membresias` | Planes, suscripción con pago, renovación, cancelación, vencimiento diario y «Mi membresía» | ✅ implementada |
 | `011-descuentos` | Descuentos por porcentaje o valor fijo, el de mayor valor en la liquidación, activar/inactivar | ✅ implementada |
 | `012-reservas` | Reservar, cancelar, reservas del día, entrada con reserva y control cada minuto | ✅ implementada |
-| `013`–`015` | incidencias, monitoreo, reportes | pendientes |
+| `013-incidencias` | Registro con código y evidencia, alerta al Administrador, consulta, seguimiento y cierre | ✅ implementada |
+| `014`–`015` | monitoreo, reportes | pendientes |
 | `016-festivos-pico-placa` | API externa Nager.Date (festivos para pico y placa, TBD-03) | pendiente |
 
 La versión anterior (PARKO v1, trazabilidad `REQ-`) se conserva en el tag `v0.9.0-legado`.
@@ -221,6 +222,12 @@ Autenticación con `Authorization: Bearer <token>`. Listados con `?page&limit&q`
 | GET | `/api/v1/reservas?fecha&estado&q&page&limit` (hoy por defecto, por hora) | `reservas.ver` | HU-54 |
 | PATCH | `/api/v1/reservas/:id/cancelacion` | `reservas.editar` (Cliente: solo las suyas) | HU-53 |
 | GET | `/api/v1/usuarios/me/reservas` | `perfil.ver` | HU-53 |
+| POST | `/api/v1/incidencias` (JSON o multipart con `evidencia` JPG/PNG ≤ 5 MB; código `INC-` y alerta) | `incidencias.crear` | HU-56 |
+| GET | `/api/v1/incidencias?q&tipo&estado&desde&hasta&page&limit` | `incidencias.ver` | HU-57 |
+| GET | `/api/v1/incidencias/:id` (con el seguimiento) | `incidencias.ver` | HU-57 |
+| GET | `/api/v1/incidencias/:id/evidencia` `[Propuesta]` | `incidencias.ver` | HU-57 |
+| POST | `/api/v1/incidencias/:id/seguimientos` | `incidencias.editar` | HU-58 |
+| PATCH | `/api/v1/incidencias/:id/cierre` | `incidencias.editar` | HU-58 |
 
 Pantallas de la 004: `celdas.html` (mapa por piso que se refresca cada 10 s; personal), `parqueaderos.html`, `parqueadero-detalle.html` (puertas), `disponibilidad.html` (Cliente) y la portada `index.html` (cupos por tipo con «Lleno», sin sesión). El paso de la celda a ocupada y a disponible con cada entrada y salida (HU-23) lo usan los movimientos de la spec 007.
 
@@ -239,6 +246,8 @@ Pantallas de la 010: `planes.html` (Configuración › Planes de membresía), `m
 Pantallas de la 011: `descuentos.html` (Configuración › Descuentos: listado, nuevo, editar y activar/inactivar con confirmación) y la fila «Descuento» en el cobro de `movimientos.html` y en el comprobante de `factura.html`. La liquidación (`GET /movimientos/:id/liquidacion` y la salida) aplica, como máximo, el descuento activo y vigente a la hora de salida que más descuenta y devuelve `descuento`; con membresía o sin valor bruto no se aplica ninguno. La semilla trae 3 descuentos, ninguno vigente en noviembre de 2026.
 
 Pantallas de la 012: `mis-reservas.html` (Cliente: reservar con fecha, hora y celda libre o automática; cancelar) y `reservas.html` (personal: las del día por hora, con estado y búsqueda). La entrada de un vehículo dentro de su franja (inicio + 30 min) usa la celda reservada y cumple la reserva (`reserva` en la respuesta de `POST /movimientos`). El servidor corre cada minuto el control de reservas (`src/tareas/programador.js`): marca la celda como reservada desde la hora de inicio (o reasigna otra si está ocupada) y vence las no usadas, liberando la celda y avisando al cliente por correo.
+
+Pantallas de la 013: `incidencias.html` (listado con búsqueda por código o placa y filtros; «Nueva incidencia» con placa registrada u ocasional, fecha no futura, descripción y evidencia) e `incidencia.html` (detalle con la evidencia privada, historial de seguimiento, nota y cierre con solución). Cada incidencia genera una alerta de tipo «incidencia» para el Administrador (la bandeja es de la spec 014); una cerrada ya no admite cambios. La evidencia se guarda en `backend/uploads/incidencias/` (fuera de git).
 
 El contrato completo de cada spec está en `specs/NNN-*/contracts/openapi.yaml`.
 
