@@ -43,10 +43,10 @@
 
 ## Fase 8: Pulido
 
-- [ ] T015 Carpeta Postman `casos/012-reservas.js`; `npm run test:api` en verde dos veces seguidas
-- [ ] T016 [P] `README.md` (endpoints, variables y pantallas)
-- [ ] T017 Cobertura de los services ≥ 80 %, lint, `herramientas/verificar-front.js`, revisión de que no queden textos en inglés y prueba manual en escritorio y a 375 px
-- [ ] T018 Verificar que cada escenario HU-52..HU-55 tenga su prueba (y su caso Postman cuando no depende del reloj) y marcar `[X]`
+- [X] T015 Carpeta Postman `casos/012-reservas.js`; `npm run test:api` en verde dos veces seguidas
+- [X] T016 [P] `README.md` (endpoints, variables y pantallas)
+- [X] T017 Cobertura de los services ≥ 80 %, lint, `herramientas/verificar-front.js`, revisión de que no queden textos en inglés y prueba manual en escritorio y a 375 px
+- [X] T018 Verificar que cada escenario HU-52..HU-55 tenga su prueba (y su caso Postman cuando no depende del reloj) y marcar `[X]`
 
 ## Dependencias
 

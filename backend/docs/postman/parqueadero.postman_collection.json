@@ -13330,6 +13330,1039 @@
           }
         }
       ]
+    },
+    {
+      "name": "012 Reservas",
+      "description": "SRS B.1 §4.12 — HU-52..HU-55. Ejecutar con la BD sembrada; usa la hora real del servidor.",
+      "item": [
+        {
+          "name": "HU-52 POST /vehiculos — 201 carro de Andrea para reservar",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const letra = () => String.fromCharCode(65 + Math.floor(Math.random() * 26));",
+                  "pm.collectionVariables.set('placaRes', letra() + letra() + letra() + String(Math.floor(Math.random() * 900) + 100));",
+                  "pm.collectionVariables.set('placaRes2', letra() + letra() + letra() + String(Math.floor(Math.random() * 900) + 100));",
+                  "const bogota = (dias) => new Date(Date.now() - 5 * 3600000 + dias * 86400000).toISOString().slice(0, 10);",
+                  "pm.collectionVariables.set('inicioRes', bogota(1) + 'T08:00');",
+                  "pm.collectionVariables.set('inicioRes15', bogota(1) + 'T08:15');",
+                  "pm.collectionVariables.set('inicioPasado', bogota(-1) + 'T08:00');",
+                  "pm.collectionVariables.set('inicioLejano', bogota(8) + 'T08:00');",
+                  "pm.collectionVariables.set('diaRes', bogota(1));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.collectionVariables.set('idVehRes', cuerpo.data.idVehiculo);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placaRes}}\",\n  \"tipo\": \"carro\",\n  \"color\": \"Blanco\",\n  \"marca\": \"Renault\",\n  \"modelo\": 2023,\n  \"idPropietario\": 4\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-52 POST /vehiculos — 201 segundo carro de Andrea",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.collectionVariables.set('idVehRes2', cuerpo.data.idVehiculo);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vehiculos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vehiculos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"placa\": \"{{placaRes2}}\",\n  \"tipo\": \"carro\",\n  \"color\": \"Blanco\",\n  \"marca\": \"Renault\",\n  \"modelo\": 2023,\n  \"idPropietario\": 4\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-52 GET /celdas/disponibles — 200 libres en la franja",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('hay celdas libres', () => pm.expect(cuerpo.data.length).to.be.above(0));",
+                  "pm.collectionVariables.set('idCeldaRes', cuerpo.data[0].idCelda);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/disponibles?fecha={{inicioRes}}&tipo=carro",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "disponibles"
+              ],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "{{inicioRes}}"
+                },
+                {
+                  "key": "tipo",
+                  "value": "carro"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-52 GET /celdas/disponibles — 422 sin tipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/celdas/disponibles?fecha={{inicioRes}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "celdas",
+                "disponibles"
+              ],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "{{inicioRes}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-52 POST /reservas — 201 confirmada con código",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('confirmada R-', () => { pm.expect(cuerpo.data.estado).to.eql('confirmada'); pm.expect(cuerpo.data.codigo).to.match(/^R-\\d{6}$/); });",
+                  "pm.test('espera de 30 minutos', () => pm.expect(cuerpo.data.minutosEspera).to.eql(30));",
+                  "pm.collectionVariables.set('idReserva', cuerpo.data.idReserva);",
+                  "pm.collectionVariables.set('codigoReserva', cuerpo.data.codigo);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idVehiculo\": \"{{idVehRes}}\",\n  \"fechaHoraInicio\": \"{{inicioRes}}\",\n  \"idCelda\": \"{{idCeldaRes}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-52 POST /reservas — 409 la celda no está disponible en ese horario (con sugerida)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code CELDA_NO_DISPONIBLE', () => pm.expect(cuerpo.error.code).to.eql('CELDA_NO_DISPONIBLE'));",
+                  "pm.test('mensaje', () => pm.expect(cuerpo.error.message).to.eql('La celda no está disponible en ese horario'));",
+                  "pm.test('sugerida', () => pm.expect(cuerpo.error.details[0]).to.have.property('sugerida'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idVehiculo\": \"{{idVehRes2}}\",\n  \"fechaHoraInicio\": \"{{inicioRes15}}\",\n  \"idCelda\": \"{{idCeldaRes}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-52 POST /reservas — 409 el vehículo ya tiene una reserva en ese horario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code RESERVA_VEHICULO_CRUZADA', () => pm.expect(cuerpo.error.code).to.eql('RESERVA_VEHICULO_CRUZADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idVehiculo\": \"{{idVehRes}}\",\n  \"fechaHoraInicio\": \"{{inicioRes15}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-52 POST /reservas — 201 sin celda elegida: el sistema asigna una libre",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('otra celda', () => pm.expect(cuerpo.data.celda.idCelda).to.not.eql(Number(pm.collectionVariables.get('idCeldaRes'))));",
+                  "pm.collectionVariables.set('idReserva2', cuerpo.data.idReserva);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idVehiculo\": \"{{idVehRes2}}\",\n  \"fechaHoraInicio\": \"{{inicioRes15}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-52 POST /reservas — 422 fecha pasada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));",
+                  "pm.test('futura', () => pm.expect(cuerpo.error.details[0].mensaje).to.eql('La hora de inicio debe ser futura.'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idVehiculo\": \"{{idVehRes}}\",\n  \"fechaHoraInicio\": \"{{inicioPasado}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-52 POST /reservas — 422 a más de 7 días",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code VALIDACION', () => pm.expect(cuerpo.error.code).to.eql('VALIDACION'));",
+                  "pm.test('7 días', () => pm.expect(cuerpo.error.details[0].mensaje).to.eql('La reserva debe ser para los próximos 7 días.'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idVehiculo\": \"{{idVehRes}}\",\n  \"fechaHoraInicio\": \"{{inicioLejano}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-52 POST /reservas — 403 el cliente con un vehículo ajeno (FGH678, de Carlos)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idVehiculo\": 3,\n  \"fechaHoraInicio\": \"{{inicioRes}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-53 GET /usuarios/me/reservas — 200 las del cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('incluye la reserva', () => pm.expect(cuerpo.data.map((r) => r.codigo)).to.include(pm.collectionVariables.get('codigoReserva')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me/reservas?estado=confirmada&limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "reservas"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "confirmada"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /usuarios/me/reservas — 401 sin sesión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/me/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "me",
+                "reservas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-54 GET /reservas?fecha&estado — 200 las de mañana ordenadas por hora",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "const horas = cuerpo.data.map((r) => r.fechaHoraInicio);",
+                  "pm.test('ordenadas por hora', () => pm.expect(horas).to.eql([...horas].sort()));",
+                  "pm.test('solo confirmadas', () => pm.expect(cuerpo.data.every((r) => r.estado === 'confirmada')).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas?fecha={{diaRes}}&estado=confirmada&limit=100",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "{{diaRes}}"
+                },
+                {
+                  "key": "estado",
+                  "value": "confirmada"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /reservas — 403 cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-53 POST /reservas — 201 el operador reserva para FGH678 (de Carlos)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('inicioLejano7', new Date(Date.now() - 5 * 3600000 + 6 * 86400000).toISOString().slice(0, 10) + 'T' + String(10 + Math.floor(Math.random() * 10)) + ':' + String(Math.floor(Math.random() * 6)) + '0');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('el cliente es el propietario', () => pm.expect(cuerpo.data.cliente.idUsuario).to.eql(5));",
+                  "pm.collectionVariables.set('idReservaCarlos', cuerpo.data.idReserva);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idVehiculo\": 3,\n  \"fechaHoraInicio\": \"{{inicioLejano7}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "HU-53 PATCH /reservas/:id/cancelacion — 403 la reserva de otro cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code SIN_PERMISO', () => pm.expect(cuerpo.error.code).to.eql('SIN_PERMISO'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas/{{idReservaCarlos}}/cancelacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "{{idReservaCarlos}}",
+                "cancelacion"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-53 PATCH /reservas/:id/cancelacion — 200 el operador la cancela",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas/{{idReservaCarlos}}/cancelacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "{{idReservaCarlos}}",
+                "cancelacion"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-53 PATCH /reservas/:id/cancelacion — 200 cancelada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));",
+                  "pm.test('cancelada', () => pm.expect(cuerpo.data.estado).to.eql('cancelada'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas/{{idReserva}}/cancelacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "{{idReserva}}",
+                "cancelacion"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-53 PATCH /reservas/:id/cancelacion — 409 ya cancelada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code RESERVA_NO_CANCELABLE', () => pm.expect(cuerpo.error.code).to.eql('RESERVA_NO_CANCELABLE'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenCliente}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas/{{idReserva}}/cancelacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "{{idReserva}}",
+                "cancelacion"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-53 PATCH /reservas/999999/cancelacion — 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=false', () => pm.expect(cuerpo.ok).to.eql(false));",
+                  "pm.test('code RESERVA_NO_ENCONTRADA', () => pm.expect(cuerpo.error.code).to.eql('RESERVA_NO_ENCONTRADA'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas/999999/cancelacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "999999",
+                "cancelacion"
+              ]
+            }
+          }
+        },
+        {
+          "name": "HU-53 PATCH /reservas/:id/cancelacion — 200 el operador cancela la segunda",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const cuerpo = pm.response.json();",
+                  "pm.test('sobre ok=true', () => pm.expect(cuerpo.ok).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tokenOperador}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas/{{idReserva2}}/cancelacion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "{{idReserva2}}",
+                "cancelacion"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
