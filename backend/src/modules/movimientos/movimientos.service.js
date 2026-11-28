@@ -7,6 +7,7 @@ const parqueaderos = require('../parqueaderos/parqueaderos.repository');
 const celdasRepositorio = require('../celdas/celdas.repository');
 const celdas = require('../celdas/celdas.service');
 const restricciones = require('../restricciones/restricciones.service');
+const reservas = require('../reservas/reservas.service');
 const reloj = require('../../utils/reloj');
 const { AppError, errores } = require('../../utils/errores');
 const { registrarBitacora } = require('../../utils/bitacora');
@@ -65,6 +66,7 @@ async function registrarEntrada(datos, actor) {
   const { placa } = datos;
   let rechazo = null;
   let idMovimiento;
+  let reserva = null;
   try {
     idMovimiento = await withTransaction(async (conexion) => {
       const puerta = await puertaPara('entrada', datos.idPuerta, conexion);
@@ -94,6 +96,9 @@ async function registrarEntrada(datos, actor) {
         throw error;
       }
 
+      // Spec 012 (RF-RES-07): reserva confirmada del vehículo en su franja, en este parqueadero.
+      if (vehiculo) reserva = await reservas.paraEntrada(conexion, { idVehiculo: vehiculo.idVehiculo, idParqueadero: puerta.idParqueadero, ahora });
+
       // RF-MOV-05: placa nueva → vehículo ocasional (sin propietario).
       if (!vehiculo) {
         const nuevo = {
@@ -108,10 +113,13 @@ async function registrarEntrada(datos, actor) {
         vehiculo = { idVehiculo, tipo };
       }
 
-      // RF-MOV-04: la celda elegida o la disponible de menor código.
-      const idCelda = datos.idCelda
-        ? await celdaElegida(datos.idCelda, { idParqueadero: puerta.idParqueadero, tipo }, conexion)
-        : await celdas.sugerir(conexion, { idParqueadero: puerta.idParqueadero, tipoVehiculo: tipo });
+      // RF-MOV-04: la celda elegida o la disponible de menor código; con reserva (RF-RES-07), la reservada si
+      // está libre o reservada (si no, la sugerida).
+      const reservadaLibre = reserva && ['disponible', 'reservada'].includes(reserva._estadoCelda);
+      let idCelda;
+      if (reservadaLibre) idCelda = reserva.celda.idCelda;
+      else if (datos.idCelda && !reserva) idCelda = await celdaElegida(datos.idCelda, { idParqueadero: puerta.idParqueadero, tipo }, conexion);
+      else idCelda = await celdas.sugerir(conexion, { idParqueadero: puerta.idParqueadero, tipoVehiculo: tipo });
       if (!idCelda) throw errores.conflicto(`Sin celdas disponibles para ${tipo}`, 'SIN_CELDAS');
       await celdas.ocupar(conexion, { idCelda, idVehiculo: vehiculo.idVehiculo, tipoVehiculo: tipo });
 
@@ -122,7 +130,8 @@ async function registrarEntrada(datos, actor) {
       // RF-MOV-06: el consecutivo se toma en la misma transacción (sin huecos si la entrada falla).
       const codigo = await siguienteConsecutivo(conexion, 'ticket');
       await repositorio.insertarTicket(id, codigo, ahora, { conexion });
-      await bitacora(conexion, actor, 'registrar_entrada', 'movimiento', id, { placa, idCelda, idPuerta: puerta.idPuerta, ticket: codigo });
+      await bitacora(conexion, actor, 'registrar_entrada', 'movimiento', id, { placa, idCelda, idPuerta: puerta.idPuerta, ticket: codigo, reserva: reserva?.codigo });
+      if (reserva) await reservas.cumplir(conexion, reserva, id, actor);
       return id;
     });
   } catch (error) {
@@ -133,7 +142,9 @@ async function registrarEntrada(datos, actor) {
     }
     throw error;
   }
-  return publico(await repositorio.obtenerPorId(idMovimiento), ahora);
+  const movimiento = publico(await repositorio.obtenerPorId(idMovimiento), ahora);
+  // Spec 012: la reserva cumplida con esta entrada (aviso en la caseta).
+  return { ...movimiento, reserva: reserva ? { idReserva: reserva.idReserva, codigo: reserva.codigo } : null };
 }
 
 // ---------------------------------------------------------------- HU-33

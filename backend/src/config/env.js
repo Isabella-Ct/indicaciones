@@ -42,6 +42,9 @@ const esquema = z
     SMTP_CLAVE: z.string().default(''),
     // Base de los enlaces que viajan por correo (recuperación de contraseña, spec 003)
     URL_PUBLICA: z.string().url('URL_PUBLICA debe ser una URL (p. ej. http://localhost:3000)').optional(),
+    // Reservas (spec 012, TBD-07): anticipación máxima en días y minutos de espera antes de vencer.
+    RESERVA_ANTICIPACION_DIAS: z.coerce.number().int().min(1).max(60).default(7),
+    RESERVA_MINUTOS_ESPERA: z.coerce.number().int().min(5).max(240).default(30),
   })
   .refine((e) => e.NODE_ENV !== 'test' || e.DB_NAME.endsWith('_test'), {
     message: 'Con NODE_ENV=test, DB_NAME debe terminar en _test (protege la base de desarrollo)',

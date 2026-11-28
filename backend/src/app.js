@@ -48,6 +48,8 @@ function rutasProtegidas() {
     { ruta: '/membresias', router: require('./modules/membresias/membresias.routes') },
     // spec 011-descuentos
     { ruta: '/descuentos', router: require('./modules/descuentos/descuentos.routes') },
+    // spec 012-reservas
+    { ruta: '/reservas', router: require('./modules/reservas/reservas.routes') },
   ];
 }
 

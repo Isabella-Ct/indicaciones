@@ -4,6 +4,12 @@ Historial de `schema.sql` y de las migraciones en `migrations/`. Cada entrada in
 
 ---
 
+## 2.2.0 (sin cambios) — 2026-11-27 · spec `012-reservas`
+
+La spec 012 usa `reserva` tal como está: `UNIQUE uq_reserva_codigo` (consecutivo `reserva`, `R-` + 6 dígitos, ya en la semilla), los índices por celda, vehículo y cliente con estado y hora (para buscar cruces de franjas, RF-RES-02), `minutos_espera` (30 por defecto, TBD-07) e `id_movimiento` (al cumplirse, RF-RES-07). La celda usa su estado `reservada` durante la franja (RN-27) y la notificación su tipo `reserva`. La anticipación máxima (7 días) y la espera (30 min) son variables de entorno (`RESERVA_ANTICIPACION_DIAS`, `RESERVA_MINUTOS_ESPERA`) mientras TBD-07 no se decida; la espera se copia a cada reserva. La semilla no cambia.
+
+---
+
 ## 2.2.0 (sin cambios en el esquema; semilla ampliada) — 2026-11-27 · spec `011-descuentos`
 
 La spec 011 usa `descuento` y `liquidacion.id_descuento` / `liquidacion.valor_descuento` tal como están: `UNIQUE uq_descuento_nombre` (RF-DES-01), `CHECK` del valor (porcentaje 1–100 o fijo > 0, RF-DES-02) y de la vigencia, e índice `idx_descuento_vigencia` para buscar los vigentes al liquidar. La liquidación guarda el descuento aplicado y su valor una sola vez, así que editar o inactivar un descuento no cambia las ya guardadas (RF-DES-05). Solo cambia `seed.sql`: 3 descuentos — «Motos fin de semana» (20 %, motos, diciembre de 2026), «Navidad clientes registrados» (10 %, registrados, 15–31 de diciembre de 2026) y «Promoción de apertura» ($ 1.000, enero de 2026, inactivo); ninguno vigente en noviembre de 2026 (research R-08).

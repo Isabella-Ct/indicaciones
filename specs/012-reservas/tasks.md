@@ -8,31 +8,31 @@
 
 ## Fase 1: Preparación
 
-- [ ] T001 `RESERVA_ANTICIPACION_DIAS` y `RESERVA_MINUTOS_ESPERA` en `backend/src/config/env.js` y `.env.example` (research R-02); nota en `CAMBIOS.md` (sin cambios de esquema)
+- [X] T001 `RESERVA_ANTICIPACION_DIAS` y `RESERVA_MINUTOS_ESPERA` en `backend/src/config/env.js` y `.env.example` (research R-02); nota en `CAMBIOS.md` (sin cambios de esquema)
 
 ## Fase 2: Fundacional
 
-- [ ] T002 [P] `backend/src/modules/reservas/reservas.reglas.js` (`franja`, `seCruzan`, `validarInicio`, `enFranja`, `vencida`) + `backend/tests/unit/reservas.reglas.test.js`
+- [X] T002 [P] `backend/src/modules/reservas/reservas.reglas.js` (`franja`, `seCruzan`, `validarInicio`, `enFranja`, `vencida`) + `backend/tests/unit/reservas.reglas.test.js`
 
 ## Fase 3: US1 — Reservar (P1) — HU-52
 
-- [ ] T003 [US1] `backend/tests/integration/reservas.test.js` bloque HU-52 E1–E5
-- [ ] T004 [US1] `backend/src/modules/reservas/` validator (data-model.md Reserva.id_vehiculo, Reserva.id_celda, Reserva.fecha_hora_inicio, Reserva.minutos_espera, Reserva.estado), repository, service `reservar` (R-03) y `disponibles` (R-04), controller y rutas; `GET /celdas/disponibles` antes de `/:id` en `celdas.routes.js`; registro en `rutasProtegidas()`
+- [X] T003 [US1] `backend/tests/integration/reservas.test.js` bloque HU-52 E1–E5
+- [X] T004 [US1] `backend/src/modules/reservas/` validator (data-model.md Reserva.id_vehiculo, Reserva.id_celda, Reserva.fecha_hora_inicio, Reserva.minutos_espera, Reserva.estado), repository, service `reservar` (R-03) y `disponibles` (R-04), controller y rutas; `GET /celdas/disponibles` antes de `/:id` en `celdas.routes.js`; registro en `rutasProtegidas()`
 
 ## Fase 4: US2 — Cancelar (P1) — HU-53
 
-- [ ] T005 [US2] Bloque HU-53 E1–E3 en `reservas.test.js`
-- [ ] T006 [US2] Service `cancelar` (R-05) y `mias`; `PATCH /reservas/:id/cancelacion` y `GET /usuarios/me/reservas` antes de `/:id` en `usuarios.routes.js`
+- [X] T005 [US2] Bloque HU-53 E1–E3 en `reservas.test.js`
+- [X] T006 [US2] Service `cancelar` (R-05) y `mias`; `PATCH /reservas/:id/cancelacion` y `GET /usuarios/me/reservas` antes de `/:id` en `usuarios.routes.js`
 
 ## Fase 5: US3 — Reservas del día (P2) — HU-54
 
-- [ ] T007 [US3] Bloque HU-54 E1–E2 en `reservas.test.js`
-- [ ] T008 [US3] Service `listar` (R-06) y `GET /reservas`
+- [X] T007 [US3] Bloque HU-54 E1–E2 en `reservas.test.js`
+- [X] T008 [US3] Service `listar` (R-06) y `GET /reservas`
 
 ## Fase 6: US4 — Cumplir o vencer (P2) — HU-55
 
-- [ ] T009 [US4] Bloque HU-55 E1–E3 en `reservas.test.js` (incluye la reasignación cuando la celda está ocupada)
-- [ ] T010 [US4] `paraEntrada` y `cumplir` en `reservas.service` y su uso en `movimientos.service.registrarEntrada` (R-08; data-model.md Reserva.id_movimiento); `controlar` (R-07) y `src/tareas/programador.js`
+- [X] T009 [US4] Bloque HU-55 E1–E3 en `reservas.test.js` (incluye la reasignación cuando la celda está ocupada)
+- [X] T010 [US4] `paraEntrada` y `cumplir` en `reservas.service` y su uso en `movimientos.service.registrarEntrada` (R-08; data-model.md Reserva.id_movimiento); `controlar` (R-07) y `src/tareas/programador.js`
 
 ## Fase 7: Interfaz (Atomic Design)
 

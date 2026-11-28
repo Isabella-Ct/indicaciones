@@ -17,6 +17,14 @@ router.post('/lote', authorize('celdas.crear'), validate({ body: esquemas.lote }
 router.get('/', authorize('celdas.ver'), validate({ query: esquemas.listar }), controller.listar);
 
 // GET /api/v1/celdas/:id — HU-22
+// GET /api/v1/celdas/disponibles?fecha&tipo&idParqueadero — HU-52 (spec 012): libres en la franja de esa hora
+router.get(
+  '/disponibles',
+  authorize('celdas.ver'),
+  validate({ query: require('../reservas/reservas.validator').disponibles }),
+  require('../reservas/reservas.controller').disponibles
+);
+
 router.get('/:id', authorize('celdas.ver'), validate({ params: esquemas.params }), controller.obtener);
 
 // PUT /api/v1/celdas/:id — HU-21 · RF-CLD-13
